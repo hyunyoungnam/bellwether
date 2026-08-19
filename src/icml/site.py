@@ -34,7 +34,6 @@ from pathlib import Path
 
 from .common import INTERIM, PROCESSED, REPORTS, ROOT, load_json, read_jsonl
 
-FACTS_FULL = INTERIM / "facts_fulltext.jsonl"
 UNION = PROCESSED / "union.json"
 EMBED = PROCESSED / "embed_union.json"
 NEIGHBORS = PROCESSED / "neighbors_union.json"
@@ -303,35 +302,38 @@ def build_payload(span_source: str) -> dict:
     # for 59% — PDF text is dirty enough that 40.7% of its "verbatim" quotes fail
     # verification. So the abstract leads, and full text only fills the gaps it
     # leaves; that union reaches 94%.
-    # Full text exists for the focus year only (arXiv preprints; the PMLR
-    # camera-ready pass for earlier years has not been extracted yet), so the
-    # richer cards are concentrated in one corpus. That asymmetry is disclosed
-    # per corpus in `coverage`, and nothing sorts, scores or filters on it.
+    # Full-text source differs by corpus — arXiv preprints for the focus year
+    # (71.9%, biased by subfield), the PMLR camera-ready for published years
+    # (99.3%). Coverage per corpus is disclosed in `corpora[].full`, and nothing
+    # sorts, scores or filters on it.
     n_full = 0
     focus = next((c for c in corpora if c.is_focus), corpora[-1])
-    if span_source == "fulltext" and FACTS_FULL.exists():
+    if span_source == "fulltext":
         FILLABLE = ("limitation", "key_change", "result_claim", "novelty_spans",
                     "datasets", "methods", "tasks", "domain")
-        for r in read_jsonl(FACTS_FULL):
-            if not r.get("ok"):
+        for c in corpora:
+            if not c.facts_fulltext.exists():
                 continue
-            g = GID.get((focus.key, r["event_id"]))
-            if g is None:
-                continue
-            base = facts.get(g)
-            if base is None:
-                facts[g] = r["facts"]
-                src_of[g] = "fulltext"
-                n_full += 1
-                continue
-            used = False
-            for k in FILLABLE:
-                if not base.get(k) and r["facts"].get(k):
-                    base[k] = r["facts"][k]
-                    used = True
-            if used:
-                src_of[g] = "fulltext"
-                n_full += 1
+            for r in read_jsonl(c.facts_fulltext):
+                if not r.get("ok"):
+                    continue
+                g = GID.get((c.key, r["event_id"]))
+                if g is None:
+                    continue
+                base = facts.get(g)
+                if base is None:
+                    facts[g] = r["facts"]
+                    src_of[g] = "fulltext"
+                    n_full += 1
+                    continue
+                used = False
+                for k in FILLABLE:
+                    if not base.get(k) and r["facts"].get(k):
+                        base[k] = r["facts"][k]
+                        used = True
+                if used:
+                    src_of[g] = "fulltext"
+                    n_full += 1
 
     # The shared vocabulary from icml.taxonomy, not a per-run derivation. Its two
     # membership kinds are kept apart all the way to the screen: the paper said
@@ -377,10 +379,20 @@ def build_payload(span_source: str) -> dict:
             "j": 1 if t0.get("junk") else 0,
         })
 
-    # Focus-year only: parsed from arXiv full text, which earlier years do not have.
+    # Keyed by corpus, then event_id (see icml.contacts). The old flat shape
+    # (focus year only) is still read so a stale contacts.json degrades to
+    # focus-year coverage instead of crashing the build.
     craw = (load_json(CONTACTS)["contacts"] if CONTACTS.exists() else {})
-    contacts = {GID[(focus.key, int(k))]: v for k, v in craw.items()
-                if (focus.key, int(k)) in GID}
+    contacts: dict[int, list] = {}
+    if craw and all(isinstance(v, dict) for v in craw.values()):
+        for ck, per in craw.items():
+            for k, v in per.items():
+                g = GID.get((ck, int(k)))
+                if g is not None:
+                    contacts[g] = v
+    else:
+        contacts = {GID[(focus.key, int(k))]: v for k, v in craw.items()
+                    if (focus.key, int(k)) in GID}
 
     meth, data, task = Vocab(), Vocab(), Vocab()
     rows = []

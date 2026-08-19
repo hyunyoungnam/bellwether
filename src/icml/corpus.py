@@ -47,9 +47,16 @@ class Corpus:
 
     @property
     def facts(self) -> Path:
-        """Abstract pass only. Earlier years have no PDFs, so full text would make
-        the focus year look richer purely by being the focus year."""
+        """Abstract pass — the census. The only valid basis for anything counted,
+        ranked or compared across papers (Guardrail 5)."""
         return self._p("facts_abstract", ".jsonl", INTERIM)
+
+    @property
+    def facts_fulltext(self) -> Path:
+        """Full-text pass, per corpus: arXiv preprints for the focus year, the
+        PMLR camera-ready for published years. Enriches a paper's own card only —
+        coverage differs by corpus (and by subfield), so nothing may count on it."""
+        return self._p("facts_fulltext", ".jsonl", INTERIM)
 
     @property
     def topics(self) -> Path:

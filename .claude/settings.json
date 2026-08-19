@@ -3,7 +3,9 @@
     "allow": [
       "Bash(grep -v '^$')",
       "Bash(awk '{printf \"%-40s %8.1f MB\\\\n\",$NF,$5/1048576}')",
-      "Bash(curl -s -o /dev/null -w \"http.server still up: HTTP %{http_code}\\\\n\" --max-time 5 http://127.0.0.1:8001/setview.html)"
+      "Bash(curl -s -o /dev/null -w \"http.server still up: HTTP %{http_code}\\\\n\" --max-time 5 http://127.0.0.1:8001/setview.html)",
+      "Bash(git commit -q -m ' *)",
+      "Bash(git push *)"
     ]
   }
 }

@@ -19,6 +19,7 @@ import argparse
 import re
 
 from .common import INTERIM, PROCESSED, RAW, dump_json, read_jsonl
+from .corpus import available
 
 FULLTEXT = INTERIM / "fulltext.jsonl"
 RESOLVED = RAW / "arxiv" / "resolved.jsonl"
@@ -75,37 +76,50 @@ def main() -> int:
                     help="how much of each opening section to read")
     args = ap.parse_args()
 
-    if not FULLTEXT.exists():
-        raise SystemExit("no fulltext.jsonl — run icml.pdf_extract first")
-
+    # One full-text source per corpus: arXiv preprints for the focus year
+    # (bridged to event_id via resolved.jsonl), the PMLR camera-ready for
+    # published years (rows carry event_id directly). Output is keyed by corpus,
+    # because event_id is not a global identity.
     to_event: dict[str, int] = {}
     for r in read_jsonl(RESOLVED):
         if r.get("arxiv_base"):
             to_event.setdefault(r["arxiv_base"], r["event_id"])
 
-    found, scanned = {}, 0
-    for row in read_jsonl(FULLTEXT):
-        if not row.get("ok"):
+    found: dict[str, dict] = {}
+    totals = {}
+    for c in available():
+        src = FULLTEXT if c.is_focus else INTERIM / f"fulltext_pmlr_{c.year}.jsonl"
+        if not src.exists():
             continue
-        scanned += 1
-        eid = to_event.get(row["arxiv_base"])
-        if eid is None:
-            continue
-        head = " ".join((s.get("text") or "")[: args.head_chars]
-                        for s in (row.get("sections") or [])[:2])
-        people = parse(head)
-        if people:
-            found[eid] = people
+        got, scanned = {}, 0
+        for row in read_jsonl(src):
+            if not row.get("ok"):
+                continue
+            scanned += 1
+            eid = row.get("event_id") or to_event.get(row["arxiv_base"])
+            if eid is None:
+                continue
+            head = " ".join((s.get("text") or "")[: args.head_chars]
+                            for s in (row.get("sections") or [])[:2])
+            people = parse(head)
+            if people:
+                got[eid] = people
+        found[c.key] = got
+        totals[c.key] = scanned
+        print(f"  {c.key}: {len(got):,} of {scanned:,} full texts "
+              f"({len(got)/max(scanned,1):.0%}) name a corresponding author")
+
+    if not found:
+        raise SystemExit("no full-text file found — run icml.pdf_extract or icml.pmlr")
 
     dump_json(OUT, {
         "method": ("parsed from the paper's own 'Correspondence to:' line; papers "
                    "that do not print one are absent rather than guessed"),
-        "scanned_fulltexts": scanned,
-        "papers_with_contact": len(found),
+        "scanned_fulltexts": totals,
+        "papers_with_contact": {k: len(v) for k, v in found.items()},
         "contacts": found,
     })
-    print(f"wrote {OUT.name}: {len(found):,} of {scanned:,} full texts "
-          f"({len(found)/max(scanned,1):.0%}) name a corresponding author")
+    print(f"wrote {OUT.name}")
     return 0
 
 

@@ -421,10 +421,15 @@ def main() -> int:
     # Earlier years go to their own files. Merging them into facts_abstract.jsonl
     # would put three conferences in the table every corpus claim is computed
     # from, and the counts would silently become three-year totals.
+    fulltext_path = FULLTEXT
     if args.year:
-        if args.source != "abstract":
-            raise SystemExit("--year is abstract-only: earlier years have no PDFs")
-        out_path = INTERIM / f"facts_abstract_{args.year}.jsonl"
+        if args.source == "fulltext":
+            # Earlier years have no arXiv bridge but do have the PMLR
+            # camera-ready (icml.pmlr), whose rows carry event_id directly.
+            fulltext_path = INTERIM / f"fulltext_pmlr_{args.year}.jsonl"
+            if not fulltext_path.exists():
+                raise SystemExit(f"no {fulltext_path.name} — run `icml.pmlr text` first")
+        out_path = INTERIM / f"facts_{args.source}_{args.year}.jsonl"
         papers = list(read_jsonl(PROCESSED / f"papers_{args.year}.jsonl"))
     else:
         out_path = OUT_BY_SOURCE[args.source]
@@ -443,17 +448,18 @@ def main() -> int:
             jobs.append({"event_id": p["event_id"], "arxiv_base": None,
                          "title": p["title"], "text": p["abstract"][: args.max_chars]})
     else:
-        if not FULLTEXT.exists():
-            raise SystemExit("no fulltext.jsonl — run `icml.pdf_extract` first")
-        # arxiv_base -> ICML event_id, so facts attach to the canonical paper record.
+        if not fulltext_path.exists():
+            raise SystemExit(f"no {fulltext_path.name} — run `icml.pdf_extract` first")
+        # arxiv_base -> ICML event_id, so facts attach to the canonical paper
+        # record. PMLR rows skip the bridge: they already carry event_id.
         to_event: dict[str, int] = {}
         for r in read_jsonl(RESOLVED):
             if r.get("arxiv_base"):
                 to_event.setdefault(r["arxiv_base"], r["event_id"])
-        for row in read_jsonl(FULLTEXT):
+        for row in read_jsonl(fulltext_path):
             if not row.get("ok"):
                 continue
-            eid = to_event.get(row["arxiv_base"])
+            eid = row.get("event_id") or to_event.get(row["arxiv_base"])
             if eid is None or eid in done:
                 continue
             text = build_text(row.get("sections") or [], args.max_chars)
