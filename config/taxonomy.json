@@ -1,0 +1,3972 @@
+{
+  "version": "2026-08-19",
+  "unit": "papers per 1,000",
+  "min_share": 1.2,
+  "min_papers": 5,
+  "derived_from": [
+    {
+      "corpus": "icml-2025",
+      "papers": 3324
+    },
+    {
+      "corpus": "icml-2026",
+      "papers": 6592
+    }
+  ],
+  "child_labels": 1753,
+  "nested_labels": 28,
+  "labels_with_no_parent": 8013,
+  "topics": [
+    {
+      "label": "healthcare",
+      "peak_share": 28.22,
+      "seen_in": [
+        "icml-2025",
+        "icml-2026"
+      ],
+      "counts": {
+        "icml-2025": 70,
+        "icml-2026": 186
+      },
+      "children": [
+        "healthcare and industry",
+        "healthcare and logistics",
+        "healthcare and sensor network",
+        "healthcare guidance",
+        "healthcare question answering",
+        "personalized healthcare",
+        "public policy and healthcare"
+      ]
+    },
+    {
+      "label": "robotics",
+      "peak_share": 23.51,
+      "seen_in": [
+        "icml-2025",
+        "icml-2026"
+      ],
+      "counts": {
+        "icml-2025": 40,
+        "icml-2026": 155
+      },
+      "children": [
+        "assistive robotics",
+        "embodied safety in scientific robotics",
+        "finance and robotics",
+        "reward design in robotics",
+        "robotics and ar",
+        "robotics and ar vr",
+        "robotics and augmented reality",
+        "robotics manipulation",
+        "robotics optimization",
+        "scientific robotics",
+        "soft robotics"
+      ]
+    },
+    {
+      "label": "drug discovery",
+      "peak_share": 12.94,
+      "seen_in": [
+        "icml-2025",
+        "icml-2026"
+      ],
+      "counts": {
+        "icml-2025": 43,
+        "icml-2026": 69
+      },
+      "children": [
+        "biological discovery and drug discovery"
+      ]
+    },
+    {
+      "label": "reinforcement learning",
+      "peak_share": 10.83,
+      "seen_in": [
+        "icml-2025",
+        "icml-2026"
+      ],
+      "counts": {
+        "icml-2025": 36,
+        "icml-2026": 48
+      },
+      "children": [
+        "accelerating llm reinforcement learning",
+        "agentic reinforcement learning",
+        "asynchronous reinforcement learning",
+        "autonomous reinforcement learning",
+        "average reward reinforcement learning",
+        "bandit convex reinforcement learning",
+        "benchmarking quantum reinforcement learning",
+        "benchmarking reinforcement learning",
+        "concurrent reinforcement learning",
+        "constrained meta reinforcement learning",
+        "constrained multi objective reinforcement learning",
+        "constrained reinforcement learning",
+        "context based offline meta reinforcement learning",
+        "continual reinforcement learning",
+        "continuous actor critic reinforcement learning",
+        "continuous time reinforcement learning",
+        "cross dynamics reinforcement learning",
+        "data augmentation for reinforcement learning",
+        "data synthesis for reinforcement learning",
+        "deep reinforcement learning",
+        "diffusion reinforcement learning",
+        "distributional reinforcement learning",
+        "distributionally robust off dynamics reinforcement learning",
+        "distributionally robust reinforcement learning",
+        "equilibrium selection in multiagent reinforcement learning",
+        "estimating value functions in reinforcement learning",
+        "explainable reinforcement learning",
+        "exploring large action sets in reinforcement learning",
+        "federated reinforcement learning",
+        "functional interpretability in reinforcement learning",
+        "goal conditioned reinforcement learning",
+        "hierarchical reinforcement learning",
+        "in context reinforcement learning",
+        "infinite horizon average reward reinforcement learning",
+        "inverse constrained reinforcement learning",
+        "inverse reinforcement learning",
+        "large action models for reinforcement learning",
+        "long horizon llm reinforcement learning",
+        "massively parallel on policy reinforcement learning",
+        "maximum entropy reinforcement learning",
+        "meta reinforcement learning",
+        "model based reinforcement learning",
+        "model free reinforcement learning",
+        "multi agent reinforcement learning",
+        "multi objective reinforcement learning",
+        "multi reinforcement learning",
+        "multi turn reinforcement learning",
+        "multi view reinforcement learning",
+        "multivariate distributional reinforcement learning",
+        "non stationary reinforcement learning",
+        "novelty detection in reinforcement learning",
+        "off policy reinforcement learning",
+        "offline goal conditioned reinforcement learning",
+        "offline hierarchical reinforcement learning",
+        "offline in context reinforcement learning",
+        "offline inverse reinforcement learning",
+        "offline meta reinforcement learning",
+        "offline multi agent meta reinforcement learning",
+        "offline multi objective reinforcement learning",
+        "offline multi reinforcement learning",
+        "offline preference based reinforcement learning",
+        "offline reinforcement learning",
+        "offline to online reinforcement learning",
+        "offline zero shot reinforcement learning",
+        "online episodic convex reinforcement learning",
+        "online planning in reinforcement learning",
+        "online reinforcement learning",
+        "online representation learning in reinforcement learning",
+        "outcome supervised reinforcement learning",
+        "partially observable reinforcement learning",
+        "performative reinforcement learning",
+        "preference aligned reinforcement learning",
+        "preference based multi objective reinforcement learning",
+        "preference based reinforcement learning",
+        "quantum reinforcement learning",
+        "reinforcement learning alignment",
+        "reinforcement learning alignment of large language model",
+        "reinforcement learning control of a physical robot device",
+        "reinforcement learning exploration",
+        "reinforcement learning fine tuning",
+        "reinforcement learning fine tuning of large language model",
+        "reinforcement learning fine tuning of vision language model",
+        "reinforcement learning finetuning",
+        "reinforcement learning for diffusion language model",
+        "reinforcement learning for diffusion model",
+        "reinforcement learning for few step diffusion model",
+        "reinforcement learning for large language model",
+        "reinforcement learning for llm agent",
+        "reinforcement learning for llm reasoning",
+        "reinforcement learning for partially observable environment",
+        "reinforcement learning for reachability specification",
+        "reinforcement learning for software engineering agent",
+        "reinforcement learning for temporal logic specification",
+        "reinforcement learning for tool calling",
+        "reinforcement learning for vision language action model",
+        "reinforcement learning from bagged reward",
+        "reinforcement learning from demonstration",
+        "reinforcement learning from human feedback",
+        "reinforcement learning from human preference",
+        "reinforcement learning from verifiable reward",
+        "reinforcement learning from verification reward",
+        "reinforcement learning in 3d open world environment",
+        "reinforcement learning in continuous action space",
+        "reinforcement learning in large language model",
+        "reinforcement learning in monitored markov decision",
+        "reinforcement learning in non markovian environment",
+        "reinforcement learning in sparse reward environment",
+        "reinforcement learning in two player zero sum game",
+        "reinforcement learning of large language model",
+        "reinforcement learning of llm search agent",
+        "reinforcement learning post training alignment for language",
+        "reinforcement learning post training of large language model",
+        "reinforcement learning post training of large reasoning",
+        "reinforcement learning security",
+        "reinforcement learning training",
+        "reinforcement learning training of large language model",
+        "reinforcement learning under partial observability",
+        "reinforcement learning under verifiable rewards for large语言",
+        "reinforcement learning with combinatorial action",
+        "reinforcement learning with combinatorial action space",
+        "reinforcement learning with delay",
+        "reinforcement learning with diffusion model",
+        "reinforcement learning with human feedback",
+        "reinforcement learning with instantaneous safety constraint",
+        "reinforcement learning with model changing action",
+        "reinforcement learning with non exponential discounting",
+        "reinforcement learning with pairwise preference",
+        "reinforcement learning with partial observability",
+        "reinforcement learning with random time horizon",
+        "reinforcement learning with rich feedback",
+        "reinforcement learning with segment feedback",
+        "reinforcement learning with textual feedback",
+        "reinforcement learning with trajectory feedback",
+        "reinforcement learning with unobservable random delay",
+        "reinforcement learning with varying action set",
+        "reinforcement learning with verifiable reward",
+        "reinforcement learning with verifiable rewards (rlvr)",
+        "replicable reinforcement learning",
+        "residual reinforcement learning",
+        "reward poisoning attacks in reinforcement learning",
+        "risk averse reinforcement learning",
+        "risk sensitive multi objective reinforcement learning",
+        "risk sensitive reinforcement learning",
+        "robust average reward reinforcement learning",
+        "robust meta reinforcement learning",
+        "robust reinforcement learning",
+        "safe in context reinforcement learning",
+        "safe partially observable reinforcement learning",
+        "safe reinforcement learning",
+        "self supervised goal conditioned reinforcement learning",
+        "sparse reward reinforcement learning",
+        "state abstraction in reinforcement learning",
+        "state evolvable reinforcement learning",
+        "stochastic minimum cost reach avoid reinforcement learning",
+        "streaming reinforcement learning",
+        "test time reinforcement learning",
+        "tool integrated reinforcement learning",
+        "transfer reinforcement learning",
+        "unsupervised reinforcement learning",
+        "value estimation in reinforcement learning",
+        "vision tool use reinforcement learning",
+        "visual generalization evaluation for reinforcement learning",
+        "visual reinforcement learning",
+        "zero shot reinforcement learning",
+        "zero shot transfer reinforcement learning"
+      ]
+    },
+    {
+      "label": "text to image generation",
+      "peak_share": 9.86,
+      "seen_in": [
+        "icml-2025",
+        "icml-2026"
+      ],
+      "counts": {
+        "icml-2025": 25,
+        "icml-2026": 65
+      },
+      "children": [
+        "adversarial defense for text to image generation",
+        "compositional text to image generation",
+        "concept erasure in text to image generation",
+        "consistent text to image generation",
+        "high resolution text to image generation",
+        "interactive text to image generation",
+        "multilingual text to image generation",
+        "reasoning text to image generation",
+        "safe text to image generation",
+        "safety alignment in text to image generation",
+        "text rendering in text to image generation",
+        "text to image generation with spatial constraint"
+      ],
+      "nested_under": "image generation"
+    },
+    {
+      "label": "software engineering",
+      "peak_share": 9.25,
+      "seen_in": [
+        "icml-2025",
+        "icml-2026"
+      ],
+      "counts": {
+        "icml-2025": 20,
+        "icml-2026": 61
+      },
+      "children": [
+        "agentic software engineering",
+        "ai for software engineering",
+        "automated environment construction for software engineering",
+        "automated software engineering",
+        "autonomous software engineering",
+        "clarification for software engineering",
+        "freelance software engineering",
+        "goal oriented software engineering",
+        "software engineering agent training",
+        "software engineering agent training and evaluation",
+        "software engineering benchmark evaluation",
+        "software engineering data synthesis"
+      ]
+    },
+    {
+      "label": "image generation",
+      "peak_share": 8.42,
+      "seen_in": [
+        "icml-2025",
+        "icml-2026"
+      ],
+      "counts": {
+        "icml-2025": 28,
+        "icml-2026": 30
+      },
+      "children": [
+        "anomaly image generation",
+        "anything to image generation",
+        "autoregressive image generation",
+        "class conditional image generation",
+        "conditional image generation",
+        "counterfactual image generation",
+        "event customized image generation",
+        "few step image generation",
+        "high fidelity image generation",
+        "image generation and editing",
+        "image generation security",
+        "image to image generation",
+        "keypoint guided multi class image generation",
+        "layout to image generation",
+        "long text image generation",
+        "multi context image generation",
+        "multi reference image generation",
+        "natural image generation",
+        "personalized image generation",
+        "pixel space image generation",
+        "remote sensing image generation",
+        "reward aligned image generation",
+        "safe image generation",
+        "satellite image generation",
+        "text conditional image generation",
+        "text conditioned image generation",
+        "text guided stylized image generation",
+        "text image generation",
+        "text to image generation",
+        "ultra high resolution image generation",
+        "unconditional image generation",
+        "unified multimodal understanding and image generation"
+      ]
+    },
+    {
+      "label": "autonomous driving",
+      "peak_share": 8.12,
+      "seen_in": [
+        "icml-2025",
+        "icml-2026"
+      ],
+      "counts": {
+        "icml-2025": 27,
+        "icml-2026": 42
+      },
+      "children": [
+        "autonomous driving planning",
+        "cross domain end to end autonomous driving",
+        "end to end autonomous driving",
+        "robotic manipulation, autonomous driving",
+        "robotics and autonomous driving",
+        "safety critical scenario generation for autonomous driving",
+        "vehicle to vehicle cooperative autonomous driving",
+        "vision based end to end autonomous driving"
+      ]
+    },
+    {
+      "label": "federated learning",
+      "peak_share": 7.82,
+      "seen_in": [
+        "icml-2025",
+        "icml-2026"
+      ],
+      "counts": {
+        "icml-2025": 26,
+        "icml-2026": 23
+      },
+      "children": [
+        "aggregation free federated learning",
+        "asynchronous federated learning",
+        "backdoor attacks on federated learning",
+        "byzantine robust federated learning",
+        "certifiably robust model evaluation in federated learning",
+        "client selection in multimodal federated learning",
+        "clustered federated learning",
+        "communication efficient federated learning",
+        "continual federated learning",
+        "decentralized federated learning",
+        "differentially private federated learning",
+        "explainable federated learning",
+        "federated learning backdoor defense",
+        "federated learning generalization analysis",
+        "federated learning with class imbalance",
+        "federated learning with client level unlearning",
+        "federated learning with noisy label",
+        "federated learning with vision language model",
+        "graph federated learning",
+        "heterogeneous federated learning",
+        "model heterogeneous federated learning",
+        "multimodal federated learning",
+        "one shot federated learning",
+        "personalized federated learning",
+        "personalized multimodal federated learning",
+        "robust label noise correction for federated learning",
+        "secure aggregation for federated learning",
+        "semi supervised federated learning",
+        "split federated learning",
+        "streaming federated learning",
+        "text attributed graph federated learning",
+        "vertical federated learning"
+      ]
+    },
+    {
+      "label": "time series forecasting",
+      "peak_share": 7.82,
+      "seen_in": [
+        "icml-2025",
+        "icml-2026"
+      ],
+      "counts": {
+        "icml-2025": 26,
+        "icml-2026": 42
+      },
+      "children": [
+        "adversarial attacks on time series forecasting",
+        "backdoor defense in time series forecasting",
+        "few shot time series forecasting",
+        "general time series forecasting",
+        "long range time series forecasting",
+        "long term probabilistic time series forecasting",
+        "long term time series forecasting",
+        "multimodal time series forecasting",
+        "multivariate time series forecasting",
+        "non stationary time series forecasting",
+        "probabilistic time series forecasting",
+        "source free time series forecasting",
+        "spatial temporal time series forecasting",
+        "time series forecasting with covariate",
+        "time series forecasting with exogenous variable"
+      ]
+    },
+    {
+      "label": "cybersecurity",
+      "peak_share": 7.43,
+      "seen_in": [
+        "icml-2025",
+        "icml-2026"
+      ],
+      "counts": {
+        "icml-2025": 14,
+        "icml-2026": 49
+      },
+      "children": [
+        "cybersecurity defense",
+        "cybersecurity instruction following"
+      ]
+    },
+    {
+      "label": "reasoning",
+      "peak_share": 7.13,
+      "seen_in": [
+        "icml-2025",
+        "icml-2026"
+      ],
+      "counts": {
+        "icml-2025": 13,
+        "icml-2026": 47
+      },
+      "children": [
+        "3d audio visual grounding and reasoning",
+        "3d reasoning",
+        "abductive reasoning",
+        "abstract reasoning",
+        "action reasoning",
+        "active reasoning",
+        "adaptive reasoning",
+        "adversarial attack on tool augmented agentic reasoning",
+        "agentic reasoning",
+        "agnostic reasoning",
+        "ai reasoning",
+        "algorithmic reasoning",
+        "all atom reasoning",
+        "analogical reasoning",
+        "arithmetic reasoning",
+        "audio comprehension and reasoning",
+        "audio reasoning",
+        "autoregressive reasoning",
+        "biological protocol reasoning",
+        "biological reasoning",
+        "causal reasoning",
+        "chain of thought reasoning",
+        "chemical reasoning",
+        "clinical reasoning",
+        "clinical video reasoning",
+        "code reasoning",
+        "combinatorial reasoning",
+        "commercial intent reasoning",
+        "common sense reasoning",
+        "commonsense reasoning",
+        "comparison reasoning",
+        "complex reasoning",
+        "complex, multi step reasoning",
+        "compositional reasoning",
+        "counterexample driven conceptual reasoning",
+        "counterfactual reasoning",
+        "cross view urban perception and reasoning",
+        "descriptive emotional reasoning",
+        "device cloud collaborative reasoning",
+        "diagram reasoning",
+        "distilling long form reasoning",
+        "distributional reasoning",
+        "divergent reasoning",
+        "diverse reasoning",
+        "efficient large language model reasoning",
+        "efficient reasoning",
+        "egocentric reasoning",
+        "emotional reasoning",
+        "error localization in reasoning",
+        "ethical reasoning",
+        "evaluating vision language models in game based reasoning",
+        "evaluation of vision language model 3d reasoning",
+        "event reasoning",
+        "execution reasoning",
+        "file reasoning",
+        "financial reasoning",
+        "formal geometry reasoning",
+        "general reasoning",
+        "generation, annotation, evaluation, and reasoning",
+        "geospatial reasoning",
+        "graph reasoning",
+        "historical reasoning",
+        "hypothetical 3d reasoning",
+        "implicit predictive reasoning",
+        "implicit reasoning",
+        "implicit text reasoning",
+        "infinite horizon reasoning",
+        "integrated chart context reasoning",
+        "interactive interdisciplinary scientific reasoning",
+        "iterative reasoning",
+        "knowledge gap reasoning",
+        "knowledge intensive reasoning",
+        "language model general reasoning",
+        "language model reasoning",
+        "language reasoning",
+        "latent reasoning",
+        "llm agent planning and reasoning",
+        "llm reasoning",
+        "logic reasoning",
+        "logical reasoning",
+        "long chain reasoning",
+        "long context reasoning",
+        "long context retrieval and reasoning",
+        "long video multi hop reasoning",
+        "long video temporal reasoning",
+        "math and scientific reasoning",
+        "math reasoning",
+        "mathematical and code reasoning",
+        "mathematical reasoning",
+        "medical reasoning",
+        "mitigating harmful knowledge leakage in large reasoning",
+        "mobile agent reasoning",
+        "multi agent reasoning",
+        "multi domain reasoning",
+        "multi hop reasoning",
+        "multi image causal reasoning",
+        "multi image reasoning",
+        "multi modal reasoning",
+        "multi modal understanding and reasoning",
+        "multi reasoning",
+        "multi scale structural reasoning",
+        "multi step reasoning",
+        "multihop reasoning",
+        "multimodal emotion reasoning",
+        "multimodal geometry reasoning",
+        "multimodal large language model reasoning",
+        "multimodal latent space reasoning",
+        "multimodal reasoning",
+        "multimodal retrieval augmented reasoning",
+        "multimodal theory of mind reasoning",
+        "natural language reasoning",
+        "neural algorithmic reasoning",
+        "neural constraint reasoning",
+        "neuro symbolic reasoning",
+        "neurosymbolic reasoning",
+        "ocular reasoning",
+        "online mental reasoning",
+        "open ended reasoning",
+        "oriented spatiotemporal reasoning",
+        "parallel reasoning",
+        "physical reasoning",
+        "physics reasoning",
+        "pictorial reasoning",
+        "post training data selection for reasoning",
+        "post training llms on reasoning",
+        "professional level medical reasoning",
+        "public health reasoning",
+        "quantitative reasoning",
+        "reasoning about physical transformation",
+        "reasoning alignment",
+        "reasoning and planning",
+        "reasoning benchmark",
+        "reasoning centric",
+        "reasoning data selection",
+        "reasoning distillation",
+        "reasoning distillation in llm",
+        "reasoning efficiency optimization",
+        "reasoning evaluation",
+        "reasoning hallucination analysis",
+        "reasoning heavy, quantitative",
+        "reasoning in diffusion language model",
+        "reasoning in long and complex context",
+        "reasoning intensive",
+        "reasoning intensive generation in large multimodal model",
+        "reasoning intensive retrieval",
+        "reasoning language model generation",
+        "reasoning level denial of service (r dos) attacks on llm",
+        "reasoning model verification",
+        "reasoning on hyper relational knowledge graph",
+        "reasoning on text attributed graph",
+        "reasoning optimization",
+        "reasoning over diverse health signal",
+        "reasoning over long document",
+        "reasoning over multivariate medical text and time serie",
+        "reasoning over noisy and sparse knowledge graph",
+        "reasoning over sets of continuous variable",
+        "reasoning performance of llm",
+        "reasoning post training",
+        "reasoning process interpretation",
+        "reasoning segmentation",
+        "reasoning stability under semantic rewrite",
+        "reasoning trajectory analysis and control",
+        "reasoning video object segmentation",
+        "region level reasoning",
+        "relational reasoning",
+        "role playing agent reasoning",
+        "scientific reasoning",
+        "scientific video reasoning",
+        "search integrated reasoning",
+        "single view 3d geometric reasoning",
+        "spatial reasoning",
+        "spatio semantic reasoning",
+        "spatio temporal reasoning",
+        "spatiotemporal understanding and reasoning",
+        "structural reasoning",
+        "structured reasoning",
+        "symbolic math reasoning",
+        "table reasoning",
+        "temporal reasoning",
+        "test time steering of computation and reasoning",
+        "time series reasoning",
+        "token efficient reasoning",
+        "tool augmented reasoning",
+        "tool integrated reasoning",
+        "undergraduate physics reasoning",
+        "verifiable physiological waveform reasoning",
+        "verifiable reasoning",
+        "video reasoning",
+        "virtual agent learning and reasoning",
+        "vision centric reasoning",
+        "vision language reasoning",
+        "vision tabular generative reasoning",
+        "visual causal reasoning",
+        "visual implicit reasoning",
+        "visual language reasoning",
+        "visual math reasoning",
+        "visual reasoning",
+        "visual relation reasoning",
+        "visually grounded reasoning"
+      ]
+    },
+    {
+      "label": "language modeling",
+      "peak_share": 6.32,
+      "seen_in": [
+        "icml-2025",
+        "icml-2026"
+      ],
+      "counts": {
+        "icml-2025": 21,
+        "icml-2026": 38
+      },
+      "children": [
+        "antibody language modeling",
+        "audio language modeling",
+        "brain vision language modeling",
+        "byte level language modeling",
+        "dna language modeling",
+        "full duplex speech to speech language modeling",
+        "generative graph language modeling",
+        "generative spoken language modeling",
+        "instruction following speech language modeling",
+        "long context language modeling",
+        "masked diffusion language modeling",
+        "masked language modeling",
+        "multimodal large language modeling",
+        "on device collaborative language modeling",
+        "protein language modeling",
+        "robust vision language modeling",
+        "token level language modeling",
+        "video language modeling",
+        "vision language modeling"
+      ]
+    },
+    {
+      "label": "large language model",
+      "peak_share": 6.22,
+      "seen_in": [
+        "icml-2025",
+        "icml-2026"
+      ],
+      "counts": {
+        "icml-2025": 12,
+        "icml-2026": 41
+      },
+      "children": [
+        "accelerating generation in large language model",
+        "accelerating inference of large language model",
+        "acceleration of diffusion large language model",
+        "activation sparsity in large language model",
+        "adapting closed source large language model",
+        "adapting large language model",
+        "adaptive reasoning for large language model",
+        "adaptive reasoning for medical large language model",
+        "adversarial attack on multimodal large language model",
+        "adversarial attack on quantized large language model",
+        "adversarial attacks on large language model",
+        "aligning large language model",
+        "aligning pretrained large language model",
+        "alignment of large language model",
+        "alignment of multimodal large language model",
+        "analysis of high norm tokens in large language model",
+        "analyzing attention convergence in large language model",
+        "analyzing contextual influence in large language model",
+        "arithmetic in large language model",
+        "automated red teaming of large language model",
+        "backdoor attacks on large language model",
+        "backdoor defense for large language model",
+        "backdoor defense in large language model",
+        "behavioral control in large language model",
+        "benchmarking code large language model",
+        "benchmarking large language model",
+        "bias detection in large language model",
+        "bias mitigation in large language model",
+        "bidirectional fine tuning of large language model",
+        "calibration of large language model",
+        "citation enforcement in large language model",
+        "complex reasoning in large language model",
+        "compressing large language model",
+        "confidence calibration of large language model",
+        "contextual reasoning in multimodal large language model",
+        "continual learning of large language model",
+        "cultural alignment of large language model",
+        "cultural evaluation of large language model",
+        "customization of large language model",
+        "data mixture optimization for large language model",
+        "data selection for pretraining large language model",
+        "debiasing large language model",
+        "defense against prompt attacks in large language model",
+        "depth pruning of large language model",
+        "detecting harmful inputs in multimodal large language model",
+        "detecting misalignment in large language model",
+        "detecting unverbalized biases in large language model",
+        "deterministic inference for large language model",
+        "differentially private training of large language model",
+        "distilling large language model",
+        "distributed inference of large language model",
+        "distributed training of large language model",
+        "efficient inference for large language model",
+        "efficient reasoning in large language model",
+        "efficient reasoning in multimodal large language model",
+        "efficient reasoning with large language model",
+        "enhancing reasoning abilities of large language model",
+        "enhancing reasoning capabilities in large language model",
+        "enhancing transparency of large language model",
+        "ethical alignment of large language model",
+        "evaluating agentic large language model",
+        "evaluating conversational quality of large language model",
+        "evaluating epistemic agency in large language model",
+        "evaluating intent comprehension in large language model",
+        "evaluating large language model",
+        "evaluating multimodal large language model",
+        "evaluating parametric factuality in large language model",
+        "evaluating prompt sensitivity of large language model",
+        "evaluating reasoning structure of large language model",
+        "evaluating relational reasoning in large language model",
+        "evaluation of code reasoning in large language model",
+        "evaluation of large language model",
+        "evaluation of medical large language model",
+        "explaining prompt sensitivity of large language model",
+        "external memory for large language model",
+        "extreme quantization of large language model",
+        "fact memorization in large language model",
+        "factuality control for large language model",
+        "federated fine tuning of large language model",
+        "federated fine tuning of multimodal large language model",
+        "federated learning with large language model",
+        "fine tuning large language model",
+        "fine tuning masked diffusion large language model",
+        "fine tuning of large language model",
+        "hallucination mitigation in multimodal large language model",
+        "improving accuracy and calibration of large language model",
+        "improving evidence faithfulness in large language model",
+        "improving logical consistency in large language model",
+        "improving reasoning capabilities of large language model",
+        "improving reasoning performance in large language model",
+        "improving robustness of large language model",
+        "improving the reasoning capabilities of large language model",
+        "inducing deceptive reasoning in large language model",
+        "inference acceleration for diffusion large language model",
+        "inference of diffusion based large language model",
+        "inference optimization of large language model",
+        "intellectual property verification for large language model",
+        "interpretability of large language model",
+        "interpretability of multimodal large language model",
+        "interpreting information flow in large language model",
+        "interpreting internal features of large language model",
+        "interpreting large language model",
+        "iterative self improvement of large language model",
+        "jailbreak attacks on large language model",
+        "jailbreaking large language model",
+        "key value cache compression for large language model",
+        "knowledge augmentation in large language model",
+        "knowledge editing in large language model",
+        "knowledge extraction from large language model",
+        "large language model (llm)",
+        "large language model (llm) training",
+        "large language model abstention",
+        "large language model agent",
+        "large language model alignment",
+        "large language model analysis",
+        "large language model collaborative decoding",
+        "large language model compression",
+        "large language model decomposition",
+        "large language model development",
+        "large language model distillation",
+        "large language model editing",
+        "large language model ensembling",
+        "large language model evaluation",
+        "large language model fine tuning",
+        "large language model inference",
+        "large language model optimization",
+        "large language model policy optimization",
+        "large language model post training",
+        "large language model pretraining",
+        "large language model pruning",
+        "large language model quantization",
+        "large language model reasoning",
+        "large language model red teaming",
+        "large language model safety",
+        "large language model scaling",
+        "large language model security",
+        "large language model serving",
+        "large language model training",
+        "large language model tuning",
+        "large language model unlearning",
+        "large language model watermarking",
+        "layer pruning of large language model",
+        "layer wise sparsity allocation for large language model",
+        "leaderboard based evaluation of large language model",
+        "length extrapolation in large language model",
+        "lifelong unlearning in multimodal large language model",
+        "linearization of large language model",
+        "long context fine tuning of large language model",
+        "long context modeling of large language model",
+        "long context processing in large language model",
+        "long context reasoning in large language model",
+        "low bit quantization of large language model",
+        "low precision quantization for large language model",
+        "low precision training of large language model",
+        "machine unlearning in large language model",
+        "measuring over refusal in large language model",
+        "measuring value alignment of large language model",
+        "memory bound inference for large language model",
+        "mitigating hallucinations in large language model",
+        "mitigating hallucinations in multimodal large language model",
+        "mitigating harmful fine tuning for large language model",
+        "mitigating memorization in large language model",
+        "mitigating mode collapse in large language model",
+        "mitigating representation collapse in large language model",
+        "mitigating social bias in large language model",
+        "model selection for large language model",
+        "multi domain fine tuning of large language model",
+        "multi fine tuning of multimodal large language model",
+        "multi objective alignment of large language model",
+        "multi step reasoning in multi modal large language model",
+        "multimodal large language model",
+        "non parametric continual learning for large language model",
+        "numerical prediction in large language model",
+        "online model editing for multimodal large language model",
+        "online ranking of large language model",
+        "parameter compression of large language model",
+        "persona control in large language model",
+        "personality control in large language model",
+        "personalization in large language model",
+        "personalization in search augmented large language model",
+        "personalized federated fine tuning of large language model",
+        "personalized preference alignment for large language model",
+        "personalizing large language model",
+        "planning with large language model",
+        "policy optimization for large language model",
+        "post training alignment of large language model",
+        "post training control of large language model",
+        "post training data synthesis for large language model",
+        "post training of large language model",
+        "pre training large language model",
+        "preference alignment of large language model",
+        "preference learning in large language model",
+        "pretraining large language model",
+        "pricing mechanism design for large language model",
+        "privacy assessment of large language model",
+        "privacy preserving split learning for large language model",
+        "probing abstract reasoning in large language model",
+        "pruning of large language model",
+        "quantization of diffusion large language model",
+        "quantized training of large language model",
+        "reasoning in large language model",
+        "reasoning with large language model",
+        "red teaming large language model",
+        "red teaming web augmented large language model",
+        "reducing hallucinations in large language model",
+        "reducing tool hallucination in large language model",
+        "reinforcement fine tuning of large language model",
+        "safe fine tuning of large language model",
+        "safety alignment of large language model",
+        "safety analysis of mixture of experts large language model",
+        "safety enhancement of large language model",
+        "safety evaluation of large language model",
+        "safety evaluation of quantized large language model",
+        "scaling reasoning ability of large language model",
+        "scaling reasoning capabilities of large language model",
+        "scaling test time compute for large language model",
+        "secure inference for large language model",
+        "self improvement of large language model",
+        "serving large language model",
+        "serving multiple mixture of experts large language model",
+        "soft prompt transfer for large language model",
+        "sparse pre training of large language model",
+        "statistical evaluation of large language model",
+        "steering black box large language model",
+        "steering of large language model",
+        "steganography in large language model",
+        "structured pruning of large language model",
+        "temperature optimization for large language model",
+        "test time compute for large language model",
+        "test time learning for large language model",
+        "test time scaling of large language model",
+        "textual conditioning of large language model",
+        "theory of mind evaluation for large language model",
+        "token compression for omnimodal large language model",
+        "training large language model",
+        "training safe large language model",
+        "understanding attention mechanisms in large language model",
+        "understanding behavioral uncertainty in large language model",
+        "understanding internal mechanisms of large language model",
+        "understanding massive activations in large language model",
+        "understanding prompt sensitivity in large language model",
+        "understanding refusal mechanisms in large language model",
+        "value alignment of large language model",
+        "value based alignment in large language model",
+        "watermark removal in large language model",
+        "watermarking for large language model",
+        "watermarking large language model"
+      ]
+    },
+    {
+      "label": "image classification",
+      "peak_share": 6.02,
+      "seen_in": [
+        "icml-2025",
+        "icml-2026"
+      ],
+      "counts": {
+        "icml-2025": 20,
+        "icml-2026": 28
+      },
+      "children": [
+        "bayesian image classification",
+        "federated learning for medical image classification",
+        "few shot image classification",
+        "fine grained image classification",
+        "histological image classification",
+        "histological whole slide image classification",
+        "interpretable high dimensional image classification",
+        "interpretable image classification",
+        "multi class image classification",
+        "static image classification",
+        "supervised image classification",
+        "zero shot image classification"
+      ]
+    },
+    {
+      "label": "continual learning",
+      "peak_share": 5.72,
+      "seen_in": [
+        "icml-2025",
+        "icml-2026"
+      ],
+      "counts": {
+        "icml-2025": 19,
+        "icml-2026": 28
+      },
+      "children": [
+        "active continual learning",
+        "asynchronous federated continual learning",
+        "continual learning for gui agent",
+        "continual learning for llm",
+        "continual learning for multimodal agent",
+        "continual learning in llm agent",
+        "continual learning in llm system",
+        "continual learning with participation privacy",
+        "decentralized class continual learning",
+        "federated continual learning",
+        "general continual learning",
+        "graph continual learning",
+        "in context continual learning",
+        "incremental continual learning",
+        "machine unlearning in continual learning",
+        "multi label online continual learning",
+        "multi modal continual learning",
+        "online continual learning",
+        "parameter efficient continual learning",
+        "semi supervised continual learning",
+        "skill based continual learning",
+        "temporal graph continual learning",
+        "vision language continual learning"
+      ]
+    },
+    {
+      "label": "in context learning",
+      "peak_share": 5.72,
+      "seen_in": [
+        "icml-2025",
+        "icml-2026"
+      ],
+      "counts": {
+        "icml-2025": 19,
+        "icml-2026": 18
+      },
+      "children": [
+        "criterion conditional in context learning",
+        "demonstration selection for in context learning",
+        "differentially private in context learning",
+        "exemplar selection for in context learning",
+        "factual recall in context learning",
+        "few shot in context learning",
+        "implicit in context learning",
+        "interpreting in context learning",
+        "multi modal in context learning",
+        "multimodal in context learning",
+        "tabular in context learning",
+        "unsupervised coreset selection for in context learning"
+      ]
+    },
+    {
+      "label": "node classification",
+      "peak_share": 5.72,
+      "seen_in": [
+        "icml-2025",
+        "icml-2026"
+      ],
+      "counts": {
+        "icml-2025": 19,
+        "icml-2026": 9
+      },
+      "children": [
+        "dynamic node classification",
+        "semi supervised node classification"
+      ]
+    },
+    {
+      "label": "neuroscience",
+      "peak_share": 5.42,
+      "seen_in": [
+        "icml-2025",
+        "icml-2026"
+      ],
+      "counts": {
+        "icml-2025": 18,
+        "icml-2026": 23
+      },
+      "children": [
+        "clinical neuroscience",
+        "cognitive neuroscience",
+        "computational neuroscience",
+        "network neuroscience",
+        "neuroscience performance",
+        "visual neuroscience"
+      ]
+    },
+    {
+      "label": "recommender system",
+      "peak_share": 5.42,
+      "seen_in": [
+        "icml-2025",
+        "icml-2026"
+      ],
+      "counts": {
+        "icml-2025": 18,
+        "icml-2026": 25
+      },
+      "children": [
+        "exposure regulation in recommender system",
+        "federated recommender system",
+        "incentivized exploration in recommender system",
+        "targeted promotion in recommender system"
+      ]
+    },
+    {
+      "label": "ai safety",
+      "peak_share": 5.31,
+      "seen_in": [
+        "icml-2025",
+        "icml-2026"
+      ],
+      "counts": {
+        "icml-2025": 12,
+        "icml-2026": 35
+      },
+      "children": [
+        "ai safety and ethics",
+        "ai safety and governance",
+        "ai safety and policy",
+        "ai safety and security",
+        "ai safety evaluation",
+        "ai safety for child protection",
+        "ai safety moderation",
+        "ai safety policy",
+        "ai safety risk analysis",
+        "ai safety verification",
+        "multimodal ai safety",
+        "preventing violence toward intimate partners via ai safety"
+      ]
+    },
+    {
+      "label": "mathematical reasoning",
+      "peak_share": 5.01,
+      "seen_in": [
+        "icml-2025",
+        "icml-2026"
+      ],
+      "counts": {
+        "icml-2025": 14,
+        "icml-2026": 33
+      },
+      "children": [
+        "complex mathematical reasoning",
+        "evaluating large language models' mathematical reasoning",
+        "formal mathematical reasoning",
+        "mathematical reasoning and proof generation",
+        "mathematical reasoning evaluation",
+        "non mathematical reasoning",
+        "visual mathematical reasoning"
+      ],
+      "nested_under": "reasoning"
+    },
+    {
+      "label": "text generation",
+      "peak_share": 4.7,
+      "seen_in": [
+        "icml-2025",
+        "icml-2026"
+      ],
+      "counts": {
+        "icml-2025": 3,
+        "icml-2026": 31
+      },
+      "children": [
+        "autoregressive text generation",
+        "constrained text generation",
+        "differentially private conditional text generation",
+        "image to text generation",
+        "incremental learning for open ended image to text generation",
+        "interleaved image text generation",
+        "long form text generation",
+        "non autoregressive text generation",
+        "reward guided text generation",
+        "safe text generation",
+        "synthetic text generation"
+      ]
+    },
+    {
+      "label": "uncertainty quantification",
+      "peak_share": 4.25,
+      "seen_in": [
+        "icml-2025",
+        "icml-2026"
+      ],
+      "counts": {
+        "icml-2025": 14,
+        "icml-2026": 28
+      },
+      "children": [
+        "causal uncertainty quantification",
+        "epistemic uncertainty quantification",
+        "fair uncertainty quantification",
+        "model uncertainty quantification",
+        "uncertainty quantification at unobserved spatial location",
+        "uncertainty quantification for classification",
+        "uncertainty quantification for generative model",
+        "uncertainty quantification for graph structured multivariate",
+        "uncertainty quantification for kernel regression",
+        "uncertainty quantification for llm based survey simulation",
+        "uncertainty quantification for neural pde solver",
+        "uncertainty quantification for protein structure prediction",
+        "uncertainty quantification for risk averse decision making",
+        "uncertainty quantification for tensor valued geometric deep",
+        "uncertainty quantification in graph neural network",
+        "uncertainty quantification in multimodal large language",
+        "uncertainty quantification in sequential",
+        "uncertainty quantification in time series forecasting",
+        "uncertainty quantification of human rating",
+        "uncertainty quantification of interventional function",
+        "verbal uncertainty quantification"
+      ]
+    },
+    {
+      "label": "generative modeling",
+      "peak_share": 4.21,
+      "seen_in": [
+        "icml-2025",
+        "icml-2026"
+      ],
+      "counts": {
+        "icml-2025": 14,
+        "icml-2026": 16
+      },
+      "children": [
+        "accelerating generative modeling",
+        "adversarial generative modeling",
+        "compositional generative modeling",
+        "conditional generative modeling",
+        "constrained generative modeling",
+        "deep generative modeling",
+        "diffusion based generative modeling",
+        "discrete generative modeling",
+        "flow based generative modeling",
+        "generative modeling for tabular data",
+        "generative modeling in discrete space",
+        "generative modeling of discrete latent structure",
+        "generative modeling of function",
+        "generative modeling of graphs with spatial structure",
+        "generative modeling of heavy tailed data",
+        "generative modeling of hyperspherical data",
+        "generative modeling of irregular time serie",
+        "generative modeling of limit order book data",
+        "generative modeling of multivariate random field",
+        "generative modeling of neural network parameter",
+        "generative modeling of periodic data",
+        "generative modeling of physical system",
+        "generative modeling on discrete state space",
+        "generative modeling on riemannian manifold",
+        "generative modeling over discrete domain",
+        "generative modeling over families of distribution",
+        "modular generative modeling",
+        "multi modal generative modeling",
+        "multimodal generative modeling",
+        "score based generative modeling",
+        "visual generative modeling"
+      ]
+    },
+    {
+      "label": "offline reinforcement learning",
+      "peak_share": 3.91,
+      "seen_in": [
+        "icml-2025",
+        "icml-2026"
+      ],
+      "counts": {
+        "icml-2025": 13,
+        "icml-2026": 24
+      },
+      "children": [
+        "continual offline reinforcement learning",
+        "cross domain offline reinforcement learning",
+        "offline reinforcement learning of style conditioned policie",
+        "offline reinforcement learning with zero shot generalization",
+        "risk averse offline reinforcement learning",
+        "safe offline reinforcement learning"
+      ],
+      "nested_under": "reinforcement learning"
+    },
+    {
+      "label": "retrieval augmented generation",
+      "peak_share": 3.79,
+      "seen_in": [
+        "icml-2025",
+        "icml-2026"
+      ],
+      "counts": {
+        "icml-2025": 3,
+        "icml-2026": 25
+      },
+      "children": [
+        "adversarial robustness of retrieval augmented generation",
+        "defense against poisoning in retrieval augmented generation",
+        "dynamic agentic retrieval augmented generation",
+        "knowledge poisoning attack on retrieval augmented generation",
+        "long video based retrieval augmented generation",
+        "multi step retrieval augmented generation",
+        "multilingual retrieval augmented generation",
+        "multimodal retrieval augmented generation",
+        "on device retrieval augmented generation"
+      ]
+    },
+    {
+      "label": "robotic manipulation",
+      "peak_share": 3.79,
+      "seen_in": [
+        "icml-2025",
+        "icml-2026"
+      ],
+      "counts": {
+        "icml-2025": 5,
+        "icml-2026": 25
+      },
+      "children": [
+        "bimanual robotic manipulation",
+        "cross robotic manipulation",
+        "embodied robotic manipulation",
+        "general robotic manipulation",
+        "gentle, language conditioned robotic manipulation",
+        "high precision robotic manipulation",
+        "long horizon and history dependent robotic manipulation",
+        "long horizon robotic manipulation",
+        "open vocabulary robotic manipulation",
+        "robotic manipulation fault diagnosis and recovery",
+        "robotic manipulation of flat object",
+        "robotic manipulation with sparse reward",
+        "safe robotic manipulation",
+        "visual reinforcement learning for robotic manipulation",
+        "visual robotic manipulation"
+      ]
+    },
+    {
+      "label": "out of distribution detection",
+      "peak_share": 3.61,
+      "seen_in": [
+        "icml-2025",
+        "icml-2026"
+      ],
+      "counts": {
+        "icml-2025": 12,
+        "icml-2026": 15
+      },
+      "children": [
+        "few shot out of distribution detection",
+        "graph out of distribution detection"
+      ]
+    },
+    {
+      "label": "machine unlearning",
+      "peak_share": 3.61,
+      "seen_in": [
+        "icml-2025",
+        "icml-2026"
+      ],
+      "counts": {
+        "icml-2025": 12,
+        "icml-2026": 20
+      },
+      "children": [
+        "adversarial attacks on machine unlearning",
+        "certified machine unlearning",
+        "multi concept machine unlearning",
+        "online machine unlearning"
+      ]
+    },
+    {
+      "label": "code generation",
+      "peak_share": 3.61,
+      "seen_in": [
+        "icml-2025",
+        "icml-2026"
+      ],
+      "counts": {
+        "icml-2025": 12,
+        "icml-2026": 16
+      },
+      "children": [
+        "code generation from multi turn execution feedback",
+        "competition level code generation",
+        "competitive code generation",
+        "complex and interactive data visualization code generation",
+        "differentially private code generation",
+        "evaluating llm code generation",
+        "formally verified code generation",
+        "gpu code generation",
+        "interactive frontend code generation",
+        "interactive scientific demonstration code generation",
+        "language model training for reasoning and code generation",
+        "language to simulation code generation",
+        "llm code generation",
+        "multi framework code generation",
+        "multimodal code generation",
+        "natural language to programming language code generation",
+        "plan following code generation",
+        "register transfer level (rtl) code generation",
+        "secure code generation",
+        "static ui to code generation",
+        "ui to code generation",
+        "verified code generation"
+      ]
+    },
+    {
+      "label": "video generation",
+      "peak_share": 3.34,
+      "seen_in": [
+        "icml-2025",
+        "icml-2026"
+      ],
+      "counts": {
+        "icml-2025": 11,
+        "icml-2026": 22
+      },
+      "children": [
+        "3d consistent video generation",
+        "adversarial attack on image to video generation",
+        "audio video generation",
+        "auto regressive video generation",
+        "autoregressive video generation",
+        "camera controllable multi view video generation",
+        "camera controlled video generation",
+        "class to video generation",
+        "conditional video generation",
+        "controllable human centric audio video generation",
+        "evaluating physical plausibility in video generation",
+        "evaluation of physical commonsense in video generation",
+        "explorable 3d scene video generation",
+        "human motion control and video generation",
+        "human motion video generation",
+        "human object interaction video generation",
+        "identity preserving video generation",
+        "image and video generation",
+        "image to video generation",
+        "length extrapolation in video generation",
+        "long horizon video generation",
+        "long video generation",
+        "motion controlled image to video generation",
+        "multi view safety critical driving video generation",
+        "native 4k video generation",
+        "one step video generation",
+        "personalized multi subject video generation",
+        "real time interactive video generation",
+        "reference based audio video generation",
+        "robot oriented video generation",
+        "sparse camera conditioned image to video generation",
+        "streaming video generation",
+        "surgical video generation",
+        "text guided image to video generation",
+        "text to audio video generation",
+        "text to video generation",
+        "ultra high resolution video generation",
+        "video generation with camera control",
+        "video to video generation"
+      ]
+    },
+    {
+      "label": "graph representation learning",
+      "peak_share": 3.31,
+      "seen_in": [
+        "icml-2025",
+        "icml-2026"
+      ],
+      "counts": {
+        "icml-2025": 11,
+        "icml-2026": 10
+      },
+      "children": [
+        "dynamic graph representation learning",
+        "fair graph representation learning",
+        "functional brain graph representation learning",
+        "knowledge graph representation learning",
+        "multimodal graph representation learning",
+        "unsupervised graph representation learning"
+      ]
+    },
+    {
+      "label": "multi agent reinforcement learning",
+      "peak_share": 3.31,
+      "seen_in": [
+        "icml-2025",
+        "icml-2026"
+      ],
+      "counts": {
+        "icml-2025": 11,
+        "icml-2026": 12
+      },
+      "children": [
+        "contextual multi agent reinforcement learning",
+        "continual multi agent reinforcement learning",
+        "cooperative multi agent reinforcement learning",
+        "decentralized multi agent reinforcement learning",
+        "multi agent reinforcement learning in social dilemmas",
+        "multi agent reinforcement learning under partial observity",
+        "offline multi agent reinforcement learning",
+        "online multi agent reinforcement learning",
+        "robust multi agent reinforcement learning"
+      ],
+      "nested_under": "reinforcement learning"
+    },
+    {
+      "label": "graph generation",
+      "peak_share": 3.31,
+      "seen_in": [
+        "icml-2025",
+        "icml-2026"
+      ],
+      "counts": {
+        "icml-2025": 11,
+        "icml-2026": 4
+      },
+      "children": [
+        "3d scene graph generation",
+        "hard constrained graph generation",
+        "hierarchical scene graph generation",
+        "molecular graph generation",
+        "multi agent communication graph generation",
+        "operating room scene graph generation",
+        "panoptic video scene graph generation",
+        "scene graph generation",
+        "synthetic brain graph generation"
+      ]
+    },
+    {
+      "label": "multimodal reasoning",
+      "peak_share": 3.03,
+      "seen_in": [
+        "icml-2025",
+        "icml-2026"
+      ],
+      "counts": {
+        "icml-2025": 3,
+        "icml-2026": 20
+      },
+      "children": [
+        "agentic multimodal reasoning",
+        "compositional multimodal reasoning",
+        "efficient multimodal reasoning",
+        "medical multimodal reasoning",
+        "multimodal reasoning evaluation"
+      ],
+      "nested_under": "reasoning"
+    },
+    {
+      "label": "test time adaptation",
+      "peak_share": 3.01,
+      "seen_in": [
+        "icml-2025",
+        "icml-2026"
+      ],
+      "counts": {
+        "icml-2025": 10,
+        "icml-2026": 11
+      },
+      "children": [
+        "continual test time adaptation",
+        "federated test time adaptation",
+        "language agent test time adaptation",
+        "multi modal test time adaptation",
+        "test time adaptation for robotic manipulation",
+        "test time adaptation of embodied agent",
+        "test time adaptation on graph",
+        "wild test time adaptation"
+      ]
+    },
+    {
+      "label": "weather forecasting",
+      "peak_share": 2.73,
+      "seen_in": [
+        "icml-2025",
+        "icml-2026"
+      ],
+      "counts": {
+        "icml-2025": 5,
+        "icml-2026": 18
+      },
+      "children": [
+        "finance and weather forecasting",
+        "global station weather forecasting",
+        "long term weather forecasting",
+        "probabilistic weather forecasting",
+        "weather forecasting report generation"
+      ]
+    },
+    {
+      "label": "parameter efficient fine tuning",
+      "peak_share": 2.71,
+      "seen_in": [
+        "icml-2025",
+        "icml-2026"
+      ],
+      "counts": {
+        "icml-2025": 9,
+        "icml-2026": 16
+      },
+      "children": [
+        "federated parameter efficient fine tuning",
+        "parameter efficient fine tuning of 3d vision model",
+        "parameter efficient fine tuning of diffusion large language",
+        "parameter efficient fine tuning of large language model",
+        "parameter efficient fine tuning of vision foundation model",
+        "parameter efficient fine tuning of vision language model",
+        "quantized parameter efficient fine tuning"
+      ]
+    },
+    {
+      "label": "solving partial differential equation",
+      "peak_share": 2.71,
+      "seen_in": [
+        "icml-2025",
+        "icml-2026"
+      ],
+      "counts": {
+        "icml-2025": 9,
+        "icml-2026": 10
+      },
+      "children": []
+    },
+    {
+      "label": "materials science",
+      "peak_share": 2.58,
+      "seen_in": [
+        "icml-2025",
+        "icml-2026"
+      ],
+      "counts": {
+        "icml-2025": 8,
+        "icml-2026": 17
+      },
+      "children": [
+        "chemistry, materials science",
+        "computational materials science"
+      ]
+    },
+    {
+      "label": "continuous control",
+      "peak_share": 2.58,
+      "seen_in": [
+        "icml-2025",
+        "icml-2026"
+      ],
+      "counts": {
+        "icml-2025": 5,
+        "icml-2026": 17
+      },
+      "children": [
+        "high dimensional continuous control",
+        "high frequency continuous control",
+        "smooth continuous control"
+      ]
+    },
+    {
+      "label": "reinforcement learning for large language model",
+      "peak_share": 2.58,
+      "seen_in": [
+        "icml-2025",
+        "icml-2026"
+      ],
+      "counts": {
+        "icml-2025": 1,
+        "icml-2026": 17
+      },
+      "children": [
+        "online reinforcement learning for large language model",
+        "reinforcement learning for large language model post trainin",
+        "scaling reinforcement learning for large language model"
+      ],
+      "nested_under": "reinforcement learning"
+    },
+    {
+      "label": "embodied ai",
+      "peak_share": 2.43,
+      "seen_in": [
+        "icml-2025",
+        "icml-2026"
+      ],
+      "counts": {
+        "icml-2025": 6,
+        "icml-2026": 16
+      },
+      "children": []
+    },
+    {
+      "label": "sequence modeling",
+      "peak_share": 2.43,
+      "seen_in": [
+        "icml-2025",
+        "icml-2026"
+      ],
+      "counts": {
+        "icml-2025": 3,
+        "icml-2026": 16
+      },
+      "children": [
+        "antibody sequence modeling",
+        "autoregressive sequence modeling",
+        "causal sequence modeling",
+        "dna sequence modeling",
+        "generative sequence modeling",
+        "irregular event sequence modeling",
+        "long range sequence modeling",
+        "long sequence modeling",
+        "neural sequence modeling",
+        "time series and sequence modeling"
+      ]
+    },
+    {
+      "label": "image editing",
+      "peak_share": 2.43,
+      "seen_in": [
+        "icml-2025",
+        "icml-2026"
+      ],
+      "counts": {
+        "icml-2025": 2,
+        "icml-2026": 16
+      },
+      "children": [
+        "2d image editing",
+        "360° panoramic image editing",
+        "autonomous image editing",
+        "counterfactual image editing",
+        "drag based image editing",
+        "image editing via gui agent",
+        "image to image editing",
+        "instruction based image editing",
+        "multi instance image editing",
+        "precise image editing",
+        "semantic image editing",
+        "text guided image editing"
+      ]
+    },
+    {
+      "label": "post training quantization",
+      "peak_share": 2.43,
+      "seen_in": [
+        "icml-2025",
+        "icml-2026"
+      ],
+      "counts": {
+        "icml-2025": 7,
+        "icml-2026": 16
+      },
+      "children": [
+        "low bit weight only post training quantization",
+        "post training quantization for diffusion model",
+        "post training quantization of diffusion model",
+        "post training quantization of large language model",
+        "post training quantization of mixture of experts large语言模型",
+        "post training quantization of mixture of experts model",
+        "post training quantization of vision language model",
+        "weight only post training quantization"
+      ]
+    },
+    {
+      "label": "protein design",
+      "peak_share": 2.41,
+      "seen_in": [
+        "icml-2025",
+        "icml-2026"
+      ],
+      "counts": {
+        "icml-2025": 8,
+        "icml-2026": 8
+      },
+      "children": [
+        "computational protein design",
+        "de novo functional protein design",
+        "de novo protein design",
+        "function guided de novo protein design",
+        "in silico protein design",
+        "multi objective protein design",
+        "sustainable protein design"
+      ]
+    },
+    {
+      "label": "model merging",
+      "peak_share": 2.41,
+      "seen_in": [
+        "icml-2025",
+        "icml-2026"
+      ],
+      "counts": {
+        "icml-2025": 8,
+        "icml-2026": 13
+      },
+      "children": [
+        "backdoor mitigation in model merging",
+        "continual model merging",
+        "evolutionary model merging",
+        "low rank model merging",
+        "model merging for graph neural network",
+        "model merging protection",
+        "multi large language model merging",
+        "multi model merging",
+        "privacy assessment of partial model merging"
+      ]
+    },
+    {
+      "label": "link prediction",
+      "peak_share": 2.41,
+      "seen_in": [
+        "icml-2025",
+        "icml-2026"
+      ],
+      "counts": {
+        "icml-2025": 8,
+        "icml-2026": 6
+      },
+      "children": [
+        "dynamic link prediction",
+        "subgraph based link prediction",
+        "temporal link prediction",
+        "zero shot link prediction"
+      ]
+    },
+    {
+      "label": "computational chemistry",
+      "peak_share": 2.41,
+      "seen_in": [
+        "icml-2025",
+        "icml-2026"
+      ],
+      "counts": {
+        "icml-2025": 8,
+        "icml-2026": 13
+      },
+      "children": [
+        "computational chemistry and material"
+      ]
+    },
+    {
+      "label": "graph classification",
+      "peak_share": 2.41,
+      "seen_in": [
+        "icml-2025",
+        "icml-2026"
+      ],
+      "counts": {
+        "icml-2025": 8,
+        "icml-2026": 6
+      },
+      "children": [
+        "cross domain few shot node and graph classification",
+        "heterophilous graph classification"
+      ]
+    },
+    {
+      "label": "complex reasoning",
+      "peak_share": 2.41,
+      "seen_in": [
+        "icml-2025",
+        "icml-2026"
+      ],
+      "counts": {
+        "icml-2025": 8,
+        "icml-2026": 9
+      },
+      "children": [
+        "complex reasoning and planning",
+        "complex reasoning evaluation"
+      ],
+      "nested_under": "reasoning"
+    },
+    {
+      "label": "length generalization",
+      "peak_share": 2.41,
+      "seen_in": [
+        "icml-2025",
+        "icml-2026"
+      ],
+      "counts": {
+        "icml-2025": 8,
+        "icml-2026": 2
+      },
+      "children": [
+        "length generalization in sequence prediction",
+        "length generalization on sequential"
+      ]
+    },
+    {
+      "label": "reinforcement learning from human feedback",
+      "peak_share": 2.41,
+      "seen_in": [
+        "icml-2025",
+        "icml-2026"
+      ],
+      "counts": {
+        "icml-2025": 8,
+        "icml-2026": 11
+      },
+      "children": [
+        "online reinforcement learning from human feedback",
+        "reinforcement learning from human feedback (rlhf)",
+        "reinforcement learning from human feedback for large语言模型"
+      ],
+      "nested_under": "reinforcement learning"
+    },
+    {
+      "label": "knowledge distillation",
+      "peak_share": 2.41,
+      "seen_in": [
+        "icml-2025",
+        "icml-2026"
+      ],
+      "counts": {
+        "icml-2025": 8,
+        "icml-2026": 11
+      },
+      "children": [
+        "cross domain knowledge distillation",
+        "cross modal knowledge distillation",
+        "cross tokenizer knowledge distillation",
+        "data free knowledge distillation",
+        "knowledge distillation for language model",
+        "knowledge distillation for large language model reasoning",
+        "knowledge distillation from dense models to mixture of exp (",
+        "knowledge distillation of deep spiking neural network",
+        "offline knowledge distillation",
+        "online knowledge distillation"
+      ]
+    },
+    {
+      "label": "out of distribution generalization",
+      "peak_share": 2.41,
+      "seen_in": [
+        "icml-2025",
+        "icml-2026"
+      ],
+      "counts": {
+        "icml-2025": 8,
+        "icml-2026": 4
+      },
+      "children": [
+        "algorithm selection for out of distribution generalization",
+        "out of distribution generalization analysis",
+        "out of distribution generalization for graph neural network",
+        "out of distribution generalization in federated learning",
+        "out of distribution generalization in graph learning",
+        "out of distribution generalization in reinforcement learning",
+        "steering out of distribution generalization"
+      ]
+    },
+    {
+      "label": "video understanding",
+      "peak_share": 2.28,
+      "seen_in": [
+        "icml-2025",
+        "icml-2026"
+      ],
+      "counts": {
+        "icml-2025": 6,
+        "icml-2026": 15
+      },
+      "children": [
+        "advertising video understanding",
+        "audio video understanding",
+        "e commerce short video understanding",
+        "general video understanding",
+        "high frame rate video understanding",
+        "joint spatial temporal video understanding",
+        "long duration streaming video understanding",
+        "long form video understanding",
+        "long video understanding",
+        "metaphorical video understanding",
+        "streaming video understanding"
+      ]
+    },
+    {
+      "label": "llm reasoning",
+      "peak_share": 2.28,
+      "seen_in": [
+        "icml-2025",
+        "icml-2026"
+      ],
+      "counts": {
+        "icml-2025": 3,
+        "icml-2026": 15
+      },
+      "children": [
+        "analyzing llm reasoning",
+        "answer selection in llm reasoning",
+        "dynamic abstention in llm reasoning",
+        "interpreting llm reasoning",
+        "learning process reward models for llm reasoning",
+        "llm reasoning evaluation",
+        "llm reasoning factuality",
+        "multi agent llm reasoning",
+        "structure grounded llm reasoning",
+        "tree based llm reasoning"
+      ],
+      "nested_under": "reasoning"
+    },
+    {
+      "label": "reinforcement learning with verifiable reward",
+      "peak_share": 2.28,
+      "seen_in": [
+        "icml-2026"
+      ],
+      "counts": {
+        "icml-2026": 15
+      },
+      "children": [],
+      "nested_under": "reinforcement learning"
+    },
+    {
+      "label": "biology",
+      "peak_share": 2.12,
+      "seen_in": [
+        "icml-2025",
+        "icml-2026"
+      ],
+      "counts": {
+        "icml-2025": 5,
+        "icml-2026": 14
+      },
+      "children": [
+        "cell biology",
+        "quantitative biology",
+        "rna biology",
+        "single cell biology",
+        "structural biology",
+        "synthetic biology",
+        "systems biology"
+      ]
+    },
+    {
+      "label": "large language model training",
+      "peak_share": 2.12,
+      "seen_in": [
+        "icml-2025",
+        "icml-2026"
+      ],
+      "counts": {
+        "icml-2025": 3,
+        "icml-2026": 14
+      },
+      "children": [
+        "data selection for large language model training",
+        "distributed multimodal large language model training",
+        "geo distributed large language model training",
+        "multimodal large language model training"
+      ],
+      "nested_under": "large language model"
+    },
+    {
+      "label": "llm evaluation",
+      "peak_share": 2.11,
+      "seen_in": [
+        "icml-2025",
+        "icml-2026"
+      ],
+      "counts": {
+        "icml-2025": 7,
+        "icml-2026": 2
+      },
+      "children": [
+        "llm evaluation aggregation",
+        "llm evaluation benchmark curation",
+        "llm evaluation from preference data",
+        "subjective llm evaluation"
+      ]
+    },
+    {
+      "label": "imitation learning",
+      "peak_share": 2.11,
+      "seen_in": [
+        "icml-2025",
+        "icml-2026"
+      ],
+      "counts": {
+        "icml-2025": 7,
+        "icml-2026": 5
+      },
+      "children": [
+        "adversarial imitation learning",
+        "few shot imitation learning",
+        "imitation learning from a single visual demonstration",
+        "imitation learning in mean field games with common noise",
+        "in context imitation learning",
+        "interactive imitation learning",
+        "multi agent imitation learning",
+        "offline imitation learning",
+        "online imitation learning",
+        "robotic imitation learning",
+        "semi supervised imitation learning",
+        "zero shot imitation learning",
+        "zero shot offline imitation learning"
+      ]
+    },
+    {
+      "label": "transfer learning",
+      "peak_share": 2.11,
+      "seen_in": [
+        "icml-2025",
+        "icml-2026"
+      ],
+      "counts": {
+        "icml-2025": 7,
+        "icml-2026": 5
+      },
+      "children": [
+        "few shot transfer learning",
+        "graph transfer learning",
+        "vision language model transfer learning"
+      ]
+    },
+    {
+      "label": "causal discovery",
+      "peak_share": 2.11,
+      "seen_in": [
+        "icml-2025",
+        "icml-2026"
+      ],
+      "counts": {
+        "icml-2025": 7,
+        "icml-2026": 13
+      },
+      "children": [
+        "bivariate causal discovery",
+        "causal discovery and inference",
+        "causal discovery for time serie",
+        "causal discovery in high dimensional nonlinear time serie",
+        "causal discovery in irregularly sampled time serie",
+        "causal discovery in multivariate time serie",
+        "causal discovery in time serie",
+        "federated causal discovery",
+        "granger causal discovery",
+        "latent variable causal discovery",
+        "multivariate causal discovery",
+        "time series causal discovery"
+      ]
+    },
+    {
+      "label": "conformal prediction",
+      "peak_share": 2.11,
+      "seen_in": [
+        "icml-2025",
+        "icml-2026"
+      ],
+      "counts": {
+        "icml-2025": 7,
+        "icml-2026": 10
+      },
+      "children": [
+        "conditional conformal prediction",
+        "conditional coverage in conformal prediction",
+        "conformal prediction for time serie",
+        "conformal prediction with costly label querie",
+        "distributed conformal prediction",
+        "multi distribution robust conformal prediction",
+        "online conformal prediction",
+        "online differentially private conformal prediction",
+        "robust conformal prediction",
+        "sequential conformal prediction"
+      ]
+    },
+    {
+      "label": "large language model alignment",
+      "peak_share": 2.11,
+      "seen_in": [
+        "icml-2025",
+        "icml-2026"
+      ],
+      "counts": {
+        "icml-2025": 7,
+        "icml-2026": 4
+      },
+      "children": [
+        "multimodal large language model alignment"
+      ],
+      "nested_under": "large language model"
+    },
+    {
+      "label": "software development",
+      "peak_share": 2.11,
+      "seen_in": [
+        "icml-2025",
+        "icml-2026"
+      ],
+      "counts": {
+        "icml-2025": 7,
+        "icml-2026": 7
+      },
+      "children": []
+    },
+    {
+      "label": "text to video generation",
+      "peak_share": 1.97,
+      "seen_in": [
+        "icml-2025",
+        "icml-2026"
+      ],
+      "counts": {
+        "icml-2025": 3,
+        "icml-2026": 13
+      },
+      "children": [
+        "text to video generation evaluation"
+      ],
+      "nested_under": "video generation"
+    },
+    {
+      "label": "finance",
+      "peak_share": 1.97,
+      "seen_in": [
+        "icml-2025",
+        "icml-2026"
+      ],
+      "counts": {
+        "icml-2025": 6,
+        "icml-2026": 13
+      },
+      "children": [
+        "evaluating large language models in finance",
+        "healthcare, education, and finance",
+        "high stakes such as finance"
+      ]
+    },
+    {
+      "label": "reward modeling",
+      "peak_share": 1.97,
+      "seen_in": [
+        "icml-2025",
+        "icml-2026"
+      ],
+      "counts": {
+        "icml-2025": 6,
+        "icml-2026": 13
+      },
+      "children": [
+        "active reward modeling",
+        "multimodal reward modeling",
+        "music reward modeling",
+        "outcome reward modeling",
+        "preference based reward modeling",
+        "process reward modeling",
+        "reward modeling for language model alignment"
+      ]
+    },
+    {
+      "label": "genomics",
+      "peak_share": 1.97,
+      "seen_in": [
+        "icml-2025",
+        "icml-2026"
+      ],
+      "counts": {
+        "icml-2025": 6,
+        "icml-2026": 13
+      },
+      "children": [
+        "ecology, geochemistry, and genomics",
+        "functional genomics",
+        "genomics research and therapeutic",
+        "regulatory genomics",
+        "single cell genomics"
+      ]
+    },
+    {
+      "label": "medical imaging",
+      "peak_share": 1.97,
+      "seen_in": [
+        "icml-2025",
+        "icml-2026"
+      ],
+      "counts": {
+        "icml-2025": 6,
+        "icml-2026": 13
+      },
+      "children": [
+        "3d multi modal medical imaging"
+      ]
+    },
+    {
+      "label": "remote sensing",
+      "peak_share": 1.82,
+      "seen_in": [
+        "icml-2025",
+        "icml-2026"
+      ],
+      "counts": {
+        "icml-2025": 6,
+        "icml-2026": 12
+      },
+      "children": [
+        "pixel level grounding in remote sensing",
+        "remote sensing object detection",
+        "remote sensing visual grounding",
+        "satellite remote sensing"
+      ]
+    },
+    {
+      "label": "model based reinforcement learning",
+      "peak_share": 1.82,
+      "seen_in": [
+        "icml-2025",
+        "icml-2026"
+      ],
+      "counts": {
+        "icml-2025": 4,
+        "icml-2026": 12
+      },
+      "children": [
+        "continual model based reinforcement learning",
+        "off policy model based reinforcement learning",
+        "offline model based reinforcement learning"
+      ],
+      "nested_under": "reinforcement learning"
+    },
+    {
+      "label": "combinatorial optimization",
+      "peak_share": 1.82,
+      "seen_in": [
+        "icml-2025",
+        "icml-2026"
+      ],
+      "counts": {
+        "icml-2025": 4,
+        "icml-2026": 12
+      },
+      "children": [
+        "black box combinatorial optimization",
+        "combinatorial optimization on graph",
+        "graph combinatorial optimization",
+        "multi objective combinatorial optimization",
+        "neural combinatorial optimization",
+        "online combinatorial optimization",
+        "sequential stochastic combinatorial optimization"
+      ]
+    },
+    {
+      "label": "visual reasoning",
+      "peak_share": 1.82,
+      "seen_in": [
+        "icml-2025",
+        "icml-2026"
+      ],
+      "counts": {
+        "icml-2025": 1,
+        "icml-2026": 12
+      },
+      "children": [
+        "abstract visual reasoning",
+        "algorithmic visual reasoning",
+        "dynamic visual reasoning",
+        "grounded visual reasoning",
+        "high resolution visual reasoning",
+        "multimodal visual reasoning",
+        "visual reasoning error detection"
+      ],
+      "nested_under": "reasoning"
+    },
+    {
+      "label": "autonomous agent",
+      "peak_share": 1.82,
+      "seen_in": [
+        "icml-2025",
+        "icml-2026"
+      ],
+      "counts": {
+        "icml-2025": 3,
+        "icml-2026": 12
+      },
+      "children": [
+        "autonomous agent control",
+        "autonomous agent exploration and online adaptation",
+        "autonomous agent system",
+        "privacy aware ui state minimization for autonomous agent"
+      ]
+    },
+    {
+      "label": "robot manipulation",
+      "peak_share": 1.82,
+      "seen_in": [
+        "icml-2025",
+        "icml-2026"
+      ],
+      "counts": {
+        "icml-2025": 3,
+        "icml-2026": 12
+      },
+      "children": [
+        "safe robot manipulation"
+      ]
+    },
+    {
+      "label": "graph learning",
+      "peak_share": 1.81,
+      "seen_in": [
+        "icml-2025",
+        "icml-2026"
+      ],
+      "counts": {
+        "icml-2025": 6,
+        "icml-2026": 6
+      },
+      "children": [
+        "continual graph learning",
+        "directed graph learning",
+        "dynamic graph learning",
+        "federated graph learning",
+        "graph learning with label noise",
+        "graph learning with missing feature",
+        "heterophilic graph learning",
+        "interpretable graph learning",
+        "long range graph learning",
+        "multi domain graph learning",
+        "one shot federated graph learning",
+        "open world graph learning",
+        "personalized federated graph learning",
+        "privacy preserving graph learning",
+        "self supervised continual graph learning",
+        "self supervised graph learning",
+        "spectral graph learning",
+        "text attributed graph learning",
+        "trustworthy graph learning",
+        "zero shot graph learning"
+      ]
+    },
+    {
+      "label": "causal inference",
+      "peak_share": 1.81,
+      "seen_in": [
+        "icml-2025",
+        "icml-2026"
+      ],
+      "counts": {
+        "icml-2025": 6,
+        "icml-2026": 8
+      },
+      "children": [
+        "causal inference under shared state interference",
+        "spatial causal inference",
+        "variable importance assessment in causal inference"
+      ]
+    },
+    {
+      "label": "adversarial robustness",
+      "peak_share": 1.81,
+      "seen_in": [
+        "icml-2025",
+        "icml-2026"
+      ],
+      "counts": {
+        "icml-2025": 6,
+        "icml-2026": 8
+      },
+      "children": [
+        "adversarial robustness analysis",
+        "adversarial robustness assessment",
+        "adversarial robustness certification",
+        "adversarial robustness evaluation",
+        "adversarial robustness in mri reconstruction",
+        "adversarial robustness in two stage learning to defer",
+        "adversarial robustness of ai peer review",
+        "adversarial robustness of attribution",
+        "adversarial robustness of hypergraph neural network",
+        "adversarial robustness of large foundation model",
+        "adversarial robustness of mixture of expert",
+        "adversarial robustness of text scoring model",
+        "adversarial robustness of vision language model",
+        "zero shot adversarial robustness"
+      ]
+    },
+    {
+      "label": "image reconstruction",
+      "peak_share": 1.81,
+      "seen_in": [
+        "icml-2025",
+        "icml-2026"
+      ],
+      "counts": {
+        "icml-2025": 6,
+        "icml-2026": 5
+      },
+      "children": [
+        "black hole image reconstruction",
+        "hyperspectral image reconstruction",
+        "medical image reconstruction"
+      ]
+    },
+    {
+      "label": "sequential decision making",
+      "peak_share": 1.81,
+      "seen_in": [
+        "icml-2025",
+        "icml-2026"
+      ],
+      "counts": {
+        "icml-2025": 6,
+        "icml-2026": 6
+      },
+      "children": [
+        "high dimensional prediction for sequential decision making",
+        "offline multi agent sequential decision making",
+        "sequential decision making in partially observable markov",
+        "sequential decision making under uncertainty",
+        "sequential decision making with preference feedback"
+      ]
+    },
+    {
+      "label": "visual question answering",
+      "peak_share": 1.81,
+      "seen_in": [
+        "icml-2025",
+        "icml-2026"
+      ],
+      "counts": {
+        "icml-2025": 6,
+        "icml-2026": 10
+      },
+      "children": [
+        "3d visual question answering",
+        "biomedical visual question answering",
+        "continual visual question answering",
+        "document visual question answering",
+        "knowledge based visual question answering",
+        "knowledge intensive visual question answering",
+        "medical visual question answering",
+        "rationale based visual question answering"
+      ]
+    },
+    {
+      "label": "next token prediction",
+      "peak_share": 1.81,
+      "seen_in": [
+        "icml-2025",
+        "icml-2026"
+      ],
+      "counts": {
+        "icml-2025": 6,
+        "icml-2026": 2
+      },
+      "children": []
+    },
+    {
+      "label": "tabular classification",
+      "peak_share": 1.81,
+      "seen_in": [
+        "icml-2025",
+        "icml-2026"
+      ],
+      "counts": {
+        "icml-2025": 6,
+        "icml-2026": 3
+      },
+      "children": [
+        "tabular classification under strategic manipulation"
+      ]
+    },
+    {
+      "label": "adversarial training",
+      "peak_share": 1.81,
+      "seen_in": [
+        "icml-2025",
+        "icml-2026"
+      ],
+      "counts": {
+        "icml-2025": 6,
+        "icml-2026": 4
+      },
+      "children": []
+    },
+    {
+      "label": "deep reinforcement learning",
+      "peak_share": 1.81,
+      "seen_in": [
+        "icml-2025",
+        "icml-2026"
+      ],
+      "counts": {
+        "icml-2025": 6,
+        "icml-2026": 5
+      },
+      "children": [
+        "analyzing memory in deep reinforcement learning",
+        "backdoor attack analysis in deep reinforcement learning",
+        "backdoor attacks in deep reinforcement learning",
+        "offline federated deep reinforcement learning"
+      ],
+      "nested_under": "reinforcement learning"
+    },
+    {
+      "label": "dataset distillation",
+      "peak_share": 1.81,
+      "seen_in": [
+        "icml-2025",
+        "icml-2026"
+      ],
+      "counts": {
+        "icml-2025": 6,
+        "icml-2026": 11
+      },
+      "children": [
+        "multi modal dataset distillation"
+      ]
+    },
+    {
+      "label": "domain generalization",
+      "peak_share": 1.81,
+      "seen_in": [
+        "icml-2025",
+        "icml-2026"
+      ],
+      "counts": {
+        "icml-2025": 6,
+        "icml-2026": 5
+      },
+      "children": [
+        "cross domain generalization",
+        "evolving domain generalization",
+        "imbalanced domain generalization",
+        "multimodal domain generalization",
+        "out of domain generalization",
+        "single domain generalization",
+        "structural domain generalization"
+      ]
+    },
+    {
+      "label": "ai generated image detection",
+      "peak_share": 1.67,
+      "seen_in": [
+        "icml-2025",
+        "icml-2026"
+      ],
+      "counts": {
+        "icml-2025": 4,
+        "icml-2026": 11
+      },
+      "children": []
+    },
+    {
+      "label": "hallucination detection",
+      "peak_share": 1.67,
+      "seen_in": [
+        "icml-2025",
+        "icml-2026"
+      ],
+      "counts": {
+        "icml-2025": 2,
+        "icml-2026": 11
+      },
+      "children": [
+        "hallucination detection in mllm",
+        "object hallucination detection",
+        "zero source llm hallucination detection"
+      ]
+    },
+    {
+      "label": "large language model safety",
+      "peak_share": 1.67,
+      "seen_in": [
+        "icml-2025",
+        "icml-2026"
+      ],
+      "counts": {
+        "icml-2025": 3,
+        "icml-2026": 11
+      },
+      "children": [
+        "large language model safety and analysis"
+      ],
+      "nested_under": "large language model"
+    },
+    {
+      "label": "symbolic regression",
+      "peak_share": 1.67,
+      "seen_in": [
+        "icml-2025",
+        "icml-2026"
+      ],
+      "counts": {
+        "icml-2025": 3,
+        "icml-2026": 11
+      },
+      "children": []
+    },
+    {
+      "label": "spatial reasoning",
+      "peak_share": 1.67,
+      "seen_in": [
+        "icml-2025",
+        "icml-2026"
+      ],
+      "counts": {
+        "icml-2025": 1,
+        "icml-2026": 11
+      },
+      "children": [
+        "3d spatial reasoning",
+        "all scale visual spatial reasoning",
+        "complex spatial reasoning",
+        "fine grained spatial reasoning",
+        "multi image spatial reasoning",
+        "spatial reasoning from egocentric video",
+        "spatial reasoning on material structure",
+        "structure centric spatial reasoning",
+        "view consistent spatial reasoning",
+        "visual spatial reasoning"
+      ],
+      "nested_under": "reasoning"
+    },
+    {
+      "label": "scientific discovery",
+      "peak_share": 1.67,
+      "seen_in": [
+        "icml-2025",
+        "icml-2026"
+      ],
+      "counts": {
+        "icml-2025": 1,
+        "icml-2026": 11
+      },
+      "children": [
+        "in context scientific discovery"
+      ]
+    },
+    {
+      "label": "physics",
+      "peak_share": 1.67,
+      "seen_in": [
+        "icml-2026"
+      ],
+      "counts": {
+        "icml-2026": 11
+      },
+      "children": [
+        "computational physics",
+        "duality discovery in statistical physics",
+        "intuitive physics",
+        "learning intuitive physics",
+        "physics aligned data compression",
+        "physics based",
+        "physics based humanoid motion tracking",
+        "physics based motion imitation",
+        "physics constrained generation",
+        "physics discovery",
+        "physics grounded 3d asset generation",
+        "physics informed diffusion modeling",
+        "physics informed operator learning",
+        "physics research",
+        "physics simulation",
+        "quantum physics",
+        "statistical physics",
+        "super resolution of small scale physics",
+        "test time generalization for physics"
+      ]
+    },
+    {
+      "label": "multimodal learning",
+      "peak_share": 1.52,
+      "seen_in": [
+        "icml-2025",
+        "icml-2026"
+      ],
+      "counts": {
+        "icml-2025": 5,
+        "icml-2026": 10
+      },
+      "children": [
+        "continual multimodal learning",
+        "data poisoning attacks against multimodal learning",
+        "eeg based multimodal learning",
+        "incomplete multimodal learning",
+        "multimodal learning with missing modalitie",
+        "multimodal learning with variational autoencoder"
+      ]
+    },
+    {
+      "label": "anomaly detection",
+      "peak_share": 1.52,
+      "seen_in": [
+        "icml-2025",
+        "icml-2026"
+      ],
+      "counts": {
+        "icml-2025": 4,
+        "icml-2026": 10
+      },
+      "children": [
+        "anomaly detection in continuous time event sequence",
+        "anomaly detection on embedding benchmark",
+        "cross multi domain log anomaly detection",
+        "dynamic graph anomaly detection",
+        "federated graph anomaly detection",
+        "few shot multimodal anomaly detection",
+        "generalist graph anomaly detection",
+        "graph anomaly detection",
+        "graph level anomaly detection",
+        "industrial anomaly detection",
+        "lidar point cloud anomaly detection",
+        "mechanistic anomaly detection",
+        "multi class anomaly detection",
+        "multi class unsupervised anomaly detection",
+        "multivariate time series anomaly detection",
+        "open set supervised anomaly detection",
+        "open set time series anomaly detection",
+        "semi supervised graph anomaly detection",
+        "tabular anomaly detection",
+        "tabular data anomaly detection",
+        "time series anomaly detection",
+        "unsupervised anomaly detection",
+        "unsupervised streaming anomaly detection",
+        "video anomaly detection",
+        "visual anomaly detection",
+        "weakly supervised anomaly detection",
+        "weakly supervised video anomaly detection",
+        "zero shot 3d anomaly detection",
+        "zero shot time series anomaly detection"
+      ]
+    },
+    {
+      "label": "llm alignment",
+      "peak_share": 1.52,
+      "seen_in": [
+        "icml-2025",
+        "icml-2026"
+      ],
+      "counts": {
+        "icml-2025": 4,
+        "icml-2026": 10
+      },
+      "children": []
+    },
+    {
+      "label": "fine tuning large language model",
+      "peak_share": 1.52,
+      "seen_in": [
+        "icml-2025",
+        "icml-2026"
+      ],
+      "counts": {
+        "icml-2025": 5,
+        "icml-2026": 10
+      },
+      "children": [
+        "pre training and fine tuning large language model"
+      ],
+      "nested_under": "large language model"
+    },
+    {
+      "label": "class incremental learning",
+      "peak_share": 1.52,
+      "seen_in": [
+        "icml-2025",
+        "icml-2026"
+      ],
+      "counts": {
+        "icml-2025": 3,
+        "icml-2026": 10
+      },
+      "children": [
+        "3d few shot class incremental learning",
+        "agnostic class incremental learning",
+        "cross domain class incremental learning",
+        "exemplar free class incremental learning",
+        "federated class incremental learning",
+        "few shot class incremental learning",
+        "multi label class incremental learning",
+        "open set graph class incremental learning"
+      ]
+    },
+    {
+      "label": "bioinformatics",
+      "peak_share": 1.52,
+      "seen_in": [
+        "icml-2025",
+        "icml-2026"
+      ],
+      "counts": {
+        "icml-2025": 3,
+        "icml-2026": 10
+      },
+      "children": [
+        "ai agent evaluation in bioinformatics"
+      ]
+    },
+    {
+      "label": "test time scaling",
+      "peak_share": 1.52,
+      "seen_in": [
+        "icml-2026"
+      ],
+      "counts": {
+        "icml-2026": 10
+      },
+      "children": [
+        "test time scaling evaluation",
+        "test time scaling for discrete diffusion language model",
+        "test time scaling for masked diffusion language model",
+        "test time scaling of diffusion model"
+      ]
+    },
+    {
+      "label": "knowledge editing",
+      "peak_share": 1.5,
+      "seen_in": [
+        "icml-2025",
+        "icml-2026"
+      ],
+      "counts": {
+        "icml-2025": 5,
+        "icml-2026": 1
+      },
+      "children": [
+        "cross modality knowledge editing",
+        "lifelong knowledge editing",
+        "lifelong multimodal knowledge editing",
+        "long form knowledge editing",
+        "sequential knowledge editing"
+      ]
+    },
+    {
+      "label": "self supervised learning",
+      "peak_share": 1.5,
+      "seen_in": [
+        "icml-2025",
+        "icml-2026"
+      ],
+      "counts": {
+        "icml-2025": 5,
+        "icml-2026": 7
+      },
+      "children": [
+        "audio self supervised learning",
+        "interpretable self supervised learning",
+        "masked self supervised learning",
+        "multi objective graph self supervised learning",
+        "multimodal self supervised learning",
+        "non contrastive self supervised learning",
+        "self supervised learning for physiological time serie",
+        "self supervised learning for time series representation",
+        "self supervised learning for visual representation",
+        "self supervised learning on heterogeneous graph",
+        "visual self supervised learning"
+      ]
+    },
+    {
+      "label": "llm inference",
+      "peak_share": 1.5,
+      "seen_in": [
+        "icml-2025",
+        "icml-2026"
+      ],
+      "counts": {
+        "icml-2025": 5,
+        "icml-2026": 4
+      },
+      "children": [
+        "accelerating llm inference",
+        "cloud edge collaborative llm inference",
+        "diagnosis of silent errors in llm inference",
+        "efficient llm inference",
+        "efficient multimodal llm inference",
+        "llm inference acceleration",
+        "llm inference efficiency",
+        "llm inference over long sequence",
+        "llm inference scheduling",
+        "llm inference serving",
+        "long context llm inference",
+        "memory constrained moe llm inference",
+        "multi round llm inference",
+        "privacy preserving llm inference",
+        "private third party llm inference",
+        "stability analysis of llm inference"
+      ]
+    },
+    {
+      "label": "zero shot classification",
+      "peak_share": 1.5,
+      "seen_in": [
+        "icml-2025",
+        "icml-2026"
+      ],
+      "counts": {
+        "icml-2025": 5,
+        "icml-2026": 6
+      },
+      "children": []
+    },
+    {
+      "label": "inverse",
+      "peak_share": 1.5,
+      "seen_in": [
+        "icml-2025",
+        "icml-2026"
+      ],
+      "counts": {
+        "icml-2025": 5,
+        "icml-2026": 8
+      },
+      "children": [
+        "bayesian inverse",
+        "blind inverse",
+        "imaging inverse",
+        "inverse aimed at identifying interaction network",
+        "inverse constraint inference",
+        "inverse design",
+        "inverse equilibrium",
+        "inverse folding",
+        "inverse game theory",
+        "inverse generation",
+        "inverse in imaging",
+        "inverse lithography technology",
+        "inverse materials design",
+        "inverse microstructure design",
+        "inverse optimization",
+        "inverse pde",
+        "inverse protein folding",
+        "inverse relation retrieval",
+        "inverse solving",
+        "large scale forward and inverse",
+        "linear gaussian inverse",
+        "posterior sampling for black box inverse",
+        "solving inverse",
+        "unpaired image inverse",
+        "zero shot inverse"
+      ]
+    },
+    {
+      "label": "clustering",
+      "peak_share": 1.5,
+      "seen_in": [
+        "icml-2025",
+        "icml-2026"
+      ],
+      "counts": {
+        "icml-2025": 5,
+        "icml-2026": 4
+      },
+      "children": [
+        "attribute graph clustering",
+        "capacitated fair range k clustering",
+        "cell clustering",
+        "clustering document",
+        "clustering evaluation",
+        "clustering grouped data",
+        "clustering items based on bandit feedback",
+        "clustering of manifold valued data",
+        "clustering time series data",
+        "constrained clustering",
+        "constrained correlation clustering",
+        "constrained graph clustering",
+        "contrastive embedding clustering",
+        "correlation clustering",
+        "deep clustering",
+        "deep hypergraph clustering",
+        "deep multi view graph clustering",
+        "differentially private federated k means clustering",
+        "dynamic correlation clustering",
+        "dynamic spectral clustering",
+        "ensemble clustering",
+        "fair clustering",
+        "fair spectral clustering",
+        "federated node level graph clustering",
+        "fully dynamic consistent clustering",
+        "fully dynamic k center clustering",
+        "graph clustering",
+        "hierarchical clustering",
+        "hierarchical k median clustering",
+        "image clustering",
+        "joint functional registration and clustering",
+        "k means clustering",
+        "large scale manifold balanced clustering",
+        "multi kernel clustering",
+        "multi modal clustering",
+        "multi view clustering",
+        "multi view graph clustering",
+        "multi view subspace clustering",
+        "multiple kernel clustering",
+        "multiview subspace clustering",
+        "scrna seq clustering",
+        "short text clustering",
+        "spectral clustering",
+        "streaming view clustering",
+        "subspace clustering",
+        "time series clustering",
+        "variable clustering"
+      ]
+    },
+    {
+      "label": "weak to strong generalization",
+      "peak_share": 1.5,
+      "seen_in": [
+        "icml-2025",
+        "icml-2026"
+      ],
+      "counts": {
+        "icml-2025": 5,
+        "icml-2026": 4
+      },
+      "children": []
+    },
+    {
+      "label": "video question answering",
+      "peak_share": 1.5,
+      "seen_in": [
+        "icml-2025"
+      ],
+      "counts": {
+        "icml-2025": 5
+      },
+      "children": [
+        "long video question answering"
+      ]
+    },
+    {
+      "label": "computer graphics",
+      "peak_share": 1.5,
+      "seen_in": [
+        "icml-2025",
+        "icml-2026"
+      ],
+      "counts": {
+        "icml-2025": 5,
+        "icml-2026": 8
+      },
+      "children": []
+    },
+    {
+      "label": "planning",
+      "peak_share": 1.5,
+      "seen_in": [
+        "icml-2025",
+        "icml-2026"
+      ],
+      "counts": {
+        "icml-2025": 5,
+        "icml-2026": 4
+      },
+      "children": [
+        "active elicitation in joint planning",
+        "agent planning",
+        "agentic planning",
+        "ai planning",
+        "automated planning",
+        "autonomous planning",
+        "autonomous robotic planning",
+        "closed loop vehicle trajectory planning",
+        "combinatorial generalization in planning",
+        "complex planning",
+        "compositional planning",
+        "computer aided synthesis planning",
+        "decision time planning",
+        "embodied planning",
+        "gui planning",
+        "latent planning",
+        "lifelong trajectory planning",
+        "long term planning",
+        "maze planning",
+        "motion planning",
+        "multi agent collaboration planning",
+        "multi agent communicative and cooperative planning",
+        "multi agent embodied planning",
+        "multi agent planning",
+        "multi planning",
+        "multi robot motion planning",
+        "multi step planning",
+        "multi step retrosynthesis planning",
+        "online planning",
+        "open web search planning",
+        "path planning",
+        "planning and control",
+        "planning and learning of markov decision processe",
+        "planning over policie",
+        "planning with a generative model",
+        "planning with generative model",
+        "policy, politics, and city planning",
+        "retrosynthesis planning",
+        "robot planning",
+        "robotic planning",
+        "robotic spatial planning",
+        "single agent deterministic planning",
+        "spatial planning",
+        "step by step planning",
+        "trajectory planning",
+        "travel planning",
+        "urban planning",
+        "visual planning",
+        "zero shot planning"
+      ]
+    },
+    {
+      "label": "time series classification",
+      "peak_share": 1.5,
+      "seen_in": [
+        "icml-2025",
+        "icml-2026"
+      ],
+      "counts": {
+        "icml-2025": 5,
+        "icml-2026": 7
+      },
+      "children": [
+        "irregular multivariate time series classification",
+        "medical time series classification",
+        "multivariate time series classification",
+        "physiological time series classification",
+        "single domain generalization in time series classification"
+      ]
+    },
+    {
+      "label": "long context llm inference",
+      "peak_share": 1.5,
+      "seen_in": [
+        "icml-2025",
+        "icml-2026"
+      ],
+      "counts": {
+        "icml-2025": 5,
+        "icml-2026": 5
+      },
+      "children": [
+        "kv cache compression for long context llm inference",
+        "long context llm inference acceleration"
+      ],
+      "nested_under": "llm inference"
+    },
+    {
+      "label": "feature selection",
+      "peak_share": 1.5,
+      "seen_in": [
+        "icml-2025"
+      ],
+      "counts": {
+        "icml-2025": 5
+      },
+      "children": [
+        "federated data and feature selection",
+        "instance wise feature selection",
+        "node feature selection"
+      ]
+    },
+    {
+      "label": "scientific computing",
+      "peak_share": 1.5,
+      "seen_in": [
+        "icml-2025",
+        "icml-2026"
+      ],
+      "counts": {
+        "icml-2025": 5,
+        "icml-2026": 7
+      },
+      "children": []
+    },
+    {
+      "label": "safe reinforcement learning",
+      "peak_share": 1.37,
+      "seen_in": [
+        "icml-2025",
+        "icml-2026"
+      ],
+      "counts": {
+        "icml-2025": 1,
+        "icml-2026": 9
+      },
+      "children": [],
+      "nested_under": "reinforcement learning"
+    },
+    {
+      "label": "aligning large language models with human preference",
+      "peak_share": 1.37,
+      "seen_in": [
+        "icml-2025",
+        "icml-2026"
+      ],
+      "counts": {
+        "icml-2025": 4,
+        "icml-2026": 9
+      },
+      "children": []
+    },
+    {
+      "label": "education",
+      "peak_share": 1.37,
+      "seen_in": [
+        "icml-2025",
+        "icml-2026"
+      ],
+      "counts": {
+        "icml-2025": 4,
+        "icml-2026": 9
+      },
+      "children": [
+        "clinical education",
+        "geography education",
+        "healthcare, economics, and education",
+        "intelligent education",
+        "one to many alignment in clinical socratic education",
+        "physics education",
+        "science and education"
+      ]
+    },
+    {
+      "label": "supervised fine tuning",
+      "peak_share": 1.37,
+      "seen_in": [
+        "icml-2025",
+        "icml-2026"
+      ],
+      "counts": {
+        "icml-2025": 3,
+        "icml-2026": 9
+      },
+      "children": [
+        "data mixing optimization for supervised fine tuning",
+        "data selection for supervised fine tuning",
+        "quantization aware supervised fine tuning",
+        "supervised fine tuning of autoregressive vision language",
+        "supervised fine tuning of language model",
+        "supervised fine tuning of large language model"
+      ]
+    },
+    {
+      "label": "generative ai",
+      "peak_share": 1.37,
+      "seen_in": [
+        "icml-2025",
+        "icml-2026"
+      ],
+      "counts": {
+        "icml-2025": 2,
+        "icml-2026": 9
+      },
+      "children": [
+        "fairness in generative ai",
+        "generative ai evaluation",
+        "generative ai regulation",
+        "generative ai safety",
+        "generative ai security",
+        "generative ai system",
+        "privacy and security of generative ai"
+      ]
+    },
+    {
+      "label": "cross modal retrieval",
+      "peak_share": 1.37,
+      "seen_in": [
+        "icml-2025",
+        "icml-2026"
+      ],
+      "counts": {
+        "icml-2025": 1,
+        "icml-2026": 9
+      },
+      "children": [
+        "multi image cross modal retrieval"
+      ]
+    },
+    {
+      "label": "computer aided design",
+      "peak_share": 1.37,
+      "seen_in": [
+        "icml-2025",
+        "icml-2026"
+      ],
+      "counts": {
+        "icml-2025": 2,
+        "icml-2026": 9
+      },
+      "children": [
+        "computer aided design (cad)"
+      ]
+    },
+    {
+      "label": "long horizon",
+      "peak_share": 1.37,
+      "seen_in": [
+        "icml-2026"
+      ],
+      "counts": {
+        "icml-2026": 9
+      },
+      "children": [
+        "complex, long horizon",
+        "long horizon action sequence generation",
+        "long horizon adversarial decision making",
+        "long horizon agentic",
+        "long horizon agentic reasoning",
+        "long horizon constrained travel planning",
+        "long horizon control",
+        "long horizon control from visual input",
+        "long horizon data agent orchestration",
+        "long horizon decision making",
+        "long horizon dialogue",
+        "long horizon dynamical modeling",
+        "long horizon embodied intelligence",
+        "long horizon exploration",
+        "long horizon forecasting",
+        "long horizon full stack website development",
+        "long horizon interaction",
+        "long horizon interactive agent evaluation",
+        "long horizon interactive agent training",
+        "long horizon interactive video based world model",
+        "long horizon language agent training",
+        "long horizon manipulation",
+        "long horizon memory management",
+        "long horizon memory reasoning",
+        "long horizon motion generation",
+        "long horizon multi step",
+        "long horizon planning",
+        "long horizon planning for complex embodied",
+        "long horizon prediction",
+        "long horizon reasoning",
+        "long horizon repository generation",
+        "long horizon robotic",
+        "long horizon robotic planning",
+        "long horizon state prediction",
+        "long horizon vessel trajectory prediction",
+        "long horizon vision language action control",
+        "long horizon with sparse and delayed reward"
+      ]
+    },
+    {
+      "label": "ai alignment",
+      "peak_share": 1.21,
+      "seen_in": [
+        "icml-2025",
+        "icml-2026"
+      ],
+      "counts": {
+        "icml-2025": 2,
+        "icml-2026": 8
+      },
+      "children": [
+        "ai alignment and cooperative multi agent interaction",
+        "conceptual analysis of ai alignment"
+      ]
+    },
+    {
+      "label": "llm fine tuning",
+      "peak_share": 1.21,
+      "seen_in": [
+        "icml-2025",
+        "icml-2026"
+      ],
+      "counts": {
+        "icml-2025": 2,
+        "icml-2026": 8
+      },
+      "children": [
+        "autonomous llm fine tuning",
+        "efficient llm fine tuning"
+      ]
+    },
+    {
+      "label": "multi view clustering",
+      "peak_share": 1.21,
+      "seen_in": [
+        "icml-2025",
+        "icml-2026"
+      ],
+      "counts": {
+        "icml-2025": 3,
+        "icml-2026": 8
+      },
+      "children": [
+        "fair multi view clustering",
+        "federated incomplete multi view clustering",
+        "federated multi view clustering",
+        "imbalanced multi view clustering",
+        "incomplete multi view clustering",
+        "unbalanced incomplete multi view clustering",
+        "unknown k multi view clustering"
+      ],
+      "nested_under": "clustering"
+    },
+    {
+      "label": "large language model inference",
+      "peak_share": 1.21,
+      "seen_in": [
+        "icml-2025",
+        "icml-2026"
+      ],
+      "counts": {
+        "icml-2025": 4,
+        "icml-2026": 8
+      },
+      "children": [
+        "accelerating diffusion large language model inference",
+        "efficient large language model inference",
+        "large language model inference acceleration",
+        "large language model inference efficiency",
+        "long context large language model inference",
+        "memory constrained large language model inference",
+        "privacy preserving large language model inference",
+        "private large language model inference",
+        "secure large language model inference"
+      ],
+      "nested_under": "large language model"
+    },
+    {
+      "label": "long video understanding",
+      "peak_share": 1.21,
+      "seen_in": [
+        "icml-2025",
+        "icml-2026"
+      ],
+      "counts": {
+        "icml-2025": 1,
+        "icml-2026": 8
+      },
+      "children": [],
+      "nested_under": "video understanding"
+    },
+    {
+      "label": "bayesian optimization",
+      "peak_share": 1.21,
+      "seen_in": [
+        "icml-2025",
+        "icml-2026"
+      ],
+      "counts": {
+        "icml-2025": 4,
+        "icml-2026": 8
+      },
+      "children": [
+        "batch multi objective bayesian optimization",
+        "bayesian optimization from human feedback",
+        "bayesian optimization over structured data",
+        "bayesian optimization with natural language feedback",
+        "cost aware stopping for bayesian optimization",
+        "high dimensional bayesian optimization",
+        "high dimensional constrained bayesian optimization",
+        "multi objective bayesian optimization",
+        "multi objective causal bayesian optimization"
+      ]
+    },
+    {
+      "label": "chain of thought reasoning",
+      "peak_share": 1.21,
+      "seen_in": [
+        "icml-2025",
+        "icml-2026"
+      ],
+      "counts": {
+        "icml-2025": 2,
+        "icml-2026": 8
+      },
+      "children": [
+        "efficient chain of thought reasoning",
+        "evaluating faithfulness of chain of thought reasoning",
+        "fair chain of thought reasoning",
+        "latent chain of thought reasoning",
+        "long chain of thought reasoning",
+        "long horizon chain of thought reasoning",
+        "multi attempt chain of thought reasoning",
+        "understanding latent planning in chain of thought reasoning"
+      ],
+      "nested_under": "reasoning"
+    },
+    {
+      "label": "safety alignment",
+      "peak_share": 1.21,
+      "seen_in": [
+        "icml-2026"
+      ],
+      "counts": {
+        "icml-2026": 8
+      },
+      "children": [
+        "decoding time safety alignment",
+        "llm safety alignment",
+        "mechanistic interpretability of llm safety alignment",
+        "multilingual safety alignment",
+        "multimodal large language model safety alignment",
+        "safety alignment analysis",
+        "safety alignment evaluation",
+        "safety alignment in multimodal large scale reasoning model",
+        "safety alignment in vision language model",
+        "safety alignment of language model"
+      ]
+    },
+    {
+      "label": "autoregressive image generation",
+      "peak_share": 1.21,
+      "seen_in": [
+        "icml-2026"
+      ],
+      "counts": {
+        "icml-2026": 8
+      },
+      "children": [
+        "next scale autoregressive image generation",
+        "visual autoregressive image generation"
+      ],
+      "nested_under": "image generation"
+    },
+    {
+      "label": "multi agent system",
+      "peak_share": 1.21,
+      "seen_in": [
+        "icml-2026"
+      ],
+      "counts": {
+        "icml-2026": 8
+      },
+      "children": [
+        "automated construction of multi agent system",
+        "automated design of multi agent system",
+        "automated failure attribution for llm multi agent system",
+        "detecting behavioral change in multi agent system",
+        "error recognition in multi agent system",
+        "large scale multi agent system",
+        "llm multi agent system",
+        "malicious behavior detection in multi agent system",
+        "multi agent system communication optimization",
+        "multi agent system construction",
+        "multi agent system design",
+        "multi agent system explainability",
+        "multi agent system optimization",
+        "multi agent system orchestration",
+        "multi agent system protocol selection",
+        "multi agent system reliability",
+        "multi agent system scaling",
+        "multi agent system security evaluation",
+        "optimization of llm based multi agent system",
+        "process verification of multi agent system",
+        "prompt optimization for llm based multi agent system",
+        "robustness of multi agent system",
+        "safety in llm based multi agent system"
+      ]
+    },
+    {
+      "label": "multivariate time series forecasting",
+      "peak_share": 1.2,
+      "seen_in": [
+        "icml-2025",
+        "icml-2026"
+      ],
+      "counts": {
+        "icml-2025": 4,
+        "icml-2026": 7
+      },
+      "children": [
+        "irregular multivariate time series forecasting",
+        "probabilistic multivariate time series forecasting",
+        "zero shot multivariate time series forecasting"
+      ],
+      "nested_under": "time series forecasting"
+    },
+    {
+      "label": "visual generation",
+      "peak_share": 1.2,
+      "seen_in": [
+        "icml-2025",
+        "icml-2026"
+      ],
+      "counts": {
+        "icml-2025": 4,
+        "icml-2026": 5
+      },
+      "children": [
+        "autoregressive visual generation",
+        "reflective visual generation"
+      ]
+    },
+    {
+      "label": "compositional generalization",
+      "peak_share": 1.2,
+      "seen_in": [
+        "icml-2025",
+        "icml-2026"
+      ],
+      "counts": {
+        "icml-2025": 4,
+        "icml-2026": 5
+      },
+      "children": [
+        "compositional generalization in language model reasoning",
+        "compositional generalization in vision language action (vla)",
+        "distributional compositional generalization"
+      ]
+    },
+    {
+      "label": "robotic control",
+      "peak_share": 1.2,
+      "seen_in": [
+        "icml-2025",
+        "icml-2026"
+      ],
+      "counts": {
+        "icml-2025": 4,
+        "icml-2026": 5
+      },
+      "children": []
+    },
+    {
+      "label": "semantic segmentation",
+      "peak_share": 1.2,
+      "seen_in": [
+        "icml-2025",
+        "icml-2026"
+      ],
+      "counts": {
+        "icml-2025": 4,
+        "icml-2026": 6
+      },
+      "children": [
+        "3d hierarchical semantic segmentation",
+        "class incremental semantic segmentation",
+        "continual semantic segmentation",
+        "cross domain few shot semantic segmentation",
+        "domain generalized semantic segmentation",
+        "few shot point cloud semantic segmentation",
+        "lidar semantic segmentation",
+        "light field semantic segmentation",
+        "open vocabulary semantic segmentation",
+        "semi supervised semantic segmentation",
+        "tissue region semantic segmentation",
+        "unsupervised domain adaptation for semantic segmentation",
+        "video semantic segmentation"
+      ]
+    },
+    {
+      "label": "cooperative multi agent reinforcement learning",
+      "peak_share": 1.2,
+      "seen_in": [
+        "icml-2025",
+        "icml-2026"
+      ],
+      "counts": {
+        "icml-2025": 4,
+        "icml-2026": 5
+      },
+      "children": [
+        "offline cooperative multi agent reinforcement learning"
+      ],
+      "nested_under": "multi agent reinforcement learning"
+    },
+    {
+      "label": "membership inference attack",
+      "peak_share": 1.2,
+      "seen_in": [
+        "icml-2025",
+        "icml-2026"
+      ],
+      "counts": {
+        "icml-2025": 4,
+        "icml-2026": 5
+      },
+      "children": []
+    },
+    {
+      "label": "domain adaptation",
+      "peak_share": 1.2,
+      "seen_in": [
+        "icml-2025",
+        "icml-2026"
+      ],
+      "counts": {
+        "icml-2025": 4,
+        "icml-2026": 5
+      },
+      "children": [
+        "cross domain adaptation",
+        "domain adaptation for diffusion model",
+        "federated domain adaptation",
+        "gradual domain adaptation",
+        "graph domain adaptation",
+        "in context multi source domain adaptation",
+        "low resource domain adaptation",
+        "multi source domain adaptation",
+        "multi target domain adaptation",
+        "open set domain adaptation",
+        "partial domain adaptation",
+        "universal domain adaptation",
+        "unsupervised domain adaptation",
+        "unsupervised graph domain adaptation",
+        "unsupervised multi source domain adaptation",
+        "unsupervised video domain adaptation"
+      ]
+    },
+    {
+      "label": "multi agent coordination",
+      "peak_share": 1.2,
+      "seen_in": [
+        "icml-2025",
+        "icml-2026"
+      ],
+      "counts": {
+        "icml-2025": 4,
+        "icml-2026": 6
+      },
+      "children": []
+    },
+    {
+      "label": "edge computing",
+      "peak_share": 1.06,
+      "seen_in": [
+        "icml-2025",
+        "icml-2026"
+      ],
+      "counts": {
+        "icml-2025": 2,
+        "icml-2026": 7
+      },
+      "children": [
+        "cloud edge computing"
+      ]
+    },
+    {
+      "label": "social science",
+      "peak_share": 0.9,
+      "seen_in": [
+        "icml-2025",
+        "icml-2026"
+      ],
+      "counts": {
+        "icml-2025": 3,
+        "icml-2026": 5
+      },
+      "children": [
+        "computational social science",
+        "environmental health and social science"
+      ]
+    },
+    {
+      "label": "quantum computing",
+      "peak_share": 0.9,
+      "seen_in": [
+        "icml-2025",
+        "icml-2026"
+      ],
+      "counts": {
+        "icml-2025": 3,
+        "icml-2026": 5
+      },
+      "children": []
+    },
+    {
+      "label": "operations research",
+      "peak_share": 0.76,
+      "seen_in": [
+        "icml-2025",
+        "icml-2026"
+      ],
+      "counts": {
+        "icml-2025": 1,
+        "icml-2026": 5
+      },
+      "children": []
+    },
+    {
+      "label": "manufacturing",
+      "peak_share": 0.6,
+      "seen_in": [
+        "icml-2025"
+      ],
+      "counts": {
+        "icml-2025": 2
+      },
+      "children": [
+        "3d object generation for manufacturing",
+        "semiconductor manufacturing"
+      ]
+    },
+    {
+      "label": "neuroimaging",
+      "peak_share": 0.46,
+      "seen_in": [
+        "icml-2026"
+      ],
+      "counts": {
+        "icml-2026": 3
+      },
+      "children": [
+        "neuroimaging study of human processing of ai generated text"
+      ]
+    },
+    {
+      "label": "human computer interaction",
+      "peak_share": 0.3,
+      "seen_in": [
+        "icml-2025",
+        "icml-2026"
+      ],
+      "counts": {
+        "icml-2025": 1,
+        "icml-2026": 2
+      },
+      "children": []
+    },
+    {
+      "label": "energy",
+      "peak_share": 0.15,
+      "seen_in": [
+        "icml-2026"
+      ],
+      "counts": {
+        "icml-2026": 1
+      },
+      "children": [
+        "energy accounting of distillation pipeline",
+        "energy and force prediction",
+        "energy consumption",
+        "energy efficient inference in spiking neural network",
+        "energy efficient npu inference",
+        "energy network operation",
+        "full physics numerical simulations of subsurface energy",
+        "fusion energy"
+      ]
+    },
+    {
+      "label": "biotechnology",
+      "peak_share": 0.15,
+      "seen_in": [
+        "icml-2026"
+      ],
+      "counts": {
+        "icml-2026": 1
+      },
+      "children": [
+        "biomedical research and biotechnology",
+        "biotechnology and medicine"
+      ]
+    },
+    {
+      "label": "astronomy",
+      "peak_share": 0.15,
+      "seen_in": [
+        "icml-2026"
+      ],
+      "counts": {
+        "icml-2026": 1
+      },
+      "children": []
+    },
+    {
+      "label": "transportation",
+      "peak_share": 0.15,
+      "seen_in": [
+        "icml-2026"
+      ],
+      "counts": {
+        "icml-2026": 1
+      },
+      "children": [
+        "infrastructure and transportation",
+        "public transportation",
+        "transportation on graph"
+      ]
+    },
+    {
+      "label": "agriculture",
+      "peak_share": 0.15,
+      "seen_in": [
+        "icml-2026"
+      ],
+      "counts": {
+        "icml-2026": 1
+      },
+      "children": []
+    }
+  ]
+}

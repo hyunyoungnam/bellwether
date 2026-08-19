@@ -1,0 +1,13 @@
+# Regenerable data — the pipeline in CLAUDE.md rebuilds all of it.
+# Raw PDFs alone are 26 GB; nothing here belongs in a git repo.
+data/
+run/
+reports/
+dist/
+.bak/
+.cache/
+.venv/
+__pycache__/
+*.pyc
+nohup.out
+bin/
