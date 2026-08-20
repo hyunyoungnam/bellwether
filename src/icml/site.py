@@ -1868,9 +1868,9 @@ function sections(tab){
 // not a caption. Bars start at the 0.1% floor; nothing below it is drawn.
 const CHG_F=1;   // floor, per-1,000
 function logX(M){ return v=>v<=CHG_F?0:Math.log(v/CHG_F)/Math.log(M/CHG_F)*100; }
-function laneHTML(x,grey){
-  const dark=grey?'#9a9c9e':`var(--v${x.hue})`;
-  const pale=grey?'#dcdee0':`color-mix(in srgb, var(--v${x.hue}) 26%, var(--card))`;
+function laneHTML(x){
+  const dark=`var(--v${x.hue})`;
+  const pale=`color-mix(in srgb, var(--v${x.hue}) 26%, var(--card))`;
   const t=`title="${(x.s0/10).toFixed(1)}% → ${(x.s1/10).toFixed(1)}%"`;
   const w0=x.w0.toFixed(1), w1=Math.max(x.w1,.6).toFixed(1);
   return `<span class="lane" ${t}>`+
@@ -1892,7 +1892,7 @@ function changedHTML(){
   const grid='<div class="chgg">'+ticks.map(t=>`<i style="left:${X(t).toFixed(2)}%"></i>`).join('')+'</div>';
   const axis='<div class="chgax">'+ticks.map(t=>`<b style="left:${X(t).toFixed(2)}%">${t/10}%</b>`).join('')+'</div>';
   const body=secs.map(([name,rows])=>`<div class="chgsec">${name}</div>`+rows.map(e=>{
-    const lanes=e.lanes.map(x=>laneHTML({...x,w0:X(x.s0),w1:X(x.s1)},name==='largest')).join('');
+    const lanes=e.lanes.map(x=>laneHTML({...x,w0:X(x.s0),w1:X(x.s1)})).join('');
     const tag=e.gn?'<em class="tag gone">gone</em>':'';
     return `<button class="cr" data-k="${chgTab}" data-id="${e.id}">`+
       `<span class="crl" title="${esc(e.l)}">${esc(e.l)}${tag}</span><span class="trk">${lanes}</span></button>`;
@@ -1938,7 +1938,7 @@ function railTrend(){
       const tag=r.a<=2&&r.b>2?'<em class="tag">new</em>'
                :r.b<=2&&r.a>2?'<em class="tag gone">gone</em>':'';
       return `<button class="mrr" data-tid="${r.id}"><span class="mrl" title="${esc(r.l)}">${esc(r.l)}${tag}</span>`+
-        `<span class="mrt">${laneHTML({hue:pr.hue,s0:r.s0,s1:r.s1,w0:X(r.s0),w1:X(r.s1)},false)}</span></button>`;
+        `<span class="mrt">${laneHTML({hue:pr.hue,s0:r.s0,s1:r.s1,w0:X(r.s0),w1:X(r.s1)})}</span></button>`;
     }).join('');
 }
 // After a pick: what the chosen set is MADE OF, held sticky while the list
