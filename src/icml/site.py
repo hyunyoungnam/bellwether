@@ -557,7 +557,10 @@ HTML = r"""<!doctype html>
 <title>What's new in AI research</title>
 <style>
 :root{--bg:#eceef0;--card:#fff;--ink:#141414;--ink2:#454545;--mut:#7c7c78;
---line:#e2e4e6;--ring:#d2d5d8;--acc:#2a6fd0;--warm:#d2551f;--dim:#c6c8ca;--hi:#fff3c4}
+--line:#e2e4e6;--ring:#d2d5d8;--acc:#2a6fd0;--warm:#d2551f;--dim:#c6c8ca;--hi:#fff3c4;
+/* one hue per venue, in VENUES order, never cycled; the pale step is the same
+   hue knocked back — year is carried by depth, identity by hue */
+--v0:#2a6fd0;--v1:#0c9a85;--v2:#8a5cd6}
 *{box-sizing:border-box}
 [hidden]{display:none!important}   /* display:flex on .facets/.pane outranks it otherwise */
 body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif;
@@ -854,17 +857,46 @@ border:1px solid var(--ring);background:var(--card);color:var(--ink2);display:fl
 .rv.on span{color:#c9c9c9}
 .rv.dim{opacity:.45;cursor:default;padding:7px 14px;border:1px dashed var(--ring);border-radius:9px}
 .rtr{display:none}
-/* on wide screens the rail rides the left margin, like a panel */
-@media(min-width:1340px){
-  #rail{position:fixed;left:calc(50% - 490px - 168px);top:96px;flex-direction:column;width:148px;margin:0}
+/* on wide screens the rail is a real grid column and sticks while the list
+   scrolls — it holds "what to press next", which is exactly what a reader
+   forgets mid-scroll */
+@media(min-width:1300px){
+  .wrap.withrail{max-width:1266px;display:grid;grid-template-columns:250px minmax(0,980px);
+    gap:0 26px;align-items:start}
+  .wrap.withrail>header{grid-column:1/-1}
+  #rail{grid-column:1;position:sticky;top:12px;flex-direction:column;margin:0;
+    max-height:calc(100vh - 24px);overflow-y:auto;scrollbar-width:none}
+  #main{grid-column:2;min-width:0}
   .rv{justify-content:space-between}
   .rtr{display:block;margin-top:14px;border-top:1px solid var(--ring);padding-top:10px}
-  .rh{font-size:9.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--mut);margin-bottom:6px}
-  .rrow{font-size:11px;padding:1.5px 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--ink2)}
-  .rrow span{font-size:8px;margin-right:5px;vertical-align:1px}
-  .rrow.up span{color:var(--acc)}
-  .rrow.dn span{color:var(--warm)}
 }
+.rh{font-size:9.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--mut);margin-bottom:7px}
+.rh em{font-style:normal;font-weight:500;letter-spacing:0;text-transform:none;margin-left:4px}
+/* rail mini chart: one venue pair per row, log x like the landing chart */
+.mrr{display:block;width:100%;text-align:left;font:inherit;background:none;border:0;
+  padding:2.5px 0;cursor:pointer;border-radius:4px}
+.mrr:hover .mrl{color:var(--acc)}
+.mrl{font-size:11.5px;color:var(--ink2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  display:block;margin-bottom:1px}
+.mrl .tag{margin-left:5px}
+.mrt{position:relative;height:6px;display:block}
+.mrt .lane{position:absolute;inset:0;height:auto;margin:0}
+/* the set card: composition of the current selection, in reach while scrolling */
+.setcard{margin-top:14px;border-top:1px solid var(--ring);padding-top:10px}
+.scn{font-size:20px;font-weight:700;letter-spacing:-.02em}
+.scn small{font-size:11px;font-weight:500;color:var(--mut);margin-left:5px}
+.scyr{margin:8px 0 2px}
+.scyrow{display:grid;grid-template-columns:34px 1fr 70px;gap:8px;align-items:center;
+  font-size:11px;color:var(--ink2);padding:1.5px 0}
+.scyrow .yb{position:relative;height:7px}
+.scyrow .yb i{position:absolute;left:0;top:0;height:100%;border-radius:2px}
+.scyrow b{font-weight:600;font-size:10px;text-align:right;color:var(--ink2);white-space:nowrap}
+.scsub{font-size:10.5px;color:var(--mut);margin:2px 0 0}
+.scchips{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}
+.scchip{font:inherit;font-size:10.5px;padding:2px 8px;border-radius:20px;cursor:pointer;
+  border:1px solid var(--ring);background:var(--card);color:var(--ink2)}
+.scchip b{font-weight:600;color:var(--mut);margin-left:3px}
+.scchip:hover{border-color:var(--acc);color:var(--acc)}
 /* what-moved entry view */
 .chgbox{background:var(--card);border-radius:12px;padding:16px 18px;margin-top:14px}
 .chghd{font-size:15px;font-weight:660;display:flex;align-items:center;gap:10px}
@@ -873,19 +905,28 @@ border:1px solid var(--ring);background:var(--card);color:var(--ink2);display:fl
 background:none;cursor:pointer;color:var(--ink2)}
 .chgtab.on{background:var(--ink);color:#fff;border-color:var(--ink)}
 .chgsub{font-size:11px;color:var(--mut);margin:3px 0 10px}
-.cr{display:grid;grid-template-columns:minmax(150px,190px) 1fr;gap:12px;align-items:center;
-padding:3px 44px 3px 0;font-size:12.5px}
+.chgleg{display:flex;gap:14px;margin:6px 0 0;font-size:10.5px;color:var(--ink2)}
+.chgleg i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px;vertical-align:-1px}
+.chgplot{position:relative}
+/* gridlines and axis share one geometry: 172px label column + 12px gap */
+.chgg{position:absolute;top:0;bottom:0;left:184px;right:0;pointer-events:none}
+.chgg i{position:absolute;top:0;bottom:0;width:1px;background:var(--line)}
+.chgax{position:relative;height:13px;margin:10px 0 0 184px}
+.chgax b{position:absolute;transform:translateX(-50%);font-size:9px;font-weight:500;color:var(--mut);white-space:nowrap}
+.chgsec{font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--mut);
+  margin:11px 0 3px;position:relative}
+.cr{display:grid;grid-template-columns:172px 1fr;gap:12px;align-items:center;
+  padding:2px 0;position:relative;font-size:12.5px;color:var(--ink2);border:0;background:none;
+  width:100%;text-align:left;font-family:inherit;cursor:pointer;border-radius:4px}
+.cr:hover .crl{color:var(--acc)}
 .crl{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .tag{font-style:normal;font-size:9px;font-weight:700;letter-spacing:.04em;color:var(--acc);
-border:1px solid currentColor;border-radius:4px;padding:0 4px;margin-left:6px;vertical-align:1px}
+  margin-left:6px;vertical-align:1px}
 .tag.gone{color:var(--mut)}
-.trk{position:relative;height:18px}
-.trk .now{position:absolute;left:0;top:5px;height:8px;border-radius:2px;background:var(--acc)}
-.trk .was{position:absolute;left:0;top:5px;height:8px;border-radius:2px;background:#b9d0ee}
-/* source order = stacking: the longer bar is written first, so the tail shows */
-.trk .pct2{position:absolute;top:1.5px;margin-left:9px;font-size:11px;font-weight:650;
-font-variant-numeric:tabular-nums;white-space:nowrap}
-.pct2.up{color:var(--acc)} .pct2.dn{color:var(--warm)} .pct2.flat{color:var(--ink2)}
+.trk{position:relative}
+.lane{display:block;position:relative;height:8px;margin:1.5px 0}
+.lane i{position:absolute;left:0;top:0;height:100%;border-radius:0 2px 2px 0}
+
 .famchip.sel .per{color:#fff}
 .pfoot{display:flex;align-items:center;gap:8px;margin-top:7px}
 </style></head><body><div class="wrap">
@@ -893,6 +934,8 @@ font-variant-numeric:tabular-nums;white-space:nowrap}
 
 <div id="landing" hidden></div>
 <nav id="rail" hidden></nav>
+
+<div id="main">
 
 <div class="search">
   <input type="search" id="q" aria-label="Search every abstract">
@@ -930,6 +973,7 @@ font-variant-numeric:tabular-nums;white-space:nowrap}
   <div class="phd"><span>Closest papers</span><button id="pclose">Close</button></div>
   <div class="pbody" id="pbody"></div>
 </aside>
+</div>
 </div>
 <script>const D=__DATA__;</script>
 <script>
@@ -1113,9 +1157,10 @@ function facetPass(p,wantDomain){
   return hit;
 }
 
-function match(i,hits){
+function match(i,hits,corp){
   const p=P[i];
-  if(st.corp!==null&&p.cy!==st.corp)return false;
+  const cc=corp===undefined?st.corp:corp;
+  if(cc!==null&&p.cy!==cc)return false;
   if(st.ds!==null&&!p.k.includes(st.ds))return false;
   if(!methPass(p))return false;
   // Within a facet the picks are OR — two topics widen the set. ACROSS facets
@@ -1461,6 +1506,7 @@ function render(){
   const landing=st.corp===null;
   $('#landing').hidden=!landing;
   $('#rail').hidden=landing;
+  document.querySelector('.wrap').classList.toggle('withrail',!landing);
   document.querySelector('.search').hidden=landing;
   document.querySelector('.sug').hidden=landing;
   if(landing){
@@ -1479,13 +1525,10 @@ function render(){
     return `<button class="rv ${st.corp===now.j?'on':''}" data-rv="${now.j}">`+
       `${esc(ven.v)}<span>${now.y}</span></button>`;
   }).join('');
-  // The same movers the landing shows, folded to fit a rail: direction and
-  // name only. The bars live on the landing; here a triangle is enough.
-  if(CY.length>1&&CY[0].v===CY[1].v){
-    const movers=pickRows(changedRows(0,1).t).filter(r=>r.z>=Z_SHOW&&r.mat||r.z<=-Z_SHOW&&r.mat);
-    $('#rail').insertAdjacentHTML('beforeend',`<div class="rtr"><div class="rh">Since last year</div>`+
-      movers.map(r=>`<div class="rrow ${r.z>0?'up':'dn'}"><span>${r.z>0?'▲':'▼'}</span>${esc(r.l)}</div>`).join('')+`</div>`);
-  }
+  // The rail carries whatever the reader should press NEXT: before a pick, this
+  // venue's own movers (each row applies itself as the selection); after one,
+  // the composition of the set they picked (see railSetCard).
+  $('#rail').insertAdjacentHTML('beforeend','<div class="rtr" id="rtr"></div>');
   $('#rail').querySelectorAll('[data-rv]').forEach(el=>el.onclick=()=>{
     if(+el.dataset.rv!==st.corp)go(+el.dataset.rv); });
   const on=chosen();
@@ -1497,10 +1540,19 @@ function render(){
   if(!on){
     $('#results').innerHTML=`<div class="start">Pick a topic or a benchmark above, or search.`+
       `<span>Nothing is listed until you do — ${CY[st.corp].n.toLocaleString()} papers is the problem, not the answer.</span></div>`;
+    const rt=$('#rtr'); if(rt){ rt.innerHTML=railTrend();
+      rt.querySelectorAll('[data-tid]').forEach(el=>el.onclick=()=>{
+        applyChgRow('t',+el.dataset.tid); render();}); }
     drawTopics(); drawMethods(); drawDatasets(); fitChips();
     return;
   }
   const res=results();
+  { const rt=$('#rtr'); if(rt){ rt.innerHTML=railSetCard(res);
+      rt.querySelectorAll('[data-ck]').forEach(el=>el.onclick=()=>{
+        const id=+el.dataset.cid;
+        if(el.dataset.ck==='d')st.ds=st.ds===id?null:id; else st.meth=st.meth===id?null:id;
+        render();}); } }
+
   const extra=nearby();
   const show=res.slice(0,MAX_SHOWN);
   // No "show more": nobody reads to the end of 6,637. Past the cap the answer is
@@ -1701,32 +1753,45 @@ const MV=D.mvocab||[], MS=D.methods||[], MF=D.mfams||[];
 // line, and no row is called hot or important (Guardrail 1) — the benchmark tab
 // is the closest thing to that claim we allow ourselves: where the field tests
 // is a commitment, not a word choice.
-let CHG=null;
+// Each venue's latest edition vs its previous one. The pair is chosen per
+// venue — never across venues — and every number below is a share per 1,000
+// of its own edition, because edition sizes differ 2x.
+function venuePairs(){
+  const out=[];
+  VENUES.forEach((ven,hue)=>{
+    const ys=CY.map((c,j)=>({...c,j})).filter(c=>c.v===ven.v);
+    if(ys.length>=2)out.push({v:ven.v,hue,c0:ys[ys.length-2].j,c1:ys[ys.length-1].j,
+                              y0:ys[ys.length-2].y,y1:ys[ys.length-1].y});
+  });
+  return out;
+}
+const CHG={};
 function changedRows(c0,c1){
-  if(CHG)return CHG;
+  const key=c0+':'+c1;
+  if(CHG[key])return CHG[key];
   const out={t:[],m:[],d:[]};
-  const push=(arr,l,a,b,min)=>{
+  const push=(arr,l,id,a,b,min)=>{
     if(a+b<min)return;
     const s0=a/CYN[c0]*1000, s1=b/CYN[c1]*1000;
-    arr.push({l,a,b,s0,s1,d:s1-s0});
+    arr.push({l,id,a,b,s0,s1});
   };
   T.forEach((t,ti)=>{
     if(t.j)return;
     let a=0,b=0;
-    for(const i of TOPIC_PAPERS[ti]){ P[i].cy===c0?a++:b++; }
-    push(out.t,t.l,a,b,12);
+    for(const i of TOPIC_PAPERS[ti]){ if(P[i].cy===c0)a++; else if(P[i].cy===c1)b++; }
+    push(out.t,t.l,ti,a,b,12);
   });
   // methods: children roll up to their top-level parent, as the menu does
   const par=new Map(); for(const [id,,,pa] of MS) par.set(id,pa==null?id:pa);
   const mc=new Map();
-  for(const p of P){ const seen=new Set();
+  for(const p of P){ if(p.cy!==c0&&p.cy!==c1)continue; const seen=new Set();
     for(const m of (p.mu||[])){ const top=par.get(m)??m;
       if(seen.has(top))continue; seen.add(top);
-      let c=mc.get(top); if(!c)mc.set(top,c=[0,0]); c[p.cy]++; } }
+      let c=mc.get(top); if(!c)mc.set(top,c=new Map()); c.set(p.cy,(c.get(p.cy)||0)+1); } }
   for(const [id,,,pa] of MS){
     if(pa!=null)continue;
-    const c=mc.get(id)||[0,0];
-    push(out.m,MV[id],c[c0],c[c1],12);
+    const c=mc.get(id);
+    push(out.m,MV[id],id,c?.get(c0)||0,c?.get(c1)||0,12);
   }
   // benchmarks: the ids DS already filtered (placeholders like "three datasets"
   // are counts wearing a name and would top any list)
@@ -1735,84 +1800,199 @@ function changedRows(c0,c1){
   // letters and digits agree, keep the commoner spelling. Display-time only —
   // the underlying alias problem (LIBERO vs "LIBERO benchmark") is still open.
   const dc=new Map();
-  for(const p of P){ const seen=new Set();
+  for(const p of P){ if(p.cy!==c0&&p.cy!==c1)continue; const seen=new Set();
     for(const di of new Set(p.k)){ if(!ok.has(di))continue;
-      const key=dname(di).toLowerCase().replace(/[^a-z0-9]/g,'');
-      if(seen.has(key))continue; seen.add(key);
-      let c=dc.get(key); if(!c)dc.set(key,c={n:new Map(),a:0,b:0});
-      c.n.set(di,(c.n.get(di)||0)+1); p.cy===c0?c.a++:c.b++; } }
+      const key2=dname(di).toLowerCase().replace(/[^a-z0-9]/g,'');
+      if(seen.has(key2))continue; seen.add(key2);
+      let c=dc.get(key2); if(!c)dc.set(key2,c={n:new Map(),a:0,b:0});
+      c.n.set(di,(c.n.get(di)||0)+1); if(p.cy===c0)c.a++; else c.b++; } }
   for(const c of dc.values()){
     const di=[...c.n.entries()].sort((x,y)=>y[1]-x[1])[0][0];
-    push(out.d,dname(di),c.a,c.b,8);
+    push(out.d,dname(di),di,c.a,c.b,8);
   }
-  for(const k of ['t','m','d'])out[k].sort((x,y)=>y.d-x.d);
-  return CHG=out;
+  return CHG[key]=out;
 }
 let chgTab='t';
-// Which rows earn ink — a rule, not a top-N. Each topic is two samples of the
-// two editions, so the share change carries a two-proportion z-score; a row is
-// coloured and labelled only when |z| >= 2.576 (99%), which lets the corpus
-// sizes decide what is noise instead of a hand-picked cutoff. The two largest
-// current shares are labelled grey as anchors ("this is still the biggest
-// thing") whatever their z. Everything else above the share floor is a thin
-// grey line — the visible mass of fields that did not move — and below the
-// floor is not drawn at all.
-// A row earns a place by TWO tests at once, plus two anchors:
-//   real      |z| >= 2.576 — a two-proportion test at 99%, so the corpus sizes
+// Which rows earn ink — a rule, not a top-N. Per venue pair, a row must pass
+// TWO tests at once:
+//   real      |z| >= 2.576 — a two-proportion test at 99%, so the edition sizes
 //             decide what is sampling noise, not a hand-picked cutoff;
-//   material  the share moved by >= 2 per 1,000 OR by >= 1.5x — statistically
-//             real but tiny drifts are not worth a reader's row.
-// Anchors: the two largest current shares, grey, whatever their change — the
-// chart must also say what the biggest things ARE, or "rose" has no context.
+//   material  the share moved by >= 2 per 1,000 OR by >= 1.5x.
+// With several venues loaded, agreement is the tiebreak: a topic that clears the
+// test at three venues outranks one that clears at one, and a row where venues
+// pull in OPPOSITE directions is not drawn at all — a disagreement stated as a
+// trend would be a lie. Sections replace arrows and numbers: LARGEST holds the
+// two biggest current shares whatever their change (context — "rose" means
+// nothing without what is big), RISING/NEW/FALLING carry the direction.
 const Z_SHOW=2.576, LABEL_CAP=5, D_MIN=2, FOLD_MIN=1.5;
-function pickRows(rows){
-  const minS=chgTab==='d'?2:3;
-  const vis=rows.filter(r=>Math.max(r.s0,r.s1)>=minS);
-  const n0=CYN[0],n1=CYN[1];
-  for(const r of vis){
-    const pp=(r.a+r.b)/(n0+n1);
-    const se=Math.sqrt(pp*(1-pp)*(1/n0+1/n1));
-    r.z=se?(r.b/n1-r.a/n0)/se:0;
-    const lo=Math.min(r.s0,r.s1), hi=Math.max(r.s0,r.s1);
-    r.mat=Math.abs(r.s1-r.s0)>=D_MIN||(lo>0?hi/lo:1e9)>=FOLD_MIN;
+function sections(tab){
+  const pairs=venuePairs();
+  if(!pairs.length)return null;
+  const minS=tab==='d'?2:3;
+  let tot1=0; for(const pr of pairs)tot1+=CYN[pr.c1];
+  const by=new Map();
+  for(const pr of pairs){
+    for(const r of changedRows(pr.c0,pr.c1)[tab]){
+      const n0=CYN[pr.c0], n1=CYN[pr.c1];
+      const pp=(r.a+r.b)/(n0+n1), se=Math.sqrt(pp*(1-pp)*(1/n0+1/n1));
+      const z=se?(r.b/n1-r.a/n0)/se:0;
+      const lo=Math.min(r.s0,r.s1), hi=Math.max(r.s0,r.s1);
+      const mat=Math.abs(r.s1-r.s0)>=D_MIN||(lo>0?hi/lo:1e9)>=FOLD_MIN;
+      let e=by.get(r.l); if(!e)by.set(r.l,e={l:r.l,id:r.id,lanes:[],b:0});
+      e.b+=r.b;
+      e.lanes.push({hue:pr.hue,s0:r.s0,s1:r.s1,z,mat,nw:r.a<=2&&r.b>2,gn:r.b<=2&&r.a>2});
+    }
   }
-  const up=vis.filter(r=>r.z>=Z_SHOW&&r.mat).sort((x,y)=>y.z-x.z).slice(0,LABEL_CAP);
-  const dn=vis.filter(r=>r.z<=-Z_SHOW&&r.mat).sort((x,y)=>x.z-y.z).slice(0,LABEL_CAP);
-  const sel=new Set([...up,...dn]);
-  for(const r of vis.filter(r=>!sel.has(r)).sort((x,y)=>y.s1-x.s1).slice(0,2))sel.add(r);
-  return [...sel].sort((x,y)=>y.s1-x.s1);
+  const rows=[...by.values()].filter(e=>e.lanes.some(x=>Math.max(x.s0,x.s1)>=minS));
+  for(const e of rows){
+    e.up=e.lanes.filter(x=>x.z>=Z_SHOW&&x.mat).length;
+    e.dn=e.lanes.filter(x=>x.z<=-Z_SHOW&&x.mat).length;
+    e.nw=e.lanes.some(x=>x.nw); e.gn=e.lanes.some(x=>x.gn);
+    e.maxz=Math.max(...e.lanes.map(x=>Math.abs(x.z)));
+    e.s1u=e.b/tot1*1000;
+  }
+  const rising=rows.filter(e=>e.up&&!e.dn&&!e.nw)
+    .sort((x,y)=>y.up-x.up||y.maxz-x.maxz).slice(0,LABEL_CAP);
+  const fresh=rows.filter(e=>e.up&&!e.dn&&e.nw)
+    .sort((x,y)=>y.s1u-x.s1u).slice(0,LABEL_CAP);
+  const falling=rows.filter(e=>e.dn&&!e.up)
+    .sort((x,y)=>y.maxz-x.maxz).slice(0,LABEL_CAP);
+  const inSec=new Set([...rising,...fresh,...falling]);
+  const largest=rows.filter(e=>!inSec.has(e)).sort((x,y)=>y.s1u-x.s1u).slice(0,2);
+  return {pairs,largest,rising,fresh,falling};
+}
+// Log x. The linear form could not show both size and growth: length is an
+// absolute encoding, so 0.2->0.9% (a 4.5x rise) was invisible next to a big
+// flat bar. On a log axis equal tails are equal FOLD changes, which is the
+// comparison the sections are making — and the axis says so with plain ticks,
+// not a caption. Bars start at the 0.1% floor; nothing below it is drawn.
+const CHG_F=1;   // floor, per-1,000
+function logX(M){ return v=>v<=CHG_F?0:Math.log(v/CHG_F)/Math.log(M/CHG_F)*100; }
+function laneHTML(x,grey){
+  const dark=grey?'#9a9c9e':`var(--v${x.hue})`;
+  const pale=grey?'#dcdee0':`color-mix(in srgb, var(--v${x.hue}) 26%, var(--card))`;
+  const t=`title="${(x.s0/10).toFixed(1)}% → ${(x.s1/10).toFixed(1)}%"`;
+  const w0=x.w0.toFixed(1), w1=Math.max(x.w1,.6).toFixed(1);
+  return `<span class="lane" ${t}>`+
+    (x.w0>x.w1
+      ?`<i style="width:${w0}%;background:${pale}"></i><i style="width:${w1}%;background:${dark}"></i>`
+      :`<i style="width:${w1}%;background:${dark}"></i><i style="width:${w0}%;background:${pale}"></i>`)+
+    `</span>`;
 }
 function changedHTML(){
-  // One venue pair for now; when a second venue lands, this becomes one block
-  // per venue with two collected years, never a cross-venue comparison.
-  if(CY.length<2||CY[0].v!==CY[1].v)return '';
-  const sel=pickRows(changedRows(0,1)[chgTab]);
-  if(!sel.length)return '';
-  // One track, one hue, no legend: the pale bar is last year's share, the dark
-  // bar is this year's, the longer drawn underneath so the tail is visible —
-  // a dark tail grew, a pale tail shrank. The number is "was → is", both as a
-  // share of that year's conference: a lone figure beside a change chart gets
-  // read as the change (5.2% looked like "+5.2%"), so both ends are stated.
-  const max=Math.max(...sel.flatMap(r=>[r.s0,r.s1]),1e-9);
-  const html=sel.map(r=>{
-    const cls=r.z>=Z_SHOW&&r.mat?'up':r.z<=-Z_SHOW&&r.mat?'dn':'flat';
-    const tag=r.a<=2&&r.b>2?'<em class="tag">new</em>':r.b<=2&&r.a>2?'<em class="tag gone">gone</em>':'';
-    const w0=r.s0/max*100, w1=r.s1/max*100;
-    return `<div class="cr"><span class="crl">${esc(r.l)}${tag}</span>`+
-      `<span class="trk">`+
-      (w0>w1?`<i class="was" style="width:${w0.toFixed(1)}%"></i>`:'')+
-      `<i class="now" style="width:${Math.max(w1,.4).toFixed(1)}%"></i>`+
-      (w1>=w0?`<i class="was" style="width:${w0.toFixed(1)}%"></i>`:'')+
-      `<b class="pct2 ${cls}" style="left:${Math.max(w0,w1).toFixed(1)}%">${(r.s0/10).toFixed(1)} → ${(r.s1/10).toFixed(1)}%</b>`+
-      `</span></div>`;
-  }).join('');
+  const S=sections(chgTab);
+  if(!S)return '';
+  const secs=[['largest',S.largest],['rising',S.rising],['new',S.fresh],['falling',S.falling]]
+    .filter(x=>x[1].length);
+  if(!secs.length)return '';
+  const all=secs.flatMap(x=>x[1]);
+  const M=Math.max(...all.flatMap(e=>e.lanes.flatMap(x=>[x.s0,x.s1])),CHG_F*2);
+  const X=logX(M);
+  const ticks=[1,3,10,30,100].filter(t=>t<=M*1.04);
+  const grid='<div class="chgg">'+ticks.map(t=>`<i style="left:${X(t).toFixed(2)}%"></i>`).join('')+'</div>';
+  const axis='<div class="chgax">'+ticks.map(t=>`<b style="left:${X(t).toFixed(2)}%">${t/10}%</b>`).join('')+'</div>';
+  const body=secs.map(([name,rows])=>`<div class="chgsec">${name}</div>`+rows.map(e=>{
+    const lanes=e.lanes.map(x=>laneHTML({...x,w0:X(x.s0),w1:X(x.s1)},name==='largest')).join('');
+    const tag=e.gn?'<em class="tag gone">gone</em>':'';
+    return `<button class="cr" data-k="${chgTab}" data-id="${e.id}">`+
+      `<span class="crl" title="${esc(e.l)}">${esc(e.l)}${tag}</span><span class="trk">${lanes}</span></button>`;
+  }).join('')).join('');
+  const multi=S.pairs.length>1;
+  const leg=multi
+    ?`<div class="chgleg">${S.pairs.map(p=>`<span><i style="background:var(--v${p.hue})"></i>${esc(p.v)}</span>`).join('')}</div>`
+    :`<div class="chgleg"><span><i style="background:color-mix(in srgb, var(--v${S.pairs[0].hue}) 26%, var(--card))"></i>${S.pairs[0].y0}</span>`+
+     `<span><i style="background:var(--v${S.pairs[0].hue})"></i>${S.pairs[0].y1}</span></div>`;
   const tab=(k,l)=>`<button class="chgtab ${chgTab===k?'on':''}" data-tab="${k}">${l}</button>`;
   return `<div class="chgbox"><div class="chghd">Since last year`+
-    `<span class="chgtabs">${tab('t','topics')}${tab('m','methods')}${tab('d','benchmarks')}</span></div>`+html+`</div>`;
+    `<span class="chgtabs">${tab('t','topics')}${tab('m','methods')}${tab('d','benchmarks')}</span></div>`+
+    `<div class="chgplot">${grid}${body}</div>${axis}${leg}</div>`;
+}
+function applyChgRow(k,id){
+  st.q=[]; const q=$('#q'); if(q)q.value='';
+  st.sel=null; st.grouped=false;
+  st.topics.clear(); st.fams.clear(); st.meth=null; st.mfam=null; st.ds=null;
+  if(k==='t')st.topics.add(id); else if(k==='m')st.meth=id; else st.ds=id;
+}
+// The rail's before-a-pick view: this venue's own significant movers, the same
+// two-test rule as the landing, one pair-lane each. A row IS a filter — clicking
+// it applies the topic, because a trend a reader cannot act on is trivia.
+function railTrend(){
+  const pr=venuePairs().find(p=>p.c1===st.corp||p.c0===st.corp);
+  if(!pr)return '';
+  const rows=[];
+  for(const r of changedRows(pr.c0,pr.c1).t){
+    const n0=CYN[pr.c0], n1=CYN[pr.c1];
+    const pp=(r.a+r.b)/(n0+n1), se=Math.sqrt(pp*(1-pp)*(1/n0+1/n1));
+    const z=se?(r.b/n1-r.a/n0)/se:0;
+    const lo=Math.min(r.s0,r.s1), hi=Math.max(r.s0,r.s1);
+    const mat=Math.abs(r.s1-r.s0)>=D_MIN||(lo>0?hi/lo:1e9)>=FOLD_MIN;
+    if(Math.max(r.s0,r.s1)>=3&&Math.abs(z)>=Z_SHOW&&mat)rows.push({...r,z});
+  }
+  rows.sort((x,y)=>Math.abs(y.z)-Math.abs(x.z));
+  const top=rows.slice(0,8);
+  if(!top.length)return '';
+  const M=Math.max(...top.flatMap(r=>[r.s0,r.s1]),CHG_F*2);
+  const X=logX(M);
+  return `<div class="rh">Since last year <em>${pr.y0} → ${pr.y1}</em></div>`+
+    top.map(r=>{
+      const tag=r.a<=2&&r.b>2?'<em class="tag">new</em>'
+               :r.b<=2&&r.a>2?'<em class="tag gone">gone</em>':'';
+      return `<button class="mrr" data-tid="${r.id}"><span class="mrl" title="${esc(r.l)}">${esc(r.l)}${tag}</span>`+
+        `<span class="mrt">${laneHTML({hue:pr.hue,s0:r.s0,s1:r.s1,w0:X(r.s0),w1:X(r.s1)},false)}</span></button>`;
+    }).join('');
+}
+// After a pick: what the chosen set is MADE OF, held sticky while the list
+// scrolls. Same selection counted in each edition of this venue (share of that
+// year — sizes differ 2x), then the vocabulary that recurs inside the set,
+// scoped tighter than the corpus-wide menus above the results.
+function railSetCard(res){
+  const hits=queryHits();
+  const cur=CY[st.corp];
+  const hue=Math.max(VENUES.findIndex(v=>v.v===cur.v),0);
+  const sib=CY.map((c,j)=>({c,j})).filter(x=>x.c.v===cur.v);
+  const ys=sib.map(({c,j})=>{
+    let n=0; for(let i=0;i<P.length;i++) if(match(i,hits,j))n++;
+    return {y:c.y,n,sh:n/CYN[j]*1000};
+  });
+  const mx=Math.max(...ys.map(r=>r.sh),1e-9);
+  const yrows=ys.map((r,ix)=>{
+    const col=ix===ys.length-1?`var(--v${hue})`
+              :`color-mix(in srgb, var(--v${hue}) 26%, var(--card))`;
+    return `<div class="scyrow"><span>${r.y}</span>`+
+      `<span class="yb"><i style="width:${Math.max(r.sh/mx*100,1.5).toFixed(1)}%;background:${col}"></i></span>`+
+      `<b>${r.n} · ${(r.sh/10).toFixed(1)}%</b></div>`;
+  }).join('');
+  const dk=new Map(), mk=new Map();
+  const par=new Map(); for(const [id,,,pa] of MS)par.set(id,pa==null?id:pa);
+  for(const i of res){
+    for(const d of new Set(P[i].k)) if(DSSET.has(d)&&d!==st.ds)dk.set(d,(dk.get(d)||0)+1);
+    const seen=new Set();
+    for(const m of (P[i].mu||[])){ const t2=par.get(m)??m;
+      if(seen.has(t2))continue; seen.add(t2);
+      if(t2!==st.meth)mk.set(t2,(mk.get(t2)||0)+1); }
+  }
+  const chips=(map,kind,name)=>[...map.entries()].filter(([,c])=>c>=2)
+    .sort((a,b)=>b[1]-a[1]).slice(0,4)
+    .map(([id,c])=>`<button class="scchip" data-ck="${kind}" data-cid="${id}">${esc(name(id))}<b>${c}</b></button>`).join('');
+  const dch=chips(dk,'d',dname), mch=chips(mk,'m',i=>MV[i]);
+  const nf=res.filter(i=>P[i].f).length;
+  return `<div class="setcard"><div class="rh">This set</div>`+
+    `<div class="scn">${res.length.toLocaleString()}<small>papers</small></div>`+
+    `<div class="scyr">${yrows}</div>`+
+    (sib.length>1?`<div class="scsub">the same pick, in each edition — share of that year</div>`:'')+
+    (dch?`<div class="rh" style="margin-top:11px">Tested on <em>in this set</em></div><div class="scchips">${dch}</div>`:'')+
+    (mch?`<div class="rh" style="margin-top:11px">Builds on <em>in this set</em></div><div class="scchips">${mch}</div>`:'')+
+    (nf?`<div class="scsub" style="margin-top:9px">${nf} of ${res.length} cards use full text</div>`:'')+
+    `</div>`;
 }
 function wireChanged(){
   document.querySelectorAll('[data-tab]').forEach(el=>el.onclick=()=>{
     chgTab=el.dataset.tab; render();});
+  document.querySelectorAll('.cr[data-id]').forEach(el=>el.onclick=()=>{
+    applyChgRow(el.dataset.k,+el.dataset.id);
+    const j=CY.length-1;
+    if(st.corp!==j)go(j); else render();
+  });
 }
 
 function renderGrouped(res){
