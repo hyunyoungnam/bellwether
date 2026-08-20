@@ -585,8 +585,10 @@ body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.5 system-ui,-app
    controls above it left the content looking pushed to the right. */
 .wrap{max-width:980px;margin:0 auto;padding:18px 20px 60px}
 header{margin:14px 0 22px;text-align:center}
-h1{font-size:40px;margin:0;font-weight:700;letter-spacing:-.025em;line-height:1.3}
-@media(max-width:600px){h1{font-size:26px}}
+/* One line, always: the sentence never wraps — fitTitle() shrinks the font
+   to the content instead, so filling a slot cannot push the rest onto line 2. */
+h1{font-size:40px;margin:0;font-weight:700;letter-spacing:-.025em;line-height:1.3;
+white-space:nowrap}
 /* The title IS the query: "What's new in [reasoning] for [healthcare]?" */
 #home{cursor:pointer}
 .tslot{display:inline-block;font:inherit;border:0;cursor:pointer;padding:0 8px;margin:0 1px;
@@ -596,9 +598,11 @@ line-height:1.25}
 .tslot.ghost{background:none;color:#9aa0a6;border-bottom:3px dashed #c9ccd0;font-weight:500}
 h1 .tand{font-weight:500;color:var(--ink2)}
 .tedit{position:relative;display:inline-block}
-.tedit input{font:inherit;font-size:.72em;font-weight:600;width:280px;padding:2px 10px;
-border:0;border-bottom:3px solid var(--acc);border-radius:10px 10px 0 0;background:#e8effc;
-color:var(--ink);outline:none}
+/* the input takes EXACTLY the width of the button it replaces (set inline by
+   openSlot), so opening an editor moves nothing around it */
+.tedit input{font:inherit;font-size:inherit;font-weight:600;padding:0 8px;margin:0 1px;
+border:0;border-bottom:3px solid var(--acc);border-radius:10px;background:#e8effc;
+color:var(--ink);outline:none;box-sizing:border-box}
 .tdd{position:absolute;left:0;top:100%;z-index:40;background:var(--card);text-align:left;
 border:1px solid var(--ring);border-radius:0 12px 12px 12px;box-shadow:0 12px 34px rgba(0,0,0,.16);
 padding:6px;width:340px;max-height:320px;overflow:auto}
@@ -1663,8 +1667,10 @@ function applySlot(ax,id){
 function openSlot(btn,ax){
   if(tdd){ closeTdd(); btn=$('#ttl .tslot[data-ax="'+ax+'"]')||btn; }
   const all=slotCandidates(ax);
+  const w=btn.getBoundingClientRect().width;
   const wrap=document.createElement('span'); wrap.className='tedit';
-  wrap.innerHTML=`<input placeholder="type to filter…"><div class="tdd"></div>`;
+  wrap.innerHTML=`<input placeholder="${w<150?'…':'type to filter…'}"><div class="tdd"></div>`;
+  wrap.querySelector('input').style.width=w+'px';
   btn.replaceWith(wrap);
   tdd=wrap;
   const inp=wrap.querySelector('input'), dd=wrap.querySelector('.tdd');
@@ -1709,7 +1715,19 @@ function drawSentence(){
   });
   const tq=el.querySelector('[data-tq]'); if(tq)tq.onclick=()=>{st.q=[];$('#q').value='';render();};
   const tl=el.querySelector('[data-tl]'); if(tl)tl.onclick=()=>{st.lim=null;$('#lq').value='';render();};
+  fitTitle();
 }
+// Shrink-to-fit instead of wrapping. scrollWidth/clientWidth gives the exact
+// overflow ratio, so one measurement suffices — no loop, no flicker.
+function fitTitle(){
+  const el=$('#ttl');
+  el.style.fontSize='';
+  const base=parseFloat(getComputedStyle(el).fontSize);
+  if(el.scrollWidth>el.clientWidth){
+    el.style.fontSize=Math.max(17,Math.floor(base*el.clientWidth/el.scrollWidth*10)/10-.3)+'px';
+  }
+}
+addEventListener('resize',fitTitle);
 // ---- V5: type the failure you care about ------------------------------------
 function limBase(){
   const keep=st.lim; st.lim=null;
