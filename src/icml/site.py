@@ -1766,7 +1766,7 @@ function render(){
   $('#rail').hidden=landing;
   document.querySelector('.wrap').classList.toggle('withrail',!landing);
   drawSentence();
-  document.querySelector('.search').hidden=landing;
+  document.querySelector('.searchrow').hidden=landing;
   document.querySelector('.sug').hidden=landing;
   if(landing){
     $('#meter').hidden=true; $('#legend').hidden=true; $('#results').innerHTML='';
