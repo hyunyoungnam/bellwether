@@ -958,6 +958,10 @@ border:1px solid var(--ring);background:var(--card);color:var(--ink2);display:fl
   border:1px solid var(--ring);background:var(--card);color:var(--ink2)}
 .scchip b{font-weight:600;color:var(--mut);margin-left:3px}
 .scchip:hover{border-color:var(--acc);color:var(--acc)}
+.scsplit{font:inherit;font-size:11.5px;margin-top:11px;padding:5px 11px;border-radius:8px;
+border:1px solid var(--ring);background:var(--card);color:var(--ink2);cursor:pointer;width:100%}
+.scsplit:hover{color:var(--ink);border-color:var(--mut)}
+.scsplit.on{background:var(--ink);color:#fff;border-color:var(--ink)}
 /* what-moved entry view */
 .chgbox{background:var(--card);border-radius:12px;padding:16px 18px;margin-top:14px}
 .chghd{font-size:15px;font-weight:660;display:flex;align-items:center;gap:10px}
@@ -1009,26 +1013,8 @@ background:none;cursor:pointer;color:var(--ink2)}
 </div>
 </div>
 
-<div class="sug">
-  <div class="sughd">Topic <em>what the paper is about</em> <span id="tophint"></span></div>
-  <div class="fams" id="topfams"></div>
-  <div class="famopen" id="topopen"></div>
-  <div class="sughd">Method <em>what it builds on</em> <span id="mhint"></span></div>
-  <div class="fams" id="mfams"></div>
-  <div class="famopen" id="mopen"></div>
-  <div class="sughd">Benchmarks <em>where it was tested</em> <span id="dshint"></span></div>
-  <div class="chipwrap">
-    <div class="dslist clip" id="dslist"></div>
-    <button class="chiptog" id="dstog" hidden></button>
-  </div>
-</div>
 
 <div class="xref" id="xref" hidden></div>
-<div class="meter" id="meter">
-  <div class="mrow"><span id="count"></span><span id="ctx"></span>
-    <button id="grptog" class="simbtn" style="margin-left:auto">Split into subgroups</button></div>
-  <div class="mtrack"><i id="mfill"></i></div>
-</div>
 <div class="legend" id="legend">
   <span class="sw"><span class="hl why">why it was needed</span></span>
   <span class="sw"><span class="hl new">what is new</span></span>
@@ -1126,10 +1112,6 @@ function papersWithWord(w){
 // Papers are shown only once the reader has asked for some. Listing all 6,637 on
 // arrival is the problem this product exists to remove, not a neutral default.
 const MAX_SHOWN=80, NEIGHBOURS_SHOWN=5;
-// Declared here, not beside clipRow: drawDatasets() runs during setup, before
-// that part of the script is reached, and a const in its temporal dead zone
-// throws rather than reading as undefined.
-const rowCount={}, openRow={}, openFam=new Set();
 const st={corp:null,q:[],topics:new Set(),fams:new Set(),sel:null,panel:null,ds:null,meth:null,mfam:null,grouped:false,lim:null};
 // A conference pick alone is NOT a selection. Picking "ICML 2026" leaves 6,637
 // papers, which is the problem this product exists to remove — the reader still
@@ -1787,9 +1769,8 @@ function render(){
   document.querySelector('.wrap').classList.toggle('withrail',!landing);
   drawSentence();
   document.querySelector('.searchrow').hidden=landing;
-  document.querySelector('.sug').hidden=landing;
   if(landing){
-    $('#meter').hidden=true; $('#legend').hidden=true; $('#results').innerHTML='';
+    $('#legend').hidden=true; $('#results').innerHTML='';
     $('#landing').innerHTML=landingHTML();
     wireLanding();
     return;
@@ -1812,21 +1793,18 @@ function render(){
     if(+el.dataset.rv!==st.corp)go(+el.dataset.rv); });
   const on=chosen();
   drawXref();
-  $('#meter').hidden=!on;
-  const gt=$('#grptog'); if(gt){ gt.textContent=st.grouped?'Show papers':'Split into subgroups';
-    gt.classList.toggle('on',st.grouped); }
   $('#legend').hidden=!on;
   if(!on){
-    $('#results').innerHTML=`<div class="start">Pick a topic or a benchmark above, or search.`+
+    $('#results').innerHTML=`<div class="start">Fill a blank in the title, or search.`+
       `<span>Nothing is listed until you do — ${CY[st.corp].n.toLocaleString()} papers is the problem, not the answer.</span></div>`;
     const rt=$('#rtr'); if(rt){ rt.innerHTML=railTrend();
       rt.querySelectorAll('[data-tid]').forEach(el=>el.onclick=()=>{
         applyChgRow('t',+el.dataset.tid); render();}); }
-    drawTopics(); drawMethods(); drawDatasets(); fitChips();
     return;
   }
   const res=results();
   { const rt=$('#rtr'); if(rt){ rt.innerHTML=railSetCard(res);
+      const g2=rt.querySelector('#grptog2'); if(g2)g2.onclick=()=>{st.grouped=!st.grouped;render();};
       rt.querySelectorAll('[data-ck]').forEach(el=>el.onclick=()=>{
         const id=+el.dataset.cid;
         if(el.dataset.ck==='d')st.ds=st.ds===id?null:id; else st.meth=st.meth===id?null:id;
@@ -1847,38 +1825,7 @@ function render(){
         `<span>found through the paper embeddings, not the text — read them as suggestions</span></div>`
         +extraShown.map(card).join('') : ''))
     ||'<div class="empty">No papers match all of these. Remove one.</div>';
-  // Denominator is the chosen conference, never the whole payload: the reader
-  // entered one proceedings, and "of 9,976" answers a question nobody asked.
-  const tot=st.corp!==null?CY[st.corp].n:P.length;
-  const pct=tot?100*res.length/tot:0;
-  const all=res.length===tot;
-  const VL=st.corp!==null?`${CY[st.corp].v} ${CY[st.corp].y}`:'all';
-  // Orals are not a filter — the tier shows as a badge, the set is already
-  // ordered orals first, and this line says how many the selection holds.
-  let nOral=0,nSpot=0;
-  for(const i of res){ if(P[i].o===1)nOral++; else if(P[i].o===2)nSpot++; }
-  const tiers=(nOral||nSpot)?` <span class="of">·${nOral?` ${nOral} oral${nOral>1?'s':''}`:''}`+
-    `${nSpot?` ${nOral?'and ':''}${nSpot} spotlight${nSpot>1?'s':''}`:''}, listed first</span>`:'';
-  $('#count').innerHTML=all
-    ? `<b>${tot.toLocaleString()}</b> <span class="of">papers — all of ${esc(VL)}</span>`
-    : `<b>${res.length.toLocaleString()}</b> <span class="of">of ${tot.toLocaleString()} ${esc(VL)} papers</span>`
-      +` <span class="pct">${pct<0.1&&res.length?'<0.1':pct.toFixed(1)}%</span>`+tiers;
-  $('#mfill').style.width=(res.length?Math.max(pct,0.35):0)+'%';
-  $('#meter').querySelector('.mtrack').classList.toggle('full',all);
   if(st.grouped){ renderGrouped(res); return; }
-  // Say what is currently narrowing the set — with two kinds of chip active at
-  // once, "11 papers" on its own does not explain itself.
-  {
-    const parts=[];
-    if(st.fams.size)parts.push([...st.fams].map(k=>k.split('|')[1]).join(' or '));
-    if(st.topics.size)parts.push([...st.topics].map(t=>T[t].l).join(' or '));
-    if(st.lim!==null)parts.push(`prior work struggling with “${st.lim}”`);
-    if(st.meth!==null)parts.push('built on '+MV[st.meth]);
-    else if(st.mfam!==null)parts.push('built on '+MF[st.mfam]);
-    if(st.ds!==null)parts.push('using '+dname(st.ds));
-    if(st.q.length)parts.push('matching “'+st.q.join(' ')+'”');
-    $('#ctx').textContent=parts.join(' · ');
-  }
   $('#results').querySelectorAll('[data-mail]').forEach(el=>el.onclick=async ev=>{
     ev.stopPropagation();
     const addr=el.dataset.mail, was=el.textContent;
@@ -1890,7 +1837,6 @@ function render(){
   $('#results').querySelectorAll('[data-sim]').forEach(el=>el.onclick=ev=>{
     ev.stopPropagation();
     openPanel(+el.dataset.sim);});
-  drawTopics(); drawMethods(); drawDatasets(); fitChips();
 }
 
 // The count shown is the count returned, within whatever else is chosen.
@@ -1903,24 +1849,7 @@ const FAMKEY=T.map(t=>(t.f===1?'#domfams|':'#topfams|')+(t.F||'Other'));
 // Clip a chip strip at a whole row. Chips wrap, so the cut point depends on
 // viewport width and font metrics — measure it rather than guess a pixel height.
 const CHIP_ROWS=2;
-function clipRow(boxSel,togSel,noun){
-  const box=$(boxSel), tog=$(togSel);
-  if(!box||!tog)return;
-  const total=rowCount[boxSel]??0;
-  box.classList.remove('clip'); box.style.maxHeight='';
-  const items=[...box.children];
-  if(!items.length){tog.hidden=true;return;}
-  const tops=[...new Set(items.map(el=>el.offsetTop))].sort((a,b)=>a-b);
-  if(tops.length<=CHIP_ROWS){tog.hidden=true;return;}
-  tog.hidden=false;
-  tog.textContent=openRow[boxSel]?`Show fewer ${noun}`:`Show all ${total} ${noun}`;
-  if(openRow[boxSel])return;
-  box.style.maxHeight=(tops[CHIP_ROWS-1]-tops[0]+items[0].offsetHeight)+'px';
-  box.classList.add('clip');
-}
-function fitChips(){
-  clipRow('#dslist','#dstog','benchmarks');
-}
+
 
 function countInto(base){
   const n=new Array(T.length).fill(0);
@@ -1928,114 +1857,10 @@ function countInto(base){
   return n;
 }
 
-function drawTopics(){
-  // Two facets, because that is the only first level this data supports —
-  // see declared_split() in taxonomy.py for the three groupings that failed.
-  drawFacet('#chips','#chiptog','#tophint',i=>T[i].f!==1,n,'topics');
-  drawDomains(n);
-}
 
-// Domains are shown by family. The families are curated, not derived — the topic
-// centroids all sit within 0.85-0.92 cosine of each other, so the embeddings have
-// no resolving power at this level and pretending otherwise would be a fiction.
-// Both facets render the same way: a single flowing row of family chips, and the
-// members of whichever families are open underneath. Collapsing them into a
-// vertical stack saved nothing — five stacked rows occupy the same screen as five
-// rows of chips. Flowing them horizontally is what actually shrinks the picker.
-function drawFamilies(famSel,openSel,hintSel,pick,n,noun,base){
-  const rows=T.map((t,i)=>[i,n[i]])
-              .filter(([i,c])=>pick(i)&&!T[i].j&&(c>0||st.topics.has(i)));
-  const fams=new Map();
-  for(const [i,c] of rows){ const f=T[i].F||'Other';
-    if(!fams.has(f))fams.set(f,[]); fams.get(f).push([i,c]); }
-  const order=[...fams.entries()].sort((a,b)=>
-    b[1].reduce((s,x)=>s+x[1],0)-a[1].reduce((s,x)=>s+x[1],0));
-
-  $(famSel).innerHTML=order.map(([f,list])=>{
-    const key=famSel+'|'+f, on=openFam.has(key), sel=st.fams.has(key);
-    const picked=list.filter(([i])=>st.topics.has(i)).length;
-    // PAPERS, not labels — and only those still in play, or the family chip
-    // would claim more than the share bar under it can show.
-    const seen=new Set();
-    for(const [i] of list) for(const j of TOPIC_PAPERS[i]) if(base.has(j)) seen.add(j);
-    return `<button class="famchip ${on?'open':''} ${sel?'sel':''} ${picked?'haspick':''}" `+
-      `data-fam="${esc(key)}" title="${list.length} topics">`+
-      `<span class="car">${on?'▾':'▸'}</span>${esc(f)}`+
-      `<span class="n">${seen.size.toLocaleString()}</span>`+
-      `${picked?`<span class="pk">${picked} picked</span>`:''}</button>`;
-  }).join('')||`<span style="color:var(--mut);font-size:12px">none apply to these papers</span>`;
-
-  $(openSel).innerHTML=order.filter(([f])=>openFam.has(famSel+'|'+f)).map(([f,list])=>{
-    list.sort((a,b)=>b[1]-a[1]);
-    return `<div class="famopenrow"><div class="famname">${esc(f)}</div><div class="famchips">`+
-      list.map(([i,c])=>`<span class="chip ${st.topics.has(i)?'on':''}" data-t="${i}">`+
-        `${T[i].u!=null?'<span class="kid">↳</span>':''}${esc(T[i].l)}`+
-        `<span class="n">${c}</span></span>`).join('')+`</div></div>`;
-  }).join('');
-
-  const total=T.filter((t,i)=>pick(i)&&!t.j).length;
-  const cv=D.coverage, isDom=noun==='domains';
-  let reach=0,tot=0;
-  for(let i=0;i<P.length;i++){ if(st.corp!==null&&P[i].cy!==st.corp)continue; tot++;
-    for(const [ti] of P[i].g) if((T[ti].f===1)===isDom){reach++;break;} }
-  $(hintSel).innerHTML=(rows.length<total
-      ? `${rows.length} of ${total} ${noun} apply here`
-      : `${total} ${noun} in ${order.length} groups`)
-    +` · <span class="reach">covers ${reach.toLocaleString()} of ${tot.toLocaleString()} papers`
-    +(isDom?`, because only ${cv.named_domain.toLocaleString()} name a domain at all — `
-           +`the rest is method work with no application area`:'')+`</span>`;
-
-  for(const sel of [famSel,openSel]){
-    $(sel).querySelectorAll('[data-fam]').forEach(el=>el.onclick=()=>{
-      // one click does both: pick the family AND open it, so the share bar moves
-      // and the way to narrow further is already on screen.
-      const k=el.dataset.fam;
-      if(st.fams.has(k)){
-        st.fams.delete(k); openFam.delete(k);
-        // and everything picked under it — a family that is off must not keep
-        // filtering (and colouring) through the topics it opened
-        for(let i=0;i<T.length;i++) if(FAMKEY[i]===k) st.topics.delete(i);
-      }
-      else { st.fams.add(k); openFam.add(k); }
-      render();});
-    $(sel).querySelectorAll('.chip').forEach(el=>el.onclick=()=>{
-      const t=+el.dataset.t; st.topics.has(t)?st.topics.delete(t):st.topics.add(t); render();});
-  }
-}
-
-function countInto(base){
-  const n=new Array(T.length).fill(0);
-  for(const i of base) for(const t of TOPIC_OF[i]) n[t]++;
-  return n;
-}
-
-function drawTopics(){
-  // Domains were dropped on purpose: the core idea matters more than where it is
-  // applied, and only a third of papers name an application area at all. The
-  // facet is still computed in taxonomy.py, so bringing the row back is markup,
-  // not a re-derivation — and every domain word still works in the search box.
-  const base=baseSet('topics');
-  drawFamilies('#topfams','#topopen','#tophint',i=>T[i].f!==1,
-               countInto(base),'topics',base);
-}
-
-// ---- suggestion list: building blocks — what a paper stands on ----
+// vocabularies the chart, sentence slots and set card all draw from
 const MV=D.mvocab||[], MS=D.methods||[], MF=D.mfams||[];
-// ---- Since last year — the entry answer to "what is rising?" ---------------
-// Three measurable readings of that question, and nothing beyond them: which
-// fields take a larger share of the conference than last year, which barely
-// existed last year (marked "new" — a small delta can be the bigger signal),
-// and which take less. Everything is a counted share per 1,000 papers, from the
-// same abstract-pass extraction for both years (Guardrail 5); sizes differ 2×,
-// so only shares compare. The glyph is a dumbbell — last year's dot, this
-// year's dot, one scale — because a delta bar hides the base: +6 from 1.8 is a
-// 4× rise, +6 from 22 is a fifth. Two editions are a difference, not a trend
-// line, and no row is called hot or important (Guardrail 1) — the benchmark tab
-// is the closest thing to that claim we allow ourselves: where the field tests
-// is a commitment, not a word choice.
-// Each venue's latest edition vs its previous one. The pair is chosen per
-// venue — never across venues — and every number below is a share per 1,000
-// of its own edition, because edition sizes differ 2x.
+const DS=D.datasets, DSSET=new Set(DS.map(([d])=>d));
 function venuePairs(){
   const out=[];
   VENUES.forEach((ven,hue)=>{
@@ -2257,13 +2082,21 @@ function railSetCard(res){
     .map(([id,c])=>`<button class="scchip" data-ck="${kind}" data-cid="${id}">${esc(name(id))}<b>${c}</b></button>`).join('');
   const dch=chips(dk,'d',dname), mch=chips(mk,'m',i=>MV[i]);
   const nf=res.filter(i=>P[i].f).length;
+  // Orals are not a filter — the tier shows as a badge, the list is already
+  // ordered orals first, and this line says how many the selection holds.
+  let nOral=0,nSpot=0;
+  for(const i of res){ if(P[i].o===1)nOral++; else if(P[i].o===2)nSpot++; }
+  const tiers=(nOral||nSpot)
+    ?`<div class="scsub">${nOral?`${nOral} oral${nOral>1?'s':''}`:''}`+
+     `${nSpot?`${nOral?' · ':''}${nSpot} spotlight${nSpot>1?'s':''}`:''} — listed first</div>`:'';
   return `<div class="setcard"><div class="rh">This set</div>`+
-    `<div class="scn">${res.length.toLocaleString()}<small>papers</small></div>`+
+    `<div class="scn">${res.length.toLocaleString()}<small>papers</small></div>`+tiers+
     `<div class="scyr">${yrows}</div>`+
     (sib.length>1?`<div class="scsub">the same pick, in each edition — share of that year</div>`:'')+
     (dch?`<div class="rh" style="margin-top:11px">Tested on <em>in this set</em></div><div class="scchips">${dch}</div>`:'')+
     (mch?`<div class="rh" style="margin-top:11px">Builds on <em>in this set</em></div><div class="scchips">${mch}</div>`:'')+
     (nf?`<div class="scsub" style="margin-top:9px">${nf} of ${res.length} cards use full text</div>`:'')+
+    `<button class="scsplit ${st.grouped?'on':''}" id="grptog2">${st.grouped?'Show papers':'Split into subgroups'}</button>`+
     `</div>`;
 }
 function wireChanged(){
@@ -2294,99 +2127,11 @@ function renderGrouped(res){
     $(`.p[data-i="${st.sel}"]`)?.scrollIntoView({block:'center'});});
 }
 
-function drawMethods(){
-  const base=baseSet('meth');
-  const cnt=new Map();
-  for(const i of base) for(const m of new Set(P[i].mu||[])) cnt.set(m,(cnt.get(m)||0)+1);
-  // a child rolls its papers up to its parent, so picking "attention" does not
-  // silently exclude the six kinds of attention that were named separately
-  const kidsOf=new Map(), meta=new Map();
-  for(const [id,n,f,par] of MS){ meta.set(id,{n,f,par});
-    if(par!=null){ if(!kidsOf.has(par))kidsOf.set(par,[]); kidsOf.get(par).push(id);} }
-  const papersOf=id=>{
-    const s=new Set(); const add=x=>{ for(let i=0;i<P.length;i++) if((P[i].mu||[]).includes(x)&&base.has(i)) s.add(i); };
-    add(id); for(const k of (kidsOf.get(id)||[])) add(k); return s;
-  };
-  const fams=new Map();
-  for(const [id,n,f,par] of MS){
-    if(par!=null)continue;
-    const c=cnt.get(id)||0;
-    let tot=c; for(const k of (kidsOf.get(id)||[])) tot+=cnt.get(k)||0;
-    if(!tot&&st.meth!==id)continue;
-    if(!fams.has(f))fams.set(f,[]); fams.get(f).push([id,tot]);
-  }
-  const order=[...fams.entries()].sort((a,b)=>{
-    const oa=MF[a[0]]==='Other', ob=MF[b[0]]==='Other';
-    if(oa!==ob)return oa?1:-1;
-    return b[1].reduce((s,x)=>s+x[1],0)-a[1].reduce((s,x)=>s+x[1],0);});
-
-  $('#mfams').innerHTML=order.map(([f,list])=>{
-    const key='#mfams|'+MF[f], on=openFam.has(key), sel=st.mfam===f;
-    const seen=new Set(); for(const [id] of list) for(const i of papersOf(id)) seen.add(i);
-    return `<button class="famchip ${on?'open':''} ${sel?'sel':''}" data-mfam="${f}" `+
-      `title="${list.length} methods">`+
-      `<span class="car">${on?'▾':'▸'}</span>${esc(MF[f])}`+
-      `<span class="n">${seen.size.toLocaleString()}</span></button>`;
-  }).join('')||'<span style="color:var(--mut);font-size:12px">no method is shared by these papers</span>';
-
-  $('#mopen').innerHTML=order.filter(([f])=>openFam.has('#mfams|'+MF[f])).map(([f,list])=>{
-    list.sort((a,b)=>b[1]-a[1]);
-    return `<div class="famopenrow"><div class="famname">${esc(MF[f])}</div><div class="famchips">`+
-      list.slice(0,60).map(([id,c])=>{
-        const k=kidsOf.get(id)||[];
-        return `<span class="chip ${st.meth===id?'on':''}" data-m="${id}">${esc(MV[id])}`+
-          `${k.length?`<span class="kn">+${k.length}</span>`:''}<span class="n">${c}</span></span>`;
-      }).join('')+`</div></div>`;
-  }).join('');
-
-  $('#mhint').innerHTML=`${MS.length} used by 3+ papers in ${order.length} groups`
-    +(()=>{let r=0,t=0;for(let i=0;i<P.length;i++){if(st.corp!==null&&P[i].cy!==st.corp)continue;t++;
-      if((P[i].mu||[]).length)r++;}
-      return ` · <span class="reach">covers ${r.toLocaleString()} of ${t.toLocaleString()} papers</span>`;})();
-  for(const sel of ['#mfams','#mopen']){
-    $(sel).querySelectorAll('[data-mfam]').forEach(el=>el.onclick=()=>{
-      const f=+el.dataset.mfam, key='#mfams|'+MF[f];
-      if(st.mfam===f){ st.mfam=null; openFam.delete(key); }
-      else { st.mfam=f; openFam.add(key); st.meth=null; }
-      render();});
-    $(sel).querySelectorAll('.chip').forEach(el=>el.onclick=()=>{
-      const m=+el.dataset.m; st.meth=st.meth===m?null:m; st.mfam=null; render();});
-  }
-}
-
-// ---- suggestion list: benchmarks, the highest-trust anchor in the corpus ----
-const DS=D.datasets, DSSET=new Set(DS.map(([d])=>d));
-function drawDatasets(){
-  const base=baseSet('ds');
-  const narrowed=base.size<P.length;
-  const cnt=new Map();
-  if(narrowed) for(const i of base) for(const d of new Set(P[i].k)) cnt.set(d,(cnt.get(d)||0)+1);
-  const rows=(narrowed
-    ? [...cnt].filter(([d,c])=>c>=2&&DSSET.has(d)).sort((a,b)=>b[1]-a[1])
-    : DS).slice(0,160);
-  if(narrowed&&st.ds!==null&&!rows.some(([d])=>d===st.ds))
-    rows.unshift([st.ds,cnt.get(st.ds)||0]);
-  rowCount['#dslist']=rows.length;
-  $('#dslist').innerHTML=rows.map(([di,c])=>
-    `<span class="ds ${st.ds===di?'on':''}" data-d="${di}">${esc(dname(di))}<span class="n">${c}</span></span>`).join('')
-    ||'<span style="color:var(--mut);font-size:12px">No benchmark is shared by two or more of these papers.</span>';
-  $('#dslist').querySelectorAll('.ds').forEach(el=>el.onclick=()=>{
-    const d=+el.dataset.d; st.ds=st.ds===d?null:d; render();});
-  $('#dshint').textContent=narrowed
-    ? `${rows.length} used by 2+ of the papers now selected, of ${DS.length}`
-    : `${DS.length} used by 3+ papers · ${D.n_datasets_real.toLocaleString()} named in all`;
-  fitChips();
-}
-drawDatasets();
-drawMethods();
 
 $('#q').addEventListener('input',e=>{
   st.q=e.target.value.toLowerCase().split(/\s+/).filter(Boolean);
   render();});
 $('#pclose').onclick=closePanel;
-$('#grptog').onclick=()=>{st.grouped=!st.grouped;render();};
-$('#dstog').onclick=()=>{openRow['#dslist']=!openRow['#dslist'];render();};
-addEventListener('resize',fitChips);
 
 const c=D.coverage;
 // The coverage caveats are no longer a paragraph at the foot of the page. Each
@@ -2397,7 +2142,7 @@ const c=D.coverage;
 
 st.corp=corpFromHash();
 render();
-fitChips();
+
 </script></body></html>"""
 
 
