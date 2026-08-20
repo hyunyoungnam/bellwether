@@ -227,7 +227,7 @@ class Vocab:
         return i
 
 
-def build_term_index(abstracts: list) -> dict:
+def build_term_index(abstracts: list, bigrams: bool = False) -> dict:
     """Salient abstract vocabulary per paper, interned.
 
     Terms too rare to link two papers, or too common to separate them, are cut —
@@ -235,11 +235,17 @@ def build_term_index(abstracts: list) -> dict:
     """
     docs, df = [], Counter()
     for text in abstracts:
-        t = {w for w in _WORD.findall((text or "").lower()) if w not in SEARCH_STOP}
+        ws = [w for w in _WORD.findall((text or "").lower())]
+        t = {w for w in ws if w not in SEARCH_STOP}
+        if bigrams:
+            t |= {f"{a} {b}" for a, b in zip(ws, ws[1:])
+                  if a not in SEARCH_STOP and b not in SEARCH_STOP}
         docs.append(t)
         df.update(t)
     n = max(len(docs), 1)
-    keep = {w for w, c in df.items() if TERM_DF_MIN <= c < TERM_DF_MAX * n}
+    # a bigram must be commoner to earn a slot — df>=2 lets in one-off phrasing
+    keep = {w for w, c in df.items()
+            if (TERM_DF_MIN if " " not in w else 5) <= c < TERM_DF_MAX * n}
     vocab = sorted(keep)
     ix = {w: i for i, w in enumerate(vocab)}
     return {"v": vocab, "p": [sorted(ix[w] for w in d if w in keep) for d in docs]}
@@ -449,6 +455,15 @@ def build_payload(span_source: str) -> dict:
     # when the key changed from event_id to gid and every lookup silently missed.
     terms = build_term_index([p.get("abstract") for p in order])
 
+    # "Who fights my problem" (V5): the same interning trick, but over the
+    # papers' own limitation sentences — so a reader can enter by the failure
+    # they care about, not the area it sits in. Unigrams plus the bigrams
+    # frequent enough to be a name ("catastrophic forgetting").
+    lim_texts = []
+    for r in rows:
+        lim_texts.append(r["L"] or "")
+    lims = build_term_index(lim_texts, bigrams=True)
+
     # Datasets a reader can enter by. Placeholders ("three datasets") are counts
     # wearing a name and outrank every real dataset if left in.
     from .taxonomy import (is_placeholder, building_blocks, method_key,
@@ -497,6 +512,7 @@ def build_payload(span_source: str) -> dict:
         "papers": rows,
         "vocab": {"m": meth.items, "d": data.items, "t": task.items},
         "terms": terms,
+        "lims": lims,
         # PCA(128) int8 of the BGE-M3 vectors, 1.1 MB. Search is lexical and
         # always will be — a browser cannot embed a query — but these let a
         # lexical hit set reach the papers that mean the same thing without
@@ -569,9 +585,50 @@ body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.5 system-ui,-app
    controls above it left the content looking pushed to the right. */
 .wrap{max-width:980px;margin:0 auto;padding:18px 20px 60px}
 header{margin:14px 0 22px;text-align:center}
-h1{font-size:40px;margin:0;font-weight:700;letter-spacing:-.025em;line-height:1.15;cursor:pointer}
-@media(max-width:600px){h1{font-size:27px}}
-.search{display:flex;gap:8px;align-items:center;margin-bottom:10px}
+h1{font-size:40px;margin:0;font-weight:700;letter-spacing:-.025em;line-height:1.3}
+@media(max-width:600px){h1{font-size:26px}}
+/* The title IS the query: "What's new in [reasoning] for [healthcare]?" */
+#home{cursor:pointer}
+.tslot{display:inline-block;font:inherit;border:0;cursor:pointer;padding:0 8px;margin:0 1px;
+border-radius:10px;background:#e8effc;color:var(--acc);border-bottom:3px solid var(--acc);
+line-height:1.25}
+.tslot .x{margin-left:6px;font-weight:400;opacity:.5;font-size:.75em;vertical-align:2px}
+.tslot.ghost{background:none;color:#9aa0a6;border-bottom:3px dashed #c9ccd0;font-weight:500}
+h1 .tand{font-weight:500;color:var(--ink2)}
+.tedit{position:relative;display:inline-block}
+.tedit input{font:inherit;font-size:.72em;font-weight:600;width:280px;padding:2px 10px;
+border:0;border-bottom:3px solid var(--acc);border-radius:10px 10px 0 0;background:#e8effc;
+color:var(--ink);outline:none}
+.tdd{position:absolute;left:0;top:100%;z-index:40;background:var(--card);text-align:left;
+border:1px solid var(--ring);border-radius:0 12px 12px 12px;box-shadow:0 12px 34px rgba(0,0,0,.16);
+padding:6px;width:340px;max-height:320px;overflow:auto}
+.tdd button{display:flex;width:100%;justify-content:space-between;gap:12px;font:inherit;
+font-size:13.5px;font-weight:400;letter-spacing:0;padding:6px 10px;border:0;border-radius:8px;
+background:none;cursor:pointer;text-align:left;line-height:1.35}
+.tdd button:hover,.tdd button.hot{background:#e8effc}
+.tdd b{font-weight:500;color:var(--mut)}
+/* the tail: free words and the limitation filter, readable as part of the sentence */
+.ttail{font-size:.62em;font-weight:500;color:var(--ink2);display:block;margin-top:4px}
+.ttail .tslot{border-bottom-width:2px}
+.ttail .lim{background:#fbe9ef;color:#a84a68;border-bottom-color:#c76a86}
+.searchrow{display:flex;gap:8px;margin-bottom:10px}
+.search{display:flex;gap:8px;align-items:center;flex:1.6}
+@media(max-width:680px){.searchrow{flex-direction:column}}
+/* V5: enter by the failure you care about, in the papers' own words */
+.lsearch{position:relative;flex:1;display:flex}
+.lsearch input{flex:1;font:inherit;font-size:13.5px;padding:12px 13px;border-radius:10px;
+border:2px solid var(--ring);background:#fff;color:var(--ink);min-width:0}
+.lsearch input:focus{outline:none;border-color:#c76a86;box-shadow:0 0 0 4px rgba(199,106,134,.16)}
+.lsearch input::placeholder{color:#b0879a;font-style:italic}
+.lsug{position:absolute;left:0;right:0;top:calc(100% + 4px);z-index:30;background:var(--card);
+border:1px solid var(--ring);border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.14);
+padding:6px;max-height:300px;overflow:auto}
+.lsug button{display:flex;width:100%;justify-content:space-between;font:inherit;font-size:13px;
+padding:6px 10px;border:0;border-radius:8px;background:none;cursor:pointer;text-align:left}
+.lsug button:hover{background:#fdf0f4}
+.lsug b{font-weight:500;color:var(--mut)}
+.limhit{background:#f4a8bd;border-radius:2px;padding:0 1px;text-decoration:none;font-style:normal}
+
 /* With no placeholder the box has to say "search" by itself: a magnifier and a
    border in the accent colour. Paler tints were measured and rejected — only the
    full accent clears 3:1 against BOTH the page (#eceef0) and the white field, so
@@ -930,15 +987,22 @@ background:none;cursor:pointer;color:var(--ink2)}
 .famchip.sel .per{color:#fff}
 .pfoot{display:flex;align-items:center;gap:8px;margin-top:7px}
 </style></head><body><div class="wrap">
-<header><h1 id="home">What's new in AI research</h1></header>
+<header><h1 id="ttl">What's new in AI research</h1></header>
 
 <div id="landing" hidden></div>
 <nav id="rail" hidden></nav>
 
 <div id="main">
 
+<div class="searchrow">
 <div class="search">
   <input type="search" id="q" aria-label="Search every abstract">
+</div>
+<div class="lsearch">
+  <input id="lq" autocomplete="off" spellcheck="false"
+         placeholder="prior work struggles with…" aria-label="Search the papers' own limitation sentences">
+  <div class="lsug" id="lsug" hidden></div>
+</div>
 </div>
 
 <div class="sug">
@@ -1019,6 +1083,24 @@ const hasVec=g=>EMB&&g<EMB.n;
 
 // ---- abstract term index: search now sees all 6,637 abstracts, not 20% ----
 const TV=D.terms.v, TP=D.terms.p;
+// V5 — the same interning, but over each paper's LIMITATION sentence, so a
+// reader can enter by the failure they care about ("who fights my problem?").
+const LV=D.lims.v, LP=D.lims.p;
+const LPOST=new Map();
+LP.forEach((ids,i)=>{for(const t of ids){let a=LPOST.get(t);if(!a)LPOST.set(t,a=[]);a.push(i);}});
+// st.lim is a STRING matched as a substring of the interned limitation terms,
+// so "hallucinat" covers hallucination / hallucinations / hallucinated at once —
+// the concept, not one inflection of it.
+let LSET=null, LSETID=null;
+function limSet(){
+  if(LSETID===st.lim)return LSET;
+  LSETID=st.lim;
+  if(st.lim===null){LSET=null;return LSET;}
+  LSET=new Set();
+  for(let t=0;t<LV.length;t++)
+    if(LV[t].includes(st.lim)) for(const i of LPOST.get(t)||[])LSET.add(i);
+  return LSET;
+}
 const POST=new Map();                       // term id -> paper indices
 TP.forEach((ids,i)=>{for(const t of ids){let a=POST.get(t);if(!a)POST.set(t,a=[]);a.push(i);}});
 
@@ -1044,11 +1126,11 @@ const MAX_SHOWN=80, NEIGHBOURS_SHOWN=5;
 // that part of the script is reached, and a const in its temporal dead zone
 // throws rather than reading as undefined.
 const rowCount={}, openRow={}, openFam=new Set();
-const st={corp:null,q:[],topics:new Set(),fams:new Set(),sel:null,panel:null,ds:null,meth:null,mfam:null,grouped:false};
+const st={corp:null,q:[],topics:new Set(),fams:new Set(),sel:null,panel:null,ds:null,meth:null,mfam:null,grouped:false,lim:null};
 // A conference pick alone is NOT a selection. Picking "ICML 2026" leaves 6,637
 // papers, which is the problem this product exists to remove — the reader still
 // has to say what their field is.
-const chosen=()=>st.q.length||st.topics.size||st.fams.size||st.ds!==null||st.meth!==null||st.mfam!==null;
+const chosen=()=>st.q.length||st.topics.size||st.fams.size||st.ds!==null||st.meth!==null||st.mfam!==null||st.lim!==null;
 
 // How strongly each literal hit matches — used to pick seeds, so the centroid is
 // built from the papers the query is actually about, not the weakest 700.
@@ -1115,6 +1197,7 @@ function baseSet(skip){
     if(skip!=='meth'&&!methPass(p))continue;
     if(skip!=='topics'&&!facetPass(p,false))continue;
     if(skip!=='domains'&&!facetPass(p,true))continue;
+    if(st.lim!==null&&!limSet().has(i))continue;
     if(hits&&!hits.has(i))continue;
     out.add(i);
   }
@@ -1168,6 +1251,7 @@ function match(i,hits,corp){
   // healthcare, not everything that is either. Anything else makes the two rows
   // fight each other.
   if(!facetPass(p,false)||!facetPass(p,true))return false;
+  if(st.lim!==null&&!limSet().has(i))return false;
   if(hits&&!hits.has(i))return false;
   return true;
 }
@@ -1251,7 +1335,7 @@ function card(i){
   // in the order a reader needs them, and the colour says which question each
   // answers: why it was needed, what is new, what it achieved.
   const parts=[];
-  if(p.L)parts.push(`<span class="hl why">${annotate(p.L,p,true)}</span>`);
+  if(p.L)parts.push(`<span class="hl why">${markLim(annotate(p.L,p,true))}</span>`);
   const change=p.K||p.n[0]||'';
   if(change)parts.push(`<span class="hl new">${annotate(change,p,true)}</span>`);
   if(p.R)parts.push(`<span class="hl eff">${annotate(p.R,p,true)}</span>`);
@@ -1496,10 +1580,184 @@ function go(j){
   render(); window.scrollTo({top:0});
 }
 window.addEventListener('popstate',()=>{ st.corp=corpFromHash(); st.sel=null; render(); });
-$('#home').onclick=()=>{ if(st.corp!==null)go(null); };
+
 function wireLanding(){
   document.querySelectorAll('[data-corp]').forEach(el=>el.onclick=()=>go(+el.dataset.corp));
   wireChanged();
+}
+
+// ---- V1: the title is the query --------------------------------------------
+// "What's new in [reasoning] for [healthcare] with [LLMs] on [GSM8K]?"
+// Slots map 1:1 onto existing state, so the category menus below and the
+// sentence are two views of one selection, and the sentence doubles as the
+// always-current answer to "what am I looking at?".
+// lazy: MS/MV are declared further down the script, and this block's
+// top level runs first — touching them here would be a TDZ crash
+let MTOP=null;
+const mtop=id=>{ if(!MTOP){MTOP=new Map(); for(const [x,,,pa] of MS)MTOP.set(x,pa==null?x:pa);} return MTOP.get(id)??id; };
+let tdd=null;
+function closeTdd(){ if(tdd){tdd.remove();tdd=null;} }
+document.addEventListener('click',e=>{ if(tdd&&!tdd.contains(e.target))closeTdd(); });
+
+function slotState(){
+  const kt=[...st.topics].filter(ti=>T[ti].f!==1), dt=[...st.topics].filter(ti=>T[ti].f===1);
+  const kf=[...st.fams].filter(k=>k.startsWith('#topfams|')), df=[...st.fams].filter(k=>k.startsWith('#domfams|'));
+  const lab=(picks,fams)=>{
+    if(picks.length)return T[picks[0]].l+(picks.length+fams.length>1?` +${picks.length+fams.length-1}`:'');
+    if(fams.length)return fams[0].split('|')[1]+(fams.length>1?` +${fams.length-1}`:'');
+    return null;
+  };
+  return {
+    k:lab(kt,kf),
+    d:lab(dt,df),
+    u:st.meth!==null?MV[st.meth]:(st.mfam!==null?MF[st.mfam]:null),
+    b:st.ds!==null?dname(st.ds):null,
+  };
+}
+function clearSlot(ax){
+  if(ax==='k'){ for(const ti of [...st.topics]) if(T[ti].f!==1)st.topics.delete(ti);
+                for(const k of [...st.fams]) if(k.startsWith('#topfams|'))st.fams.delete(k); }
+  if(ax==='d'){ for(const ti of [...st.topics]) if(T[ti].f===1)st.topics.delete(ti);
+                for(const k of [...st.fams]) if(k.startsWith('#domfams|'))st.fams.delete(k); }
+  if(ax==='u'){ st.meth=null; st.mfam=null; }
+  if(ax==='b')st.ds=null;
+}
+function slotCandidates(ax){
+  const out=[];
+  if(ax==='k'||ax==='d'){
+    const want=ax==='d';
+    const base=baseSet(want?'domains':'topics');
+    const cnt=new Map();
+    for(const i of base){ const seen=new Set();
+      for(const [ti] of P[i].g){
+        if(seen.has(ti)||T[ti].j||((T[ti].f===1)!==want))continue;
+        seen.add(ti); cnt.set(ti,(cnt.get(ti)||0)+1); } }
+    for(const [ti,c] of cnt)out.push([ti,T[ti].l,c]);
+  }else if(ax==='u'){
+    const base=baseSet('meth');
+    const cnt=new Map();
+    for(const i of base){ const seen=new Set();
+      for(const m of (P[i].mu||[])){ const t=mtop(m);
+        if(seen.has(t))continue; seen.add(t); cnt.set(t,(cnt.get(t)||0)+1); } }
+    for(const [id,c] of cnt)out.push([id,MV[id],c]);
+  }else{
+    const base=baseSet('ds');
+    const cnt=new Map();
+    for(const i of base) for(const di of new Set(P[i].k)){
+      if(!DSSET.has(di))continue; cnt.set(di,(cnt.get(di)||0)+1); }
+    for(const [di,c] of cnt)out.push([di,dname(di),c]);
+  }
+  return out.sort((x,y)=>y[2]-x[2]);
+}
+function applySlot(ax,id){
+  clearSlot(ax);
+  if(ax==='k'||ax==='d')st.topics.add(id);
+  else if(ax==='u')st.meth=id;
+  else st.ds=id;
+  st.sel=null; st.grouped=false;
+  if(st.corp===null){ go(CY.length-1); return; }
+  render();
+}
+function openSlot(btn,ax){
+  closeTdd();
+  const all=slotCandidates(ax);
+  const wrap=document.createElement('span'); wrap.className='tedit';
+  wrap.innerHTML=`<input placeholder="type to filter…"><div class="tdd"></div>`;
+  btn.replaceWith(wrap);
+  tdd=wrap;
+  const inp=wrap.querySelector('input'), dd=wrap.querySelector('.tdd');
+  const paint=q=>{
+    const rows=all.filter(([,l])=>!q||l.toLowerCase().includes(q)).slice(0,30);
+    dd.innerHTML=rows.map(([id,l,c],ix)=>
+      `<button data-id="${id}" class="${ix===0?'hot':''}"><span>${esc(l)}</span><b>${c}</b></button>`)
+      .join('')||'<button disabled>no match here</button>';
+    dd.querySelectorAll('[data-id]').forEach(el=>el.onclick=()=>{closeTdd();applySlot(ax,+el.dataset.id);});
+  };
+  paint('');
+  inp.focus();
+  inp.oninput=()=>paint(inp.value.trim().toLowerCase());
+  inp.onkeydown=e=>{
+    if(e.key==='Enter'){const top=dd.querySelector('[data-id]'); if(top){closeTdd();applySlot(ax,+top.dataset.id);}}
+    if(e.key==='Escape'){closeTdd();drawSentence();}
+  };
+}
+function drawSentence(){
+  const V=slotState();
+  const any=V.k||V.d||V.u||V.b;
+  const seg=(ax,word,filled,ghost)=>filled
+    ?` <span class="tand">${word}</span> <button class="tslot" data-ax="${ax}">${esc(filled)}<span class="x">×</span></button>`
+    :` <span class="tand">${word}</span> <button class="tslot ghost" data-ax="${ax}">${ghost}</button>`;
+  let h=`<span id="home">What's new</span>`;
+  h+=V.k?seg('k','in',V.k):` <span class="tand">in</span> <button class="tslot ${any?'ghost':''}" data-ax="k">${any?'a topic':'AI research'}</button>`;
+  h+=seg('d','for',V.d,'a field');
+  h+=seg('u','with',V.u,'a method');
+  if(any||V.b)h+=seg('b','on',V.b,'a benchmark');
+  h+='<span class="tand">?</span>';
+  const tail=[];
+  if(st.q.length)tail.push(`<span class="tand">mentioning</span> <button class="tslot" data-tq>“${esc(st.q.join(' '))}”<span class="x">×</span></button>`);
+  if(st.lim!==null)tail.push(`<span class="tand">— prior work struggles with</span> <button class="tslot lim" data-tl>“${esc(st.lim)}”<span class="x">×</span></button>`);
+  if(tail.length)h+=`<span class="ttail">${tail.join(' ')}</span>`;
+  const el=$('#ttl'); el.innerHTML=h;
+  el.querySelector('#home').onclick=()=>{ if(st.corp!==null)go(null); };
+  el.querySelectorAll('.tslot[data-ax]').forEach(b=>b.onclick=e=>{
+    e.stopPropagation();
+    const ax=b.dataset.ax;
+    if(b.querySelector('.x')&&!b.classList.contains('ghost')){ clearSlot(ax); render(); return; }
+    openSlot(b,ax);
+  });
+  const tq=el.querySelector('[data-tq]'); if(tq)tq.onclick=()=>{st.q=[];$('#q').value='';render();};
+  const tl=el.querySelector('[data-tl]'); if(tl)tl.onclick=()=>{st.lim=null;$('#lq').value='';render();};
+}
+// ---- V5: type the failure you care about ------------------------------------
+function limBase(){
+  const keep=st.lim; st.lim=null;
+  const hits=queryHits(); const out=new Set();
+  for(let i=0;i<P.length;i++) if(match(i,hits))out.add(i);
+  st.lim=keep;
+  return out;
+}
+$('#lq').addEventListener('input',()=>{
+  const q=$('#lq').value.trim().toLowerCase();
+  const box=$('#lsug');
+  if(q.length<2){ box.hidden=true; if(!q&&st.lim!==null){st.lim=null;render();} return; }
+  const base=limBase();
+  // every candidate is applied as a substring, so its count is the UNION of the
+  // matching terms — what you would actually get by picking it
+  const uc=str=>{
+    const got=new Set();
+    for(let t=0;t<LV.length;t++)
+      if(LV[t].includes(str)) for(const i of LPOST.get(t)||[]) if(base.has(i))got.add(i);
+    return got.size;
+  };
+  const seen=new Set([q]);
+  const cand=[[q,uc(q)]];
+  const scored=[];
+  for(let t=0;t<LV.length;t++) if(LV[t].includes(q)&&!seen.has(LV[t])){
+    let c=0; for(const i of LPOST.get(t)||[]) if(base.has(i))c++;
+    if(c)scored.push([LV[t],c]);
+  }
+  scored.sort((x,y)=>y[1]-x[1]);
+  for(const [str] of scored.slice(0,8)){ if(!seen.has(str)){seen.add(str);cand.push([str,uc(str)]);} }
+  const rows=cand.filter(([,c])=>c>0);
+  box.innerHTML=rows.map(([str,c])=>
+    `<button data-t="${esc(str)}"><span>${esc(str)}</span><b>${c}</b></button>`).join('')
+    ||'<button disabled>no paper names this failure</button>';
+  box.hidden=false;
+  box.querySelectorAll('[data-t]').forEach(el=>el.onclick=()=>{
+    st.lim=el.dataset.t; $('#lq').value=st.lim; box.hidden=true;
+    if(st.corp===null){ go(CY.length-1); return; }
+    render();});
+});
+$('#lq').addEventListener('keydown',e=>{
+  if(e.key==='Enter'){const top=$('#lsug').querySelector('[data-t]'); if(top)top.click();}
+  if(e.key==='Escape')$('#lsug').hidden=true;
+});
+document.addEventListener('click',e=>{ if(!e.target.closest('.lsearch'))$('#lsug').hidden=true; });
+function markLim(html){
+  if(st.lim===null)return html;
+  const t=st.lim.replace(/[.*+?^${}()|[\]\\]/g,'\\$&').replace(/\s+/g,'\\s+');
+  const rx=new RegExp('('+t+')','ig');
+  return html.split(/(<[^>]+>)/).map(seg=>seg.startsWith('<')?seg:seg.replace(rx,'<i class="limhit">$1</i>')).join('');
 }
 
 function render(){
@@ -1507,6 +1765,7 @@ function render(){
   $('#landing').hidden=!landing;
   $('#rail').hidden=landing;
   document.querySelector('.wrap').classList.toggle('withrail',!landing);
+  drawSentence();
   document.querySelector('.search').hidden=landing;
   document.querySelector('.sug').hidden=landing;
   if(landing){
@@ -1593,6 +1852,7 @@ function render(){
     const parts=[];
     if(st.fams.size)parts.push([...st.fams].map(k=>k.split('|')[1]).join(' or '));
     if(st.topics.size)parts.push([...st.topics].map(t=>T[t].l).join(' or '));
+    if(st.lim!==null)parts.push(`prior work struggling with “${st.lim}”`);
     if(st.meth!==null)parts.push('built on '+MV[st.meth]);
     else if(st.mfam!==null)parts.push('built on '+MF[st.mfam]);
     if(st.ds!==null)parts.push('using '+dname(st.ds));
@@ -1911,6 +2171,7 @@ function applyChgRow(k,id){
   st.q=[]; const q=$('#q'); if(q)q.value='';
   st.sel=null; st.grouped=false;
   st.topics.clear(); st.fams.clear(); st.meth=null; st.mfam=null; st.ds=null;
+  st.lim=null; const lq=$('#lq'); if(lq)lq.value='';
   if(k==='t')st.topics.add(id); else if(k==='m')st.meth=id; else st.ds=id;
 }
 // The rail's before-a-pick view: this venue's own significant movers, the same

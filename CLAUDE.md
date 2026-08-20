@@ -675,6 +675,24 @@ Still weak:
   carry reading instructions. (The "Since last year" chart went slopegraph →
   paired bars for exactly this reason: a slopegraph needs to be explained, two
   bars of different length do not.)
+- **The title is the query (2026-08-20).** The H1 reads "What's new in
+  [topic] for [domain] with [method] on [benchmark]?" and the bracketed slots
+  ARE the filter state: click to edit with a type-to-filter dropdown whose
+  candidates and counts are conditioned on the other slots (so a reachable
+  0-result combination cannot be picked from a menu), × to clear. The slots map
+  1:1 onto the same state the category menus set — the sentence and the menus
+  are two views of one selection, and the sentence doubles as the always-true
+  answer to "what am I looking at?". Free-text search words and the limitation
+  filter render into the sentence as a tail, same contract. Slots picked on the
+  landing route into the newest corpus.
+- **"Who fights my problem" is an entry path (2026-08-20).** A second input
+  searches ONLY the extracted limitation sentences (89% of papers state one; a
+  salient-term index of unigrams + df>=5 bigrams ships in the payload). The
+  chosen string matches as a substring of the interned terms, so "hallucinat"
+  is hallucination/-s/-ed at once; suggestions show the union count first and
+  the narrower inflections under it. Matches mark the phrase inside the card's
+  pink limitation span. This axis is orthogonal to every taxonomy — it groups
+  papers by the failure they attack, in their own words.
 - **The landing is conference-first (2026-08-19).** One card per venue, opening
   the newest year. An earlier year is never a browsing category — nobody goes
   back to browse 2025 — it exists as the baseline: it feeds the "Since last
