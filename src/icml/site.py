@@ -1596,7 +1596,9 @@ function wireLanding(){
 let MTOP=null;
 const mtop=id=>{ if(!MTOP){MTOP=new Map(); for(const [x,,,pa] of MS)MTOP.set(x,pa==null?x:pa);} return MTOP.get(id)??id; };
 let tdd=null;
-function closeTdd(){ if(tdd){tdd.remove();tdd=null;} }
+// The editor REPLACED the slot button, so closing must put the sentence back —
+// removing alone leaves a hole where the slot was (clicking away ate the slot).
+function closeTdd(redraw){ if(tdd){tdd.remove();tdd=null; if(redraw!==false)drawSentence();} }
 document.addEventListener('click',e=>{ if(tdd&&!tdd.contains(e.target))closeTdd(); });
 
 function slotState(){
@@ -1659,7 +1661,7 @@ function applySlot(ax,id){
   render();
 }
 function openSlot(btn,ax){
-  closeTdd();
+  if(tdd){ closeTdd(); btn=$('#ttl .tslot[data-ax="'+ax+'"]')||btn; }
   const all=slotCandidates(ax);
   const wrap=document.createElement('span'); wrap.className='tedit';
   wrap.innerHTML=`<input placeholder="type to filter…"><div class="tdd"></div>`;
@@ -1671,14 +1673,14 @@ function openSlot(btn,ax){
     dd.innerHTML=rows.map(([id,l,c],ix)=>
       `<button data-id="${id}" class="${ix===0?'hot':''}"><span>${esc(l)}</span><b>${c}</b></button>`)
       .join('')||'<button disabled>no match here</button>';
-    dd.querySelectorAll('[data-id]').forEach(el=>el.onclick=()=>{closeTdd();applySlot(ax,+el.dataset.id);});
+    dd.querySelectorAll('[data-id]').forEach(el=>el.onclick=()=>{closeTdd(false);applySlot(ax,+el.dataset.id);});
   };
   paint('');
   inp.focus();
   inp.oninput=()=>paint(inp.value.trim().toLowerCase());
   inp.onkeydown=e=>{
-    if(e.key==='Enter'){const top=dd.querySelector('[data-id]'); if(top){closeTdd();applySlot(ax,+top.dataset.id);}}
-    if(e.key==='Escape'){closeTdd();drawSentence();}
+    if(e.key==='Enter'){const top=dd.querySelector('[data-id]'); if(top){closeTdd(false);applySlot(ax,+top.dataset.id);}}
+    if(e.key==='Escape')closeTdd();
   };
 }
 function drawSentence(){
