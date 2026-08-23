@@ -277,7 +277,7 @@ def gid_map(corpora) -> tuple[dict[tuple[str, int], int], int]:
 
 def build_payload(span_source: str) -> dict:
     from .corpus import available
-    corpora = available(VENUE)
+    corpora = available()          # every venue far enough through the pipeline
     if not corpora:
         raise SystemExit("no corpus has both papers and an extraction")
     ci = {c.key: i for i, c in enumerate(corpora)}

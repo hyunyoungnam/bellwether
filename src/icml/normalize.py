@@ -14,9 +14,15 @@ from .collect import latest_snapshot
 from .common import (
     FOCUS_YEAR, PROCESSED, RAW, ROOT, dump_json, ensure_dirs, load_json, read_jsonl, write_jsonl,
 )
+from .corpus import Corpus
 
 ABSTRACTS = RAW / "abstracts" / "abstracts.jsonl"
 OUT = PROCESSED / "papers.jsonl"
+# The virtual sites run the same infrastructure, so one normaliser covers all
+# three venues; only the feed name and the link domain differ.
+VENUE_DOMAIN = {"ICML": "https://icml.cc", "NeurIPS": "https://neurips.cc",
+                "ICLR": "https://iclr.cc"}
+VENUE_ARG = {"icml": "ICML", "neurips": "NeurIPS", "iclr": "ICLR"}
 
 # Track identification, derived from the feed's sourceurl field.
 TRACK_PATTERNS = [
@@ -93,18 +99,15 @@ def openreview_id(paper_url: str | None) -> str | None:
 def dedupe_key(rec: dict) -> str:
     """Stable identity for a paper across its multiple schedule entries.
 
-    The feed lists an oral paper TWICE — once as its Oral slot and once as its
-    Poster slot — with different event ids. Counting rows would inflate the
-    corpus by ~160 papers and double-count every oral.
-
-    Identity is the OpenReview id, falling back to the normalised title. The
-    feed's own `uid` is deliberately NOT used: it collides across tracks
-    (verified — distinct main-track and position-track papers share a uid), so
-    keying on it would silently merge unrelated papers.
+    Every feed lists an oral paper TWICE — once as its Oral slot and once as
+    its Poster slot. ICML gives both entries the same OpenReview id, but
+    NeurIPS and ICLR give the Oral entry a SYNTHETIC id ("2025-Oral--451-…"),
+    so keying on the id leaves every one of their orals double-counted
+    (measured: 210 surviving pairs at ICLR 2025). Identity is therefore the
+    normalised title — measured across all five feeds, no two distinct real
+    papers share one — with the id kept only for the record itself.
+    The feed's own `uid` is still never used: it collides across tracks.
     """
-    oid = openreview_id(rec.get("paper_url"))
-    if oid:
-        return f"or:{oid}"
     return "title:" + re.sub(r"\W+", "", (rec.get("name") or "").lower())
 
 
@@ -143,22 +146,36 @@ def main() -> int:
     ap.add_argument("--allow-missing-abstracts", action="store_true",
                     help="build even if abstract coverage is below the 90%% threshold")
     ap.add_argument("--year", type=int, default=FOCUS_YEAR)
+    ap.add_argument("--venue", default="icml", choices=sorted(VENUE_ARG))
     args = ap.parse_args()
-
-    # papers.jsonl is the 2026 canonical file the whole pipeline reads. Earlier
-    # years are for trend comparison only and must never overwrite it.
-    out = OUT if args.year == FOCUS_YEAR else PROCESSED / f"papers_{args.year}.jsonl"
+    venue = VENUE_ARG[args.venue]
+    corpus = Corpus(venue, args.year)
+    out = corpus.papers
 
     ensure_dirs()
-    snap = latest_snapshot(args.year)
+    if venue == "ICML":
+        snap = latest_snapshot(args.year)
+    else:
+        snaps = sorted(RAW.glob(f"virtual_feed_{args.venue}_{args.year}_*.json"))
+        snap = snaps[-1] if snaps else None
     if snap is None:
         raise SystemExit("no feed snapshot — run `python3 -m icml.collect` first")
 
-    abstracts = {
-        row["event_id"]: row["abstract"]
-        for row in read_jsonl(ABSTRACTS)
-        if row.get("abstract")
-    }
+    # Abstracts, best source first: the feed itself carries them for past
+    # editions (NeurIPS 2025, ICLR 2025 — 100%); a current edition needs the
+    # scraped file (abstracts.jsonl for ICML, abstracts_<venue>_<year>.jsonl
+    # otherwise, from scripts/scrape_abstracts_generic.py).
+    if venue == "ICML":
+        abs_path = ABSTRACTS
+    else:
+        abs_path = RAW / f"abstracts_{args.venue}_{args.year}.jsonl"
+    abstracts = {}
+    if abs_path.exists():
+        abstracts = {
+            (row.get("event_id") or row["id"]): row["abstract"]
+            for row in read_jsonl(abs_path)
+            if row.get("abstract")
+        }
     results = load_json(snap)["results"]
 
     rows = []
@@ -176,11 +193,12 @@ def main() -> int:
         decision = rec.get("decision") or ""
         rows.append({
             "_key": dedupe_key(rec),
+            "venue": venue,
             "year": args.year,
             "event_id": rec["id"],
             "uid": rec.get("uid"),
             "title": (rec.get("name") or "").strip(),
-            "abstract": abstracts.get(rec["id"]),
+            "abstract": abstracts.get(rec["id"]) or (rec.get("abstract") or "").strip() or None,
             "authors": [a.get("fullname") for a in authors if a.get("fullname")],
             "author_institutions": [
                 {"name": a.get("fullname"), "institution": normalize_institution(a.get("institution"))}
@@ -198,7 +216,8 @@ def main() -> int:
             "track": classify_track(rec.get("sourceurl")),
             "openreview_id": openreview_id(rec.get("paper_url")),
             "paper_url": rec.get("paper_url"),
-            "virtual_url": f"https://icml.cc{rec['virtualsite_url']}" if rec.get("virtualsite_url") else None,
+            "virtual_url": (VENUE_DOMAIN[venue] + rec["virtualsite_url"])
+                           if rec.get("virtualsite_url") else None,
         })
 
     # Collapse the oral/poster double-listing before anything is counted.
@@ -226,7 +245,7 @@ def main() -> int:
         )
 
     n = write_jsonl(out, rows)
-    if args.year == FOCUS_YEAR:      # the manifest describes the canonical year only
+    if corpus.is_focus:              # the manifest describes the canonical corpus only
         dump_json(PROCESSED / "dataset_manifest.json", {
             "source_snapshot": snap.name,
             "papers": n,

@@ -35,7 +35,7 @@ from .corpus import Corpus, available
 MODEL = "BAAI/bge-m3"
 
 
-def union(venue: str = "ICML") -> tuple[list[Corpus], list[tuple[str, int, str]]]:
+def union(venue: str | None = None) -> tuple[list[Corpus], list[tuple[str, int, str]]]:
     """Every abstract-bearing paper across the active corpora, in gid order.
 
     Papers without an abstract have no vector and are simply absent — they must
@@ -62,7 +62,7 @@ def _embed(texts: list[str], model: str, batch: int, device: str):
 
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
-    ap.add_argument("--venue", default="ICML")
+    ap.add_argument("--venue", default=None)
     ap.add_argument("--model", default=MODEL)
     ap.add_argument("--k", type=int, default=20)
     ap.add_argument("--dims", type=int, default=128)

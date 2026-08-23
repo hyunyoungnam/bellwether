@@ -448,6 +448,7 @@ the whole corpus.
 | # | Command | Produces |
 |---|---|---|
 | 1 | `python3 -m icml.collect` | `data/raw/virtual_feed_<year>_<date>.json` |
+| — | `python3 -m icml.normalize --venue neurips --year 2025` | other venues: same infra, same schema; feed-inline abstracts for past editions, `scripts/scrape_abstracts_generic.py` for the current one. `Corpus` paths are venue-qualified (`papers_neurips_2025.jsonl`); ICML keeps its historical names |
 | 2 | `python3 -m icml.abstracts` | abstracts, 99.3% (~20 min) |
 | 3 | `python3 -m icml.normalize` | `papers.jsonl` ← canonical |
 | 4a | `python3 -m icml.arxiv_harvest` | 495k-record arXiv index (OAI-PMH) |
@@ -542,6 +543,12 @@ inside `<div class="abstract-content">`. ~5 req/s. 45 pages fail persistently.
 
 ## Traps — each cost real time
 
+- **NeurIPS and ICLR give an oral's second listing a SYNTHETIC OpenReview id**
+  (`2025-Oral--451-87f1fe27`) where ICML repeats the real one — so keying
+  dedup on the id left every ICLR/NeurIPS oral double-counted (210 surviving
+  pairs at ICLR 2025). `normalize.dedupe_key()` now keys on the normalised
+  title, which is safe by measurement: across all five collected feeds, no two
+  distinct real papers share one.
 - **Orals are listed twice** — once as Oral, once as Poster, different ids.
   Counting feed rows inflates the corpus by ~160 and double-counts every oral.
   `normalize.dedupe_key()` collapses them: 6,796 rows → **6,637 papers**. Always

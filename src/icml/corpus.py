@@ -18,11 +18,17 @@ from pathlib import Path
 
 from .common import FOCUS_YEAR, INTERIM, PROCESSED, read_jsonl
 
-# Which years the product actually uses. 2024 was collected and extracted, then
-# dropped: three years made the vocabulary drift for no gain, and the two most
-# recent conferences are what a reader is asking about. The files stay on disk —
-# this is a scope decision, not a deletion.
-ACTIVE_YEARS = (2025, 2026)
+# Which conference editions the product actually uses. ICML 2024 was collected
+# and extracted, then dropped: three years made the vocabulary drift for no
+# gain, and the two most recent editions are what a reader asks about. The
+# files stay on disk — a scope decision, not a deletion. NeurIPS 2026 does not
+# exist yet (its feed is a placeholder with ~200 rows).
+ACTIVE = (
+    ("ICML", 2025), ("ICML", 2026),
+    ("NeurIPS", 2025),
+    ("ICLR", 2025), ("ICLR", 2026),
+)
+ACTIVE_YEARS = tuple(sorted({y for _, y in ACTIVE}))
 
 
 @dataclass(frozen=True)
@@ -36,10 +42,16 @@ class Corpus:
 
     @property
     def is_focus(self) -> bool:
-        return self.year == FOCUS_YEAR
+        return self.venue == "ICML" and self.year == FOCUS_YEAR
 
     def _p(self, stem: str, ext: str, base: Path) -> Path:
-        return base / (f"{stem}{ext}" if self.is_focus else f"{stem}_{self.year}{ext}")
+        """ICML keeps its historical names (unsuffixed for the focus year,
+        `_2025` for the earlier edition) so nothing on disk moves; every other
+        venue is fully qualified — `papers_neurips_2025.jsonl` — because a year
+        alone collides across venues."""
+        if self.venue == "ICML":
+            return base / (f"{stem}{ext}" if self.is_focus else f"{stem}_{self.year}{ext}")
+        return base / f"{stem}_{self.venue.lower()}_{self.year}{ext}"
 
     @property
     def papers(self) -> Path:
@@ -78,15 +90,15 @@ class Corpus:
         return {r["event_id"]: r["facts"] for r in read_jsonl(self.facts) if r.get("ok")}
 
 
-def available(venue: str = "ICML") -> list[Corpus]:
-    """Every corpus with both a papers file and an extraction, oldest first."""
-    years = set()
-    for p in PROCESSED.glob("papers_*.jsonl"):
-        try:
-            years.add(int(p.stem.split("_")[1]))
-        except (IndexError, ValueError):
+def available(venue: str | None = None) -> list[Corpus]:
+    """Every ACTIVE corpus with both a papers file and an extraction — i.e. the
+    ones far enough through the pipeline to be shown. Ordered by (venue order
+    as declared, year), so ICML leads and each venue's editions stay together."""
+    out = []
+    for v, y in ACTIVE:
+        if venue and v != venue:
             continue
-    years.add(FOCUS_YEAR)
-    years &= set(ACTIVE_YEARS)
-    return sorted((c for c in (Corpus(venue, y) for y in years) if c.exists()),
-                  key=lambda c: c.year)
+        c = Corpus(v, y)
+        if c.exists():
+            out.append(c)
+    return out
