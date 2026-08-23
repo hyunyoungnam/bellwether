@@ -308,6 +308,13 @@ def build_payload(span_source: str) -> dict:
     # for 59% — PDF text is dirty enough that 40.7% of its "verbatim" quotes fail
     # verification. So the abstract leads, and full text only fills the gaps it
     # leaves; that union reaches 94%.
+    # Everything counted, compared or filtered on runs on the abstract pass
+    # (Guardrail 5): full-text coverage is 99% for the PMLR year and 72% for the
+    # arXiv year, so merged fields would let coverage masquerade as trend. The
+    # snapshot is taken here, before the merge below mutates `facts` in place.
+    abs_of = {g: (f.get("methods") or [], f.get("datasets") or [],
+                  f.get("tasks") or []) for g, f in facts.items()}
+
     # Full-text source differs by corpus — arXiv preprints for the focus year
     # (71.9%, biased by subfield), the PMLR camera-ready for published years
     # (99.3%). Coverage per corpus is disclosed in `corpora[].full`, and nothing
@@ -434,6 +441,10 @@ def build_payload(span_source: str) -> dict:
             "v": [meth.id(detex(m["name"])) for m in methods if m.get("role") == "baseline"][:4],
             "k": [data.id(detex(x["name"])) for x in (f.get("datasets") or [])][:5],
             "s": [task.id(detex(x["name"])) for x in (f.get("tasks") or [])][:3],
+            # abstract-pass-only twins of k/s — the ONLY fields countable
+            # across papers or years; k/s above are display, marked "full text"
+            "k0": [data.id(detex(x["name"])) for x in abs_of.get(eid, ((),(),()))[1]][:5],
+            "s0": [task.id(detex(x["name"])) for x in abs_of.get(eid, ((),(),()))[2]][:3],
             "n": spans,
             "L": edit_span(f.get("limitation") or "")[:SPAN_CHARS],
             "K": edit_span(f.get("key_change") or "")[:SPAN_CHARS],
@@ -470,7 +481,7 @@ def build_payload(span_source: str) -> dict:
                            method_family, METHOD_FAMILIES)
     ds_count: dict[int, int] = defaultdict(int)
     for r in rows:
-        for di in set(r["k"]):
+        for di in set(r["k0"]):
             ds_count[di] += 1
     ds_entry = sorted(((c, di) for di, c in ds_count.items()
                        if c >= 3 and not is_placeholder(data.items[di])), reverse=True)
@@ -490,6 +501,14 @@ def build_payload(span_source: str) -> dict:
             if key in mid_of:
                 got.add(mid_of[key])
         r["mu"] = sorted(got)
+        got0 = set()
+        for m in abs_of.get(r["i"], ((),))[0]:
+            if m.get("role") != "building-block":
+                continue
+            key, _ = method_key(m["name"])
+            if key in mid_of:
+                got0.add(mid_of[key])
+        r["mu0"] = sorted(got0)
     reach_method = len({e for _, k in mrows for e in mids[k]})
     # The same word can be a subject and a tool. Measured: "reinforcement
     # learning" is 299 papers as a topic and 245 as a method, and only 17 are in
@@ -963,6 +982,15 @@ border:1px solid var(--ring);background:var(--card);color:var(--ink2);display:fl
 border:1px solid var(--ring);background:var(--card);color:var(--ink2);cursor:pointer;width:100%}
 .scsplit:hover{color:var(--ink);border-color:var(--mut)}
 .scsplit.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+/* Inside-this-set: the since-last-year grammar, with the SELECTION as the
+   denominator — which methods/tasks/domains rose or fell within the field the
+   reader picked. Rows appear only when the two-test rule passes on the set's
+   own sizes, so a small set honestly shows only its LARGEST items. */
+.insbox{background:var(--card);border-radius:12px;padding:13px 18px 11px;margin:0 0 12px}
+.inshd{font-size:12px;font-weight:660;display:flex;align-items:center;gap:10px}
+.inshd em{font-style:normal;font-weight:500;color:var(--mut);font-size:10.5px}
+.insbox .cr{font-size:12px;padding:1.5px 0}
+.insbox .chgax{height:11px}
 /* what-moved entry view */
 .chgbox{background:var(--card);border-radius:12px;padding:16px 18px;margin-top:14px}
 .chghd{font-size:15px;font-weight:660;display:flex;align-items:center;gap:10px}
@@ -1021,6 +1049,8 @@ background:none;cursor:pointer;color:var(--ink2)}
   <span class="sw"><span class="hl new">what is new</span></span>
   <span class="sw"><span class="hl eff">what it achieved</span></span>
   <span>— the paper's own sentences, cut but never rewritten. The colours and the order are ours.</span></div>
+
+<div class="insbox" id="inset" hidden></div>
 
 <div class="res" id="results"></div>
 
@@ -1181,7 +1211,7 @@ function baseSet(skip){
   for(let i=0;i<P.length;i++){
     const p=P[i];
     if(st.corp!==null&&p.cy!==st.corp)continue;
-    if(skip!=='ds'&&st.ds!==null&&!p.k.includes(st.ds))continue;
+    if(skip!=='ds'&&st.ds!==null&&!p.k0.includes(st.ds))continue;
     if(skip!=='meth'&&!methPass(p))continue;
     if(skip!=='topics'&&!facetPass(p,false))continue;
     if(skip!=='domains'&&!facetPass(p,true))continue;
@@ -1204,7 +1234,7 @@ function methIndex(){
 function methPass(p){
   if(st.meth===null&&st.mfam===null)return true;
   methIndex();
-  const mu=p.mu||[];
+  const mu=p.mu0||[];
   if(st.meth!==null){
     if(mu.includes(st.meth))return true;
     for(const k of (MCHILD.get(st.meth)||[])) if(mu.includes(k))return true;
@@ -1232,7 +1262,7 @@ function match(i,hits,corp){
   const p=P[i];
   const cc=corp===undefined?st.corp:corp;
   if(cc!==null&&p.cy!==cc)return false;
-  if(st.ds!==null&&!p.k.includes(st.ds))return false;
+  if(st.ds!==null&&!p.k0.includes(st.ds))return false;
   if(!methPass(p))return false;
   // Within a facet the picks are OR — two topics widen the set. ACROSS facets
   // they are AND: "reasoning" plus "healthcare" means reasoning applied to
@@ -1626,13 +1656,13 @@ function slotCandidates(ax){
     const base=baseSet('meth');
     const cnt=new Map();
     for(const i of base){ const seen=new Set();
-      for(const m of (P[i].mu||[])){ const t=mtop(m);
+      for(const m of (P[i].mu0||[])){ const t=mtop(m);
         if(seen.has(t))continue; seen.add(t); cnt.set(t,(cnt.get(t)||0)+1); } }
     for(const [id,c] of cnt)out.push([id,MV[id],c]);
   }else{
     const base=baseSet('ds');
     const cnt=new Map();
-    for(const i of base) for(const di of new Set(P[i].k)){
+    for(const i of base) for(const di of new Set(P[i].k0)){
       if(!DSSET.has(di))continue; cnt.set(di,(cnt.get(di)||0)+1); }
     for(const [di,c] of cnt)out.push([di,dname(di),c]);
   }
@@ -1763,6 +1793,89 @@ function markLim(html){
   return html.split(/(<[^>]+>)/).map(seg=>seg.startsWith('<')?seg:seg.replace(rx,'<i class="limhit">$1</i>')).join('');
 }
 
+// ---- inside this set, since last year --------------------------------------
+// The colleague-requested view: not "robotics grew" but "robotics moved from
+// RL-based to VLA-based". Same two-test rule, same lanes; the denominator is
+// the selection's own size in each edition, all counts from the abstract pass.
+let insTab='u';
+const INS_MIN=12;          // below this on either side, a year claim is noise
+function drawInside(){
+  const el=$('#inset'); if(!el)return;
+  el.hidden=true;
+  const pr=venuePairs().find(p=>p.c1===st.corp||p.c0===st.corp);
+  if(!pr)return;
+  const hits=queryHits(), keep=st.corp; st.corp=null;
+  const S=[new Set(),new Set()];
+  for(let i=0;i<P.length;i++){
+    if(P[i].cy!==pr.c0&&P[i].cy!==pr.c1)continue;
+    if(match(i,hits,P[i].cy))S[P[i].cy===pr.c0?0:1].add(i);
+  }
+  st.corp=keep;
+  const n0=S[0].size, n1=S[1].size;
+  if(Math.min(n0,n1)<INS_MIN)return;
+  const items=(ax)=>{
+    const cnt=new Map();
+    for(const side of [0,1]) for(const i of S[side]){
+      const p=P[i]; const seen=new Set();
+      const ids=ax==='u'?(p.mu0||[]).map(m=>mtop(m))
+              :ax==='s'?(p.s0||[])
+              :p.g.filter(([ti])=>!T[ti].j&&T[ti].f===1).map(([ti])=>ti);
+      for(const id of ids){ if(seen.has(id))continue; seen.add(id);
+        let c=cnt.get(id); if(!c)cnt.set(id,c=[0,0]); c[side]++; }
+    }
+    return cnt;
+  };
+  const name=ax=>ax==='u'?(id=>MV[id]):ax==='s'?(id=>tname(id)):(id=>T[id].l);
+  const cnt=items(insTab), nm=name(insTab);
+  const rows=[];
+  for(const [id,[a,b]] of cnt){
+    if(a+b<5)continue;
+    const s0=a/n0*1000, s1=b/n1*1000;
+    const pp=(a+b)/(n0+n1), se=Math.sqrt(pp*(1-pp)*(1/n0+1/n1));
+    const z=se?(b/n1-a/n0)/se:0;
+    const lo=Math.min(s0,s1), hi=Math.max(s0,s1);
+    // material inside a set: >=3 points of the set, or a 1.5x fold
+    const mat=Math.abs(s1-s0)>=30||(lo>0?hi/lo:1e9)>=1.5;
+    rows.push({id,l:nm(id),a,b,s0,s1,z,mat,nw:a<=1&&b>2,gn:b<=1&&a>2});
+  }
+  if(!rows.length)return;
+  const up=rows.filter(r=>r.z>=Z_SHOW&&r.mat&&!r.nw).sort((x,y)=>y.z-x.z).slice(0,4);
+  const fresh=rows.filter(r=>r.z>=Z_SHOW&&r.mat&&r.nw).sort((x,y)=>y.s1-x.s1).slice(0,4);
+  const dn=rows.filter(r=>r.z<=-Z_SHOW&&r.mat).sort((x,y)=>x.z-y.z).slice(0,4);
+  const inSec=new Set([...up,...fresh,...dn]);
+  const largest=rows.filter(r=>!inSec.has(r)).sort((x,y)=>y.s1-x.s1).slice(0,2);
+  const secs=[['largest',largest],['rising',up],['new',fresh],['falling',dn]]
+    .filter(x=>x[1].length);
+  if(!up.length&&!fresh.length&&!dn.length)
+    secs.length=Math.min(secs.length,1);   // nothing moved: anchors only
+  const M=Math.max(...secs.flatMap(x=>x[1]).flatMap(r=>[r.s0,r.s1]),50);
+  const F=20;    // 2% of the set — in-set shares live an order above corpus ones
+  const X=v=>v<=F?0:Math.log(v/F)/Math.log(M/F)*100;
+  const ticks=[20,50,100,200,500,1000].filter(t=>t>=F&&t<=M*1.04);
+  const grid='<div class="chgg">'+ticks.map(t=>`<i style="left:${X(t).toFixed(2)}%"></i>`).join('')+'</div>';
+  const axis='<div class="chgax">'+ticks.map(t=>`<b style="left:${X(t).toFixed(2)}%">${t/10}%</b>`).join('')+'</div>';
+  const kind={u:'m',s:null,d:'t'}[insTab];
+  const body=secs.map(([nm2,rs])=>`<div class="chgsec">${nm2}</div>`+rs.map(r=>{
+    const lane=laneHTML({hue:pr.hue,s0:r.s0,s1:r.s1,w0:X(r.s0),w1:X(r.s1)});
+    const tag=r.gn?'<em class="tag gone">gone</em>':'';
+    const attrs=kind?`data-k="${kind}" data-id="${r.id}"`:'disabled style="cursor:default"';
+    return `<button class="cr" ${attrs}><span class="crl" title="${esc(r.l)}">${esc(r.l)}${tag}</span>`+
+      `<span class="trk">${lane}</span></button>`;
+  }).join('')).join('');
+  const tab=(k,l)=>`<button class="chgtab ${insTab===k?'on':''}" data-instab="${k}">${l}</button>`;
+  el.innerHTML=`<div class="inshd">Inside this set — since last year`+
+    `<em>share of the ${n0} (${pr.y0}) and ${n1} (${pr.y1}) papers picked</em>`+
+    `<span class="chgtabs">${tab('u','builds on')}${tab('s','tasks')}${tab('d','domains')}</span></div>`+
+    `<div class="chgplot">${grid}${body}</div>${axis}`;
+  el.hidden=false;
+  el.querySelectorAll('[data-instab]').forEach(b=>b.onclick=()=>{insTab=b.dataset.instab;render();});
+  el.querySelectorAll('.cr[data-id]').forEach(b=>b.onclick=()=>{
+    const k=b.dataset.k, id=+b.dataset.id;
+    if(k==='m'){ st.meth=st.meth===id?null:id; st.mfam=null; }
+    else st.topics.has(id)?st.topics.delete(id):st.topics.add(id);
+    render();});
+}
+
 function render(){
   const landing=st.corp===null;
   $('#landing').hidden=!landing;
@@ -1771,7 +1884,7 @@ function render(){
   drawSentence();
   document.querySelector('.searchrow').hidden=landing;
   if(landing){
-    $('#legend').hidden=true; $('#results').innerHTML='';
+    $('#legend').hidden=true; $('#results').innerHTML=''; $('#inset').hidden=true;
     $('#landing').innerHTML=landingHTML();
     wireLanding();
     return;
@@ -1798,12 +1911,14 @@ function render(){
   if(!on){
     $('#results').innerHTML=`<div class="start">Fill a blank in the title, or search.`+
       `<span>Nothing is listed until you do — ${CY[st.corp].n.toLocaleString()} papers is the problem, not the answer.</span></div>`;
+    $('#inset').hidden=true;
     const rt=$('#rtr'); if(rt){ rt.innerHTML=railTrend();
       rt.querySelectorAll('[data-tid]').forEach(el=>el.onclick=()=>{
         applyChgRow('t',+el.dataset.tid); render();}); }
     return;
   }
   const res=results();
+  drawInside();
   { const rt=$('#rtr'); if(rt){ rt.innerHTML=railSetCard(res);
       const g2=rt.querySelector('#grptog2'); if(g2)g2.onclick=()=>{st.grouped=!st.grouped;render();};
       rt.querySelectorAll('[data-ck]').forEach(el=>el.onclick=()=>{
@@ -1891,7 +2006,7 @@ function changedRows(c0,c1){
   const par=new Map(); for(const [id,,,pa] of MS) par.set(id,pa==null?id:pa);
   const mc=new Map();
   for(const p of P){ if(p.cy!==c0&&p.cy!==c1)continue; const seen=new Set();
-    for(const m of (p.mu||[])){ const top=par.get(m)??m;
+    for(const m of (p.mu0||[])){ const top=par.get(m)??m;
       if(seen.has(top))continue; seen.add(top);
       let c=mc.get(top); if(!c)mc.set(top,c=new Map()); c.set(p.cy,(c.get(p.cy)||0)+1); } }
   for(const [id,,,pa] of MS){
@@ -1907,7 +2022,7 @@ function changedRows(c0,c1){
   // the underlying alias problem (LIBERO vs "LIBERO benchmark") is still open.
   const dc=new Map();
   for(const p of P){ if(p.cy!==c0&&p.cy!==c1)continue; const seen=new Set();
-    for(const di of new Set(p.k)){ if(!ok.has(di))continue;
+    for(const di of new Set(p.k0)){ if(!ok.has(di))continue;
       const key2=dname(di).toLowerCase().replace(/[^a-z0-9]/g,'');
       if(seen.has(key2))continue; seen.add(key2);
       let c=dc.get(key2); if(!c)dc.set(key2,c={n:new Map(),a:0,b:0});
@@ -2072,9 +2187,9 @@ function railSetCard(res){
   const dk=new Map(), mk=new Map();
   const par=new Map(); for(const [id,,,pa] of MS)par.set(id,pa==null?id:pa);
   for(const i of res){
-    for(const d of new Set(P[i].k)) if(DSSET.has(d)&&d!==st.ds)dk.set(d,(dk.get(d)||0)+1);
+    for(const d of new Set(P[i].k0)) if(DSSET.has(d)&&d!==st.ds)dk.set(d,(dk.get(d)||0)+1);
     const seen=new Set();
-    for(const m of (P[i].mu||[])){ const t2=par.get(m)??m;
+    for(const m of (P[i].mu0||[])){ const t2=par.get(m)??m;
       if(seen.has(t2))continue; seen.add(t2);
       if(t2!==st.meth)mk.set(t2,(mk.get(t2)||0)+1); }
   }
