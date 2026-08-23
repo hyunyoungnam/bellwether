@@ -829,6 +829,7 @@ display:flex;flex-direction:column;z-index:20}
 .phd{display:flex;align-items:center;justify-content:space-between;gap:10px;
 padding:14px 16px;border-bottom:1px solid var(--line)}
 .phd span{font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--mut)}
+.phow{font-size:10.5px;color:var(--mut);padding:6px 16px 0;font-style:italic}
 .phd button{font:inherit;font-size:11.5px;padding:4px 10px;border-radius:7px;
 border:1px solid var(--ring);background:#fff;color:var(--ink2);cursor:pointer}
 .pbody{overflow-y:auto;padding:12px 16px 24px}
@@ -1025,6 +1026,7 @@ background:none;cursor:pointer;color:var(--ink2)}
 
 <aside class="panel" id="panel" hidden>
   <div class="phd"><span>Closest papers</span><button id="pclose">Close</button></div>
+  <div class="phow">closest by abstract meaning (embedding), across both years — not citations</div>
   <div class="pbody" id="pbody"></div>
 </aside>
 </div>
@@ -1379,7 +1381,6 @@ function openPanel(i){
            `${esc(q.b||q.a||'')}${q.o===1?' · Oral':q.o===2?' · Spotlight':''}</span></div>`;
   }).join('');
   $('#pbody').innerHTML=`<div class="pseed">${esc(p.t)}</div>`+
-    `<div class="pseedm">nearest by meaning — this year and last, every subarea</div>`+
     (rows||'<div style="color:var(--mut);font-size:12px">No neighbours for this paper.</div>');
   $('#panel').hidden=false; document.body.classList.add('haspanel');
   $('#pbody').querySelectorAll('[data-go]').forEach(el=>el.onclick=()=>{
