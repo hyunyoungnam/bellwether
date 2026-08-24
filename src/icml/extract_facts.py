@@ -31,7 +31,11 @@ import json
 import time
 from pathlib import Path
 
-from .common import INTERIM, PROCESSED, RAW, read_jsonl
+from .common import FOCUS_YEAR, INTERIM, PROCESSED, RAW, read_jsonl
+
+
+def corpus_default_year() -> int:
+    return FOCUS_YEAR
 
 FULLTEXT = INTERIM / "fulltext.jsonl"
 RESOLVED = RAW / "arxiv" / "resolved.jsonl"
@@ -413,7 +417,8 @@ def main() -> int:
                     help="write to this file instead of the default; use when "
                          "re-running a year whose old-schema output must stay readable")
     ap.add_argument("--year", type=int, default=None,
-                    help="read papers_<year>.jsonl instead of the canonical papers.jsonl")
+                    help="edition year; default is the focus year")
+    ap.add_argument("--venue", default="icml", choices=["icml", "neurips", "iclr"])
     ap.add_argument("--chunk", type=int, default=256,
                     help="papers per write batch; smaller = finer resume granularity")
     args = ap.parse_args()
@@ -421,19 +426,28 @@ def main() -> int:
     # Earlier years go to their own files. Merging them into facts_abstract.jsonl
     # would put three conferences in the table every corpus claim is computed
     # from, and the counts would silently become three-year totals.
+    from .corpus import Corpus
+    venue = {"icml": "ICML", "neurips": "NeurIPS", "iclr": "ICLR"}[args.venue]
+    corpus = Corpus(venue, args.year or None or corpus_default_year())
     fulltext_path = FULLTEXT
-    if args.year:
-        if args.source == "fulltext":
-            # Earlier years have no arXiv bridge but do have the PMLR
-            # camera-ready (icml.pmlr), whose rows carry event_id directly.
-            fulltext_path = INTERIM / f"fulltext_pmlr_{args.year}.jsonl"
-            if not fulltext_path.exists():
-                raise SystemExit(f"no {fulltext_path.name} — run `icml.pmlr text` first")
-        out_path = INTERIM / f"facts_{args.source}_{args.year}.jsonl"
-        papers = list(read_jsonl(PROCESSED / f"papers_{args.year}.jsonl"))
-    else:
+    if corpus.is_focus and not args.year:
         out_path = OUT_BY_SOURCE[args.source]
-        papers = list(read_jsonl(PROCESSED / "papers.jsonl"))
+    elif args.source == "fulltext":
+        if venue != "ICML":
+            raise SystemExit("fulltext is ICML-only for now — no PDFs are "
+                             "collected for other venues")
+        # Earlier ICML years have no arXiv bridge but do have the PMLR
+        # camera-ready (icml.pmlr), whose rows carry event_id directly.
+        fulltext_path = INTERIM / f"fulltext_pmlr_{args.year}.jsonl"
+        if not fulltext_path.exists():
+            raise SystemExit(f"no {fulltext_path.name} — run `icml.pmlr text` first")
+        out_path = corpus.facts_fulltext
+    else:
+        out_path = corpus.facts
+    if not corpus.papers.exists():
+        raise SystemExit(f"no {corpus.papers.name} — run `icml.normalize "
+                         f"--venue {args.venue} --year {corpus.year}` first")
+    papers = list(read_jsonl(corpus.papers))
     if args.out:
         out_path = Path(args.out)
     titles = {p["event_id"]: p["title"] for p in papers}

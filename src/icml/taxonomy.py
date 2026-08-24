@@ -214,6 +214,26 @@ def canon(label: str) -> str:
     return s
 
 
+def dataset_key(name: str) -> str:
+    """Fold key for one benchmark spelled many ways.
+
+    Measured on both ICML corpora: 138 groups, 187 redundant surfaces —
+    CIFAR-10/CIFAR10, MATH-500/MATH500/"MATH 500", LIBERO/"LIBERO benchmark",
+    AIME24/"AIME \'24". Case, punctuation and the words benchmark/dataset/
+    corpus/suite carry no identity. `+` DOES and is kept: HumanEval+ and MBPP+
+    are extended sets, not respellings of HumanEval and MBPP.
+    """
+    s = name.lower()
+    s = _re_ds_lead.sub("", s)
+    s = _re_ds_tail.sub("", s)
+    return _re_ds_keep.sub("", s)
+
+
+_re_ds_lead = re.compile(r"^(the|a)\s+")
+_re_ds_tail = re.compile(r"\s+(benchmark|dataset|corpus|suite)s?$")
+_re_ds_keep = re.compile(r"[^a-z0-9+]")
+
+
 def is_placeholder(name: str) -> bool:
     """True for 'three datasets', 'image datasets', 'real-world data'."""
     s = basic(name or "")

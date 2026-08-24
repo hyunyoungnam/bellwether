@@ -80,7 +80,10 @@ class Corpus:
         return PROCESSED / f"emb_{n}_{model.replace('/', '_')}.npy"
 
     def exists(self) -> bool:
-        return self.papers.exists() and self.facts.exists()
+        # size guard: an aborted extraction leaves a 0-byte facts file, and a
+        # corpus must not enter the product on the strength of an empty file
+        return (self.papers.exists() and self.facts.exists()
+                and self.facts.stat().st_size > 0)
 
     def read_papers(self, with_abstract: bool = False) -> list[dict]:
         rows = list(read_jsonl(self.papers))

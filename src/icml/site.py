@@ -407,7 +407,29 @@ def build_payload(span_source: str) -> dict:
         contacts = {GID[(focus.key, int(k))]: v for k, v in craw.items()
                     if (focus.key, int(k)) in GID}
 
+    # One vocabulary id per benchmark, however it is spelled: surfaces that share
+    # a dataset_key intern to the commonest spelling. Fixes the menu/search/V5
+    # fragmentation (LIBERO vs "LIBERO benchmark") at the source, not at draw
+    # time. is_placeholder still filters at the menu, unchanged.
+    from .taxonomy import dataset_key
+    ds_surface = Counter()
+    for f in facts.values():
+        for x in f.get("datasets") or []:
+            n = detex(x["name"]).strip()
+            if n:
+                ds_surface[n] += 1
+    ds_disp: dict[str, str] = {}
+    for n, _c in ds_surface.most_common():
+        k = dataset_key(n)
+        if k and k not in ds_disp:
+            ds_disp[k] = n
+
     meth, data, task = Vocab(), Vocab(), Vocab()
+
+    def ds_id(name: str) -> int:
+        n = detex(name).strip()
+        return data.id(ds_disp.get(dataset_key(n), n))
+
     rows = []
     order = sorted(papers.values(), key=lambda p: (not p.get("is_oral"),
                                                    not p.get("is_spotlight"),
@@ -439,11 +461,11 @@ def build_payload(span_source: str) -> dict:
             "p": [meth.id(detex(m["name"])) for m in methods if m.get("role") == "proposed"][:4],
             "u": [meth.id(detex(m["name"])) for m in methods if m.get("role") == "building-block"][:5],
             "v": [meth.id(detex(m["name"])) for m in methods if m.get("role") == "baseline"][:4],
-            "k": [data.id(detex(x["name"])) for x in (f.get("datasets") or [])][:5],
+            "k": [ds_id(x["name"]) for x in (f.get("datasets") or [])][:5],
             "s": [task.id(detex(x["name"])) for x in (f.get("tasks") or [])][:3],
             # abstract-pass-only twins of k/s — the ONLY fields countable
             # across papers or years; k/s above are display, marked "full text"
-            "k0": [data.id(detex(x["name"])) for x in abs_of.get(eid, ((),(),()))[1]][:5],
+            "k0": [ds_id(x["name"]) for x in abs_of.get(eid, ((),(),()))[1]][:5],
             "s0": [task.id(detex(x["name"])) for x in abs_of.get(eid, ((),(),()))[2]][:3],
             "n": spans,
             "L": edit_span(f.get("limitation") or "")[:SPAN_CHARS],
