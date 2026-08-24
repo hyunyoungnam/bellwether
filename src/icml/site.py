@@ -869,21 +869,7 @@ background:none;cursor:pointer;text-align:left;line-height:1.35}
 .ttail .tslot{border-bottom-width:2px}
 .ttail .lim{background:#fbe9ef;color:#a84a68;border-bottom-color:#c76a86}
 .searchrow{display:flex;gap:8px;margin-bottom:10px}
-.search{display:flex;gap:8px;align-items:center;flex:1.6}
-@media(max-width:680px){.searchrow{flex-direction:column}}
-/* V5: enter by the failure you care about, in the papers' own words */
-.lsearch{position:relative;flex:1;display:flex}
-.lsearch input{flex:1;font:inherit;font-size:13.5px;padding:12px 13px;border-radius:10px;
-border:2px solid var(--ring);background:#fff;color:var(--ink);min-width:0}
-.lsearch input:focus{outline:none;border-color:#c76a86;box-shadow:0 0 0 4px rgba(199,106,134,.16)}
-.lsearch input::placeholder{color:#b0879a;font-style:italic}
-.lsug{position:absolute;left:0;right:0;top:calc(100% + 4px);z-index:30;background:var(--card);
-border:1px solid var(--ring);border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.14);
-padding:6px;max-height:300px;overflow:auto}
-.lsug button{display:flex;width:100%;justify-content:space-between;font:inherit;font-size:13px;
-padding:6px 10px;border:0;border-radius:8px;background:none;cursor:pointer;text-align:left}
-.lsug button:hover{background:#fdf0f4}
-.lsug b{font-weight:500;color:var(--mut)}
+.search{display:flex;gap:8px;align-items:center;flex:1}
 .limhit{background:#f4a8bd;border-radius:2px;padding:0 1px;text-decoration:none;font-style:normal}
 
 /* With no placeholder the box has to say "search" by itself: a magnifier and a
@@ -1299,11 +1285,6 @@ background:none;cursor:pointer;color:var(--ink2)}
 <div class="search">
   <input type="search" id="q" aria-label="Search every abstract">
 </div>
-<div class="lsearch">
-  <input id="lq" autocomplete="off" spellcheck="false"
-         placeholder="prior work struggles with…" aria-label="Search the papers' own limitation sentences">
-  <div class="lsug" id="lsug" hidden></div>
-</div>
 </div>
 
 
@@ -1476,9 +1457,12 @@ function semanticExtras(hits,cap=60){
   return out.slice(0,cap).map(([,i])=>i);
 }
 
+let Q_EMPTY=null;
+function qPending(){ return st.q.length>0&&TV===null; }
 function queryHits(){
   if(!st.q.length)return null;
-  if(TV===null){ ensureSearch().then(render); return null; }
+  // index not here yet: match NOTHING rather than flash all 6,637 as a result
+  if(TV===null){ ensureSearch().then(render); return Q_EMPTY??=new Set(); }
   let acc=null;
   for(const w of st.q){
     const s=papersWithWord(w);
@@ -1965,7 +1949,7 @@ function enterWith(mut){
   st.q=[]; const q=$('#q'); if(q)q.value='';
   st.sel=null; st.grouped=false;
   st.topics.clear(); st.fams.clear(); st.meth=null; st.mfam=null; st.ds=null;
-  st.lim=null; const lq=$('#lq'); if(lq)lq.value='';
+  st.lim=null;
   mut();
   go(DG.pair?DG.pair.c1:CY.length-1);
 }
@@ -1980,7 +1964,7 @@ function wireDigest(){
     enterWith(()=>st.topics.add(r.ti));});
   document.querySelectorAll('[data-fight]').forEach(el=>el.onclick=()=>{
     const f=DG.fights[+el.dataset.fight];
-    enterWith(()=>{st.lim=f.t; const lq=$('#lq'); if(lq)lq.value=f.t;});});
+    enterWith(()=>{st.lim=f.t;});});
   document.querySelectorAll('[data-fresh]').forEach(el=>el.onclick=()=>{
     enterWith(()=>st.ds=+el.dataset.fresh);});
   document.querySelectorAll('[data-af]').forEach(el=>el.onclick=()=>{
@@ -2113,15 +2097,13 @@ function drawSentence(){
   if(V.d)tail.push(chip('for '+V.d,'d'));
   if(V.u)tail.push(chip('built on '+V.u,'u'));
   if(V.b)tail.push(chip('on '+V.b,'b'));
-  if(st.q.length)tail.push(` <button class="tslot" data-tq>“${esc(st.q.join(' '))}”<span class="x">×</span></button>`);
   if(st.lim!==null)tail.push(` <button class="tslot lim" data-tl>struggles with “${esc(st.lim)}”<span class="x">×</span></button>`);
   const el=$('#ttl');
   el.innerHTML=`<span id="home">What's new in AI research</span>`+
     (tail.length?`<span class="ttail">${tail.join(' ')}</span>`:'');
   el.querySelector('#home').onclick=()=>{ if(st.corp!==null)go(null); };
   el.querySelectorAll('[data-clear]').forEach(b=>b.onclick=()=>{clearSlot(b.dataset.clear);render();});
-  const tq=el.querySelector('[data-tq]'); if(tq)tq.onclick=()=>{st.q=[];$('#q').value='';render();};
-  const tl=el.querySelector('[data-tl]'); if(tl)tl.onclick=()=>{st.lim=null;$('#lq').value='';render();};
+  const tl=el.querySelector('[data-tl]'); if(tl)tl.onclick=()=>{st.lim=null;render();};
   fitTitle();
 }
 // Shrink-to-fit instead of wrapping. scrollWidth/clientWidth gives the exact
@@ -2137,55 +2119,6 @@ function fitTitle(){
 addEventListener('resize',fitTitle);
 
 // ---- V5: type the failure you care about ------------------------------------
-function limBase(){
-  const keep=st.lim; st.lim=null;
-  const hits=queryHits(); const out=new Set();
-  for(let i=0;i<P.length;i++) if(match(i,hits))out.add(i);
-  st.lim=keep;
-  return out;
-}
-$('#lq').addEventListener('input',()=>{
-  const q=$('#lq').value.trim().toLowerCase();
-  const box=$('#lsug');
-  if(q.length<2){ box.hidden=true; if(!q&&st.lim!==null){st.lim=null;render();} return; }
-  if(LV===null){
-    box.innerHTML='<button disabled>loading…</button>'; box.hidden=false;
-    ensureSearch().then(()=>$('#lq').dispatchEvent(new Event('input')));
-    return;
-  }
-  const base=limBase();
-  // every candidate is applied as a substring, so its count is the UNION of the
-  // matching terms — what you would actually get by picking it
-  const uc=str=>{
-    const got=new Set();
-    for(let t=0;t<LV.length;t++)
-      if(LV[t].includes(str)) for(const i of LPOST.get(t)||[]) if(base.has(i))got.add(i);
-    return got.size;
-  };
-  const seen=new Set([q]);
-  const cand=[[q,uc(q)]];
-  const scored=[];
-  for(let t=0;t<LV.length;t++) if(LV[t].includes(q)&&!seen.has(LV[t])){
-    let c=0; for(const i of LPOST.get(t)||[]) if(base.has(i))c++;
-    if(c)scored.push([LV[t],c]);
-  }
-  scored.sort((x,y)=>y[1]-x[1]);
-  for(const [str] of scored.slice(0,8)){ if(!seen.has(str)){seen.add(str);cand.push([str,uc(str)]);} }
-  const rows=cand.filter(([,c])=>c>0);
-  box.innerHTML=rows.map(([str,c])=>
-    `<button data-t="${esc(str)}"><span>${esc(str)}</span><b>${c}</b></button>`).join('')
-    ||'<button disabled>no paper names this failure</button>';
-  box.hidden=false;
-  box.querySelectorAll('[data-t]').forEach(el=>el.onclick=()=>{
-    st.lim=el.dataset.t; $('#lq').value=st.lim; box.hidden=true;
-    if(st.corp===null){ go(CY.length-1); return; }
-    render();});
-});
-$('#lq').addEventListener('keydown',e=>{
-  if(e.key==='Enter'){const top=$('#lsug').querySelector('[data-t]'); if(top)top.click();}
-  if(e.key==='Escape')$('#lsug').hidden=true;
-});
-document.addEventListener('click',e=>{ if(!e.target.closest('.lsearch'))$('#lsug').hidden=true; });
 function markLim(html){
   if(st.lim===null)return html;
   const t=st.lim.replace(/[.*+?^${}()|[\]\\]/g,'\\$&').replace(/\s+/g,'\\s+');
@@ -2202,6 +2135,7 @@ const INS_MIN=12;          // below this on either side, a year claim is noise
 function drawInside(){
   const el=$('#inset'); if(!el)return;
   el.hidden=true;
+  if(qPending())return;
   const pr=venuePairs().find(p=>p.c1===st.corp||p.c0===st.corp);
   if(!pr)return;
   const hits=queryHits(), keep=st.corp; st.corp=null;
@@ -2318,6 +2252,12 @@ function render(){
     return;
   }
   const res=results();
+  if(qPending()){
+    $('#inset').hidden=true;
+    $('#results').innerHTML='<div class="capped">loading the search index…</div>';
+    const rt0=$('#rtr'); if(rt0)rt0.innerHTML='';
+    return;
+  }
   drawInside();
   { const rt=$('#rtr'); if(rt){ rt.innerHTML=railSetCard(res);
       const g2=rt.querySelector('#grptog2'); if(g2)g2.onclick=()=>{st.grouped=!st.grouped;render();};
@@ -2533,7 +2473,7 @@ function applyChgRow(k,id){
   st.q=[]; const q=$('#q'); if(q)q.value='';
   st.sel=null; st.grouped=false;
   st.topics.clear(); st.fams.clear(); st.meth=null; st.mfam=null; st.ds=null;
-  st.lim=null; const lq=$('#lq'); if(lq)lq.value='';
+  st.lim=null;
   if(k==='t')st.topics.add(id); else if(k==='m')st.meth=id; else st.ds=id;
 }
 // The rail's before-a-pick view: this venue's own significant movers, the same
