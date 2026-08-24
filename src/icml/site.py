@@ -1687,6 +1687,14 @@ const hl=(s)=>{ if(!st.q.length)return esc(s);
     out=out.replace(new RegExp('('+w.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+')','ig'),'<mark>$1</mark>');}
   return out;};
 
+// The failure filter's term, marked inside the pink limitation sentence.
+// Tag-safe: only text segments between tags are touched.
+function markLim(html){
+  if(st.lim===null)return html;
+  const t=st.lim.replace(/[.*+?^${}()|[\]\\]/g,'\\$&').replace(/\s+/g,'\\s+');
+  const rx=new RegExp('('+t+')','ig');
+  return html.split(/(<[^>]+>)/).map(seg=>seg.startsWith('<')?seg:seg.replace(rx,'<i class="limhit">$1</i>')).join('');
+}
 // Card sentences live in data/spans_<corpus>.json, fetched the first time a
 // card from that corpus reaches the screen; render() repaints on arrival.
 const SPX={}, SP_LOADED={};
