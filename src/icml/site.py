@@ -1099,7 +1099,7 @@ const BYID={}; P.forEach((p,i)=>BYID[p.i]=i);
 
 // Neighbours and vectors are indexed by gid, so there is no lookup table: a
 // paper's row IS p.i. Papers with no abstract sit above D.nemb and have neither.
-const NBK=D.neighbors?D.neighbors.k:0, NBR=D.neighbors?D.neighbors.nbr:null;
+let NBK=0, NBR=null;
 const nbrsOf=g=>NBR&&g<D.nemb?NBR.slice(g*NBK,(g+1)*NBK):[];
 
 // ---- PCA(128) int8 vectors, dequantised and row-normalised once ----
@@ -1107,31 +1107,50 @@ const nbrsOf=g=>NBR&&g<D.nemb?NBR.slice(g*NBK,(g+1)*NBK):[];
 // other way round: take what the words DID find, and reach the papers that mean
 // the same thing without sharing the vocabulary. Those arrive as a separate,
 // labelled group — never mixed into the literal matches.
-const EMB=(()=>{
-  if(!D.emb)return null;
-  const {dims,b64,scale}=D.emb;
-  const bin=atob(b64), n=D.nemb;
-  const v=new Float32Array(n*dims);
-  for(let i=0;i<n;i++){
-    let s=0;
-    for(let d=0;d<dims;d++){
-      const q=(bin.charCodeAt(i*dims+d)<<24)>>24;   // byte -> signed int8
-      const x=q*scale; v[i*dims+d]=x; s+=x*x;
+let EMB=null, EMB_P=null;
+function ensureEmb(){
+  return EMB_P??=part('emb.json').then(d=>{
+    if(!d.emb)return;
+    NBK=d.neighbors?d.neighbors.k:0; NBR=d.neighbors?d.neighbors.nbr:null;
+    D.nemb=d.nemb;
+    const {dims,b64,scale}=d.emb;
+    const bin=atob(b64), n=d.nemb;
+    const v=new Float32Array(n*dims);
+    for(let r=0;r<n;r++){
+      let acc=0;
+      for(let dd=0;dd<dims;dd++){
+        const q=(bin.charCodeAt(r*dims+dd)<<24)>>24;   // byte -> signed int8
+        const x=q*scale; v[r*dims+dd]=x; acc+=x*x;
+      }
+      acc=Math.sqrt(acc)||1;
+      for(let dd=0;dd<dims;dd++) v[r*dims+dd]/=acc;
     }
-    s=Math.sqrt(s)||1;
-    for(let d=0;d<dims;d++) v[i*dims+d]/=s;
-  }
-  return {v,dims,n};
-})();
+    EMB={v,dims,n};
+  });
+}
 const hasVec=g=>EMB&&g<EMB.n;
 
-// ---- abstract term index: search now sees all 6,637 abstracts, not 20% ----
-const TV=D.terms.v, TP=D.terms.p;
-// V5 — the same interning, but over each paper's LIMITATION sentence, so a
-// reader can enter by the failure they care about ("who fights my problem?").
-const LV=D.lims.v, LP=D.lims.p;
-const LPOST=new Map();
-LP.forEach((ids,i)=>{for(const t of ids){let a=LPOST.get(t);if(!a)LPOST.set(t,a=[]);a.push(i);}});
+// ---- on-demand parts -------------------------------------------------------
+// The page inlines only what first paint and every count need. Sentences,
+// search indexes and vectors arrive from data/*.json when first touched (and
+// via an idle prefetch), so the growing corpus set does not grow first paint.
+const PART={};                              // name -> Promise
+function part(name){
+  return PART[name]??=fetch('data/'+name).then(r=>{
+    if(!r.ok)throw new Error(name+' '+r.status);
+    return r.json();});
+}
+// ---- term indexes: abstracts (search) and limitation sentences (V5), lazy --
+let TV=null,TP=null,LV=null,LP=null;
+const POST=new Map(), LPOST=new Map();
+let SEARCH_P=null;
+function ensureSearch(){
+  return SEARCH_P??=part('search.json').then(d=>{
+    TV=d.terms.v; TP=d.terms.p; LV=d.lims.v; LP=d.lims.p;
+    TP.forEach((ids,i)=>{for(const t of ids){let a=POST.get(t);if(!a)POST.set(t,a=[]);a.push(i);}});
+    LP.forEach((ids,i)=>{for(const t of ids){let a=LPOST.get(t);if(!a)LPOST.set(t,a=[]);a.push(i);}});
+  });
+}
 // st.lim is a STRING matched as a substring of the interned limitation terms,
 // so "hallucinat" covers hallucination / hallucinations / hallucinated at once —
 // the concept, not one inflection of it.
@@ -1139,14 +1158,12 @@ let LSET=null, LSETID=null;
 function limSet(){
   if(LSETID===st.lim)return LSET;
   LSETID=st.lim;
-  if(st.lim===null){LSET=null;return LSET;}
+  if(st.lim===null||LV===null){LSETID=undefined;LSET=st.lim===null?null:new Set();return LSET;}
   LSET=new Set();
   for(let t=0;t<LV.length;t++)
     if(LV[t].includes(st.lim)) for(const i of LPOST.get(t)||[])LSET.add(i);
   return LSET;
 }
-const POST=new Map();                       // term id -> paper indices
-TP.forEach((ids,i)=>{for(const t of ids){let a=POST.get(t);if(!a)POST.set(t,a=[]);a.push(i);}});
 
 // TV is sorted, so every term sharing a prefix is one contiguous run.
 function prefixTerms(w){
@@ -1187,6 +1204,7 @@ function hitScore(i){
 
 // Papers close in meaning to what the words found, excluding what the words found.
 function semanticExtras(hits,cap=60){
+  if(!EMB){ ensureEmb().then(render); return []; }
   if(!EMB||!hits||!hits.size||!st.q.length)return [];
   const seeds=[...hits].map(i=>[hitScore(i),i]).sort((a,b)=>b[0]-a[0])
                        .slice(0,40).map(([,i])=>P[i].i).filter(hasVec);
@@ -1214,6 +1232,7 @@ function semanticExtras(hits,cap=60){
 
 function queryHits(){
   if(!st.q.length)return null;
+  if(TV===null){ ensureSearch().then(render); return null; }
   let acc=null;
   for(const w of st.q){
     const s=papersWithWord(w);
@@ -1368,17 +1387,34 @@ const hl=(s)=>{ if(!st.q.length)return esc(s);
     out=out.replace(new RegExp('('+w.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+')','ig'),'<mark>$1</mark>');}
   return out;};
 
+// Card sentences live in data/spans_<corpus>.json, fetched the first time a
+// card from that corpus reaches the screen; render() repaints on arrival.
+const SPX={}, SP_LOADED={};
+function ensureSpans(cys){
+  for(const ci of cys){
+    const k=CY[ci].k;
+    if(SP_LOADED[k])continue;
+    SP_LOADED[k]=true;
+    part('spans_'+k+'.json').then(d=>{
+      Object.assign(SPX,d);
+      render();
+    }).catch(()=>{SP_LOADED[k]=false;});
+  }
+}
 function card(i){
   const p=P[i];
+  const sx=SPX[p.i], spReady=!!sx;
+  const pn=sx?sx[0]:[], pL=sx?sx[1]:null, pK=sx?sx[2]:null, pR=sx?sx[3]:null,
+        pc1=sx?sx[4]:null;
   const names=(arr,fn)=>arr.map(fn).join(', ');
   // One passage, not three labelled rows. The three sentences are the paper's,
   // in the order a reader needs them, and the colour says which question each
   // answers: why it was needed, what is new, what it achieved.
   const parts=[];
-  if(p.L)parts.push(`<span class="hl why">${markLim(annotate(p.L,p,true))}</span>`);
-  const change=p.K||p.n[0]||'';
+  if(pL)parts.push(`<span class="hl why">${markLim(annotate(pL,p,true))}</span>`);
+  const change=pK||pn[0]||'';
   if(change)parts.push(`<span class="hl new">${annotate(change,p,true)}</span>`);
-  if(p.R)parts.push(`<span class="hl eff">${annotate(p.R,p,true)}</span>`);
+  if(pR)parts.push(`<span class="hl eff">${annotate(pR,p,true)}</span>`);
 
   // The extracted terms are part of the summary, not a footnote under it.
   const term=(lab,v,cls)=>v?`<span class="tm ${cls}"><b>${lab}</b>${hl(v)}</span>`:'';
@@ -1391,7 +1427,7 @@ function card(i){
 
   // One name: the corresponding author when the paper printed one, else the
   // first. "et al." stands for the rest rather than listing eight names.
-  const c1=(p.c1||[])[0];
+  const c1=(pc1||[])[0];
   const lead=c1?(c1.name||c1.email):((p.au||[])[0]||'');
   const etal=(p.na||0)>1?' <i>et al.</i>':'';
   const who=lead
@@ -1405,7 +1441,8 @@ function card(i){
     <div class="meta"><span class="cyst">${esc(CY[p.cy].v)} ${CY[p.cy].y}</span>${who}${nearBadge(p)}</div>
     <div class="rule"></div>
     ${parts.length?`<div class="passage">${parts.join(' ')}</div>`
-      :`<div class="passage miss">no sentence in this paper states what is new</div>`}
+      :spReady?`<div class="passage miss">no sentence in this paper states what is new</div>`
+      :`<div class="passage miss">loading the paper's own sentences…</div>`}
     ${terms?`<div class="terms">${terms}</div>`:''}
     <div class="foot">
       <div class="fx"></div>
@@ -1421,6 +1458,12 @@ function card(i){
 // the page must too — otherwise a chip labelled 51 quietly returns 102.
 // The panel is a view onto one paper's neighbours; it never changes the result set.
 function openPanel(i){
+  if(!NBR){
+    ensureEmb().then(()=>openPanel(i));
+    $('#panel').hidden=false;
+    $('#pbody').innerHTML='<div style="color:var(--mut);font-size:12px;padding:10px 0">loading the embedding neighbours…</div>';
+    return;
+  }
   st.panel=i;
   const p=P[i];
   // Five, not twelve. The panel is a nudge sideways, not a second result list —
@@ -1775,6 +1818,11 @@ $('#lq').addEventListener('input',()=>{
   const q=$('#lq').value.trim().toLowerCase();
   const box=$('#lsug');
   if(q.length<2){ box.hidden=true; if(!q&&st.lim!==null){st.lim=null;render();} return; }
+  if(LV===null){
+    box.innerHTML='<button disabled>loading…</button>'; box.hidden=false;
+    ensureSearch().then(()=>$('#lq').dispatchEvent(new Event('input')));
+    return;
+  }
   const base=limBase();
   // every candidate is applied as a substring, so its count is the UNION of the
   // matching terms — what you would actually get by picking it
@@ -1953,6 +2001,7 @@ function render(){
   // No "show more": nobody reads to the end of 6,637. Past the cap the answer is
   // to narrow, and the count above says how much is not on screen.
   const extraShown=extra.slice(0, res.length>=MAX_SHOWN?0:Math.min(extra.length,MAX_SHOWN-res.length));
+  ensureSpans(new Set([...show,...extraShown].map(i=>P[i].cy)));
   $('#results').innerHTML=(show.map(card).join('')
     +(res.length>show.length
       ? `<div class="capped">Showing the first ${MAX_SHOWN} of ${res.length.toLocaleString()}. `+
@@ -2248,6 +2297,11 @@ function wireChanged(){
 }
 
 function renderGrouped(res){
+  if(!EMB){
+    ensureEmb().then(render);
+    $('#results').innerHTML='<div class="capped">loading the embedding vectors…</div>';
+    return;
+  }
   const g=groupsFor(res.slice(0,400));
   let html='';
   if(!g) html='<div class="capped">Too few papers to group. Pick a wider set.</div>';
@@ -2280,6 +2334,10 @@ const c=D.coverage;
 
 st.corp=corpFromHash();
 render();
+// prefetch the on-demand parts once the first paint is done — a reader on the
+// landing costs nothing extra, a reader who searches never notices the split
+setTimeout(()=>{ ensureSearch(); ensureEmb();
+  if(st.corp!==null)ensureSpans([st.corp]); },1200);
 
 </script></body></html>"""
 
@@ -2291,13 +2349,17 @@ ROBOTS = "User-agent: *\nDisallow: /\n"
 HEADERS = "/*\n  X-Robots-Tag: noindex, nofollow\n"
 
 
-def write_dist(html: str):
+def write_dist(html: str, parts: dict[str, str]):
     """Emit a folder that can be dragged onto a static host as-is."""
     d = ROOT / "dist"
     d.mkdir(parents=True, exist_ok=True)
     (d / "index.html").write_text(html, encoding="utf-8")
     (d / "robots.txt").write_text(ROBOTS, encoding="utf-8")
     (d / "_headers").write_text(HEADERS, encoding="utf-8")
+    dd = d / "data"
+    dd.mkdir(exist_ok=True)
+    for name, body in parts.items():
+        (dd / name).write_text(body, encoding="utf-8")
     return d
 
 
@@ -2316,15 +2378,39 @@ def main() -> int:
 
     VENUE = args.venue
     payload = build_payload(args.spans)
-    html = HTML.replace("__DATA__", json.dumps(payload, ensure_ascii=False,
-                                               separators=(",", ":")))
+
+    # ---- split: the page inlines only what the first paint and every count
+    # need; card sentences, the search indexes and the vectors load on demand.
+    # Sized for the six-corpus future — a single file was 21.8 MB raw already.
+    dump = lambda o: json.dumps(o, ensure_ascii=False, separators=(",", ":"))
+    parts: dict[str, str] = {}
+    spans_by: dict[str, dict] = {c["k"]: {} for c in payload["corpora"]}
+    keys_by_ci = [c["k"] for c in payload["corpora"]]
+    for r in payload["papers"]:
+        spans_by[keys_by_ci[r["cy"]]][str(r["i"])] = [
+            r.pop("n"), r.pop("L"), r.pop("K"), r.pop("R"), r.pop("c1")]
+    for k, v in spans_by.items():
+        parts[f"spans_{k}.json"] = dump(v)
+    parts["search.json"] = dump({"terms": payload.pop("terms"),
+                                 "lims": payload.pop("lims")})
+    parts["emb.json"] = dump({"emb": payload.pop("emb"),
+                              "neighbors": payload.pop("neighbors"),
+                              "nemb": payload["nemb"]})
+
+    html = HTML.replace("__DATA__", dump(payload))
     out = REPORTS / "index.html" if args.out is None else Path(args.out)
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(html, encoding="utf-8")
+    ddir = out.parent / "data"
+    ddir.mkdir(exist_ok=True)
+    for name, body in parts.items():
+        (ddir / name).write_text(body, encoding="utf-8")
     c = payload["coverage"]
-    print(f"wrote {out} ({len(html)/1024/1024:.1f} MB)")
+    psz = sum(len(b) for b in parts.values())
+    print(f"wrote {out} ({len(html)/1024/1024:.1f} MB core) + data/ "
+          f"({len(parts)} files, {psz/1024/1024:.1f} MB, fetched on demand)")
     if args.dist:
-        print(f"  dist/ ready to upload: {write_dist(html)}")
+        print(f"  dist/ ready to upload: {write_dist(html, parts)}")
     print(f"  {c['total']:,} papers · {c['with_span']:,} with a verified span "
           f"({c['with_span']/c['total']:.0%}) · {c['tagged']:,} carrying a topic "
           f"({c['tagged']/c['total']:.0%}) · {len(payload['topics'])} topics")

@@ -427,7 +427,7 @@ Built and validated. Reusable under the new framing.
 | `data/processed/topics.json` | 91 topics | level-3 multi-label tags, explicit + expanded |
 | `data/processed/neighbors.json` | 6,592 × 20 | precomputed "more like this" (1.6 MB) |
 | `data/processed/embed_compact.json` | 128-dim int8 | multi-seed queries in-browser (1.1 MB) |
-| `reports/index.html` | 5.8 MB (1.9 gz) | the interface; `--dist` writes an uploadable `dist/` |
+| `reports/index.html` + `reports/data/` | 1.4 MB gz core + 16 MB on-demand | the interface; `--dist` writes an uploadable `dist/` |
 
 **Removed 2026-07-31** (served the abandoned "corpus atlas / trend report"
 framing — do not recreate): `report.py`, `viz.py`, `trends.py`, `metrics.py`,
@@ -738,7 +738,14 @@ Still weak:
   data*, not just a title. Scanning 50 results should take a minute.
 - **Minimize prose, but never at the cost of a caveat.** Coverage and method
   notes stay.
-- **Self-contained HTML + canvas.** No build step, no Node (not installed).
+- **One core page + on-demand parts (2026-08-24).** Still no build step and no
+  Node, but no longer one file: index.html inlines only what first paint and
+  every count need (5.3 MB raw, 1.4 MB gz); card sentences (per corpus), the
+  search/limitation indexes and the vectors live in `data/*.json`, fetched on
+  first touch plus an idle prefetch. Cards render instantly with a "loading the
+  paper's own sentences…" line that fills on arrival. Consequence: file://
+  preview no longer works — use the `python3 -m http.server` that already backs
+  the tunnel. Sized for six corpora; a single file was 21.8 MB raw at two.
 - Charts follow the project dataviz standard; **load the `dataviz` skill before
   touching one.** A scatter is an all-pairs form and caps at three categorical
   hues — research areas are never eight colours; use emphasis instead.
