@@ -911,19 +911,6 @@ line-height:1.25}
 .tslot.ghost{background:none;color:#9aa0a6;border-bottom:3px dashed #c9ccd0;font-weight:500}
 h1 .tand{font-weight:500;color:var(--ink2)}
 .tedit{position:relative;display:inline-block}
-/* the input takes EXACTLY the width of the button it replaces (set inline by
-   openSlot), so opening an editor moves nothing around it */
-.tedit input{font:inherit;font-size:inherit;font-weight:600;padding:0 8px;margin:0 1px;
-border:0;border-bottom:3px solid var(--acc);border-radius:10px;background:#e8effc;
-color:var(--ink);outline:none;box-sizing:border-box}
-.tdd{position:absolute;left:0;top:100%;z-index:40;background:var(--card);text-align:left;
-border:1px solid var(--ring);border-radius:0 12px 12px 12px;box-shadow:0 12px 34px rgba(0,0,0,.16);
-padding:6px;width:340px;max-height:320px;overflow:auto}
-.tdd button{display:flex;width:100%;justify-content:space-between;gap:12px;font:inherit;
-font-size:13.5px;font-weight:400;letter-spacing:0;padding:6px 10px;border:0;border-radius:8px;
-background:none;cursor:pointer;text-align:left;line-height:1.35}
-.tdd button:hover,.tdd button.hot{background:#e8effc}
-.tdd b{font-weight:500;color:var(--mut)}
 /* the tail: free words and the limitation filter, readable as part of the sentence */
 .ttail{font-size:.62em;font-weight:500;color:var(--ink2);display:block;margin-top:4px}
 .ttail .tslot{border-bottom-width:2px}
@@ -1258,6 +1245,8 @@ border:1px solid var(--ring);background:var(--card);color:var(--ink2);display:fl
   border:1px solid var(--ring);background:var(--card);color:var(--ink2)}
 .scchip b{font-weight:600;color:var(--mut);margin-left:3px}
 .scchip:hover{border-color:var(--acc);color:var(--acc)}
+.scchip.on2{background:#e8effc;border-color:#bcd2f2;color:var(--acc);font-weight:600}
+.scchip.on2:hover{border-color:var(--warm);color:var(--warm)}
 .scsplit{font:inherit;font-size:11.5px;margin-top:11px;padding:5px 11px;border-radius:8px;
 border:1px solid var(--ring);background:var(--card);color:var(--ink2);cursor:pointer;width:100%}
 .scsplit:hover{color:var(--ink);border-color:var(--mut)}
@@ -2111,12 +2100,6 @@ function wireLanding(){
 // top level runs first — touching them here would be a TDZ crash
 let MTOP=null;
 const mtop=id=>{ if(!MTOP){MTOP=new Map(); for(const [x,,,pa] of MS)MTOP.set(x,pa==null?x:pa);} return MTOP.get(id)??id; };
-let tdd=null;
-// The editor REPLACED the slot button, so closing must put the sentence back —
-// removing alone leaves a hole where the slot was (clicking away ate the slot).
-function closeTdd(redraw){ if(tdd){tdd.remove();tdd=null; if(redraw!==false)drawSentence();} }
-document.addEventListener('click',e=>{ if(tdd&&!tdd.contains(e.target))closeTdd(); });
-
 function slotState(){
   const kt=[...st.topics].filter(ti=>T[ti].f!==1), dt=[...st.topics].filter(ti=>T[ti].f===1);
   const kf=[...st.fams].filter(k=>k.startsWith('#topfams|')), df=[...st.fams].filter(k=>k.startsWith('#domfams|'));
@@ -2140,111 +2123,6 @@ function clearSlot(ax){
   if(ax==='u'){ st.meth=null; st.mfam=null; }
   if(ax==='b')st.ds=null;
 }
-function slotCandidates(ax){
-  const out=[];
-  if(ax==='k'||ax==='d'){
-    const want=ax==='d';
-    const base=baseSet(want?'domains':'topics');
-    const cnt=new Map();
-    for(const i of base){ const seen=new Set();
-      for(const [ti] of P[i].g){
-        if(seen.has(ti)||T[ti].j||((T[ti].f===1)!==want))continue;
-        seen.add(ti); cnt.set(ti,(cnt.get(ti)||0)+1); } }
-    for(const [ti,c] of cnt)out.push([ti,T[ti].l,c]);
-  }else if(ax==='u'){
-    const base=baseSet('meth');
-    const cnt=new Map();
-    for(const i of base){ const seen=new Set();
-      for(const m of (P[i].mu0||[])){ const t=mtop(m);
-        if(seen.has(t))continue; seen.add(t); cnt.set(t,(cnt.get(t)||0)+1); } }
-    for(const [id,c] of cnt)out.push([id,MV[id],c]);
-  }else{
-    const base=baseSet('ds');
-    const cnt=new Map();
-    for(const i of base) for(const di of new Set(P[i].k0)){
-      if(!DSSET.has(di))continue; cnt.set(di,(cnt.get(di)||0)+1); }
-    for(const [di,c] of cnt)out.push([di,dname(di),c]);
-  }
-  return out.sort((x,y)=>y[2]-x[2]);
-}
-function applySlot(ax,id){
-  clearSlot(ax);
-  if(ax==='k'||ax==='d')st.topics.add(id);
-  else if(ax==='u')st.meth=id;
-  else st.ds=id;
-  st.sel=null; st.grouped=false;
-  if(st.corp===null){ go(CY.length-1); return; }
-  render();
-}
-function openSlot(btn,ax){
-  if(tdd){ closeTdd(); btn=$('#ttl .tslot[data-ax="'+ax+'"]')||btn; }
-  const all=slotCandidates(ax);
-  const w=btn.getBoundingClientRect().width;
-  const wrap=document.createElement('span'); wrap.className='tedit';
-  wrap.innerHTML=`<input placeholder="${w<150?'…':'type to filter…'}"><div class="tdd"></div>`;
-  wrap.querySelector('input').style.width=w+'px';
-  btn.replaceWith(wrap);
-  tdd=wrap;
-  const inp=wrap.querySelector('input'), dd=wrap.querySelector('.tdd');
-  const paint=q=>{
-    const rows=all.filter(([,l])=>!q||l.toLowerCase().includes(q)).slice(0,30);
-    dd.innerHTML=rows.map(([id,l,c],ix)=>
-      `<button data-id="${id}" class="${ix===0?'hot':''}"><span>${esc(l)}</span><b>${c}</b></button>`)
-      .join('')||'<button disabled>no match here</button>';
-    dd.querySelectorAll('[data-id]').forEach(el=>el.onclick=()=>{closeTdd(false);applySlot(ax,+el.dataset.id);});
-  };
-  paint('');
-  inp.focus();
-  inp.oninput=()=>paint(inp.value.trim().toLowerCase());
-  inp.onkeydown=e=>{
-    if(e.key==='Enter'){const top=dd.querySelector('[data-id]'); if(top){closeTdd(false);applySlot(ax,+top.dataset.id);}}
-    if(e.key==='Escape')closeTdd();
-  };
-}
-function drawSentence(){
-  // The title is a title again — the slot grammar tested badly. What survives
-  // from it is the part that worked: the CURRENT selection reads as removable
-  // chips right under the title, so "what am I looking at?" keeps its one home.
-  const V=slotState();
-  const chip=(label,ax)=>` <button class="tslot" data-clear="${ax}">${esc(label)}<span class="x">×</span></button>`;
-  const tail=[];
-  if(V.k)tail.push(chip(V.k,'k'));
-  if(V.d)tail.push(chip('for '+V.d,'d'));
-  if(V.u)tail.push(chip('built on '+V.u,'u'));
-  if(V.b)tail.push(chip('on '+V.b,'b'));
-  if(st.lim!==null)tail.push(` <button class="tslot lim" data-tl>struggles with “${esc(st.lim)}”<span class="x">×</span></button>`);
-  const el=$('#ttl');
-  el.innerHTML=`<span id="home">What's new in AI research</span>`+
-    (tail.length?`<span class="ttail">${tail.join(' ')}</span>`:'');
-  el.querySelector('#home').onclick=()=>{ if(st.corp!==null)go(null); };
-  el.querySelectorAll('[data-clear]').forEach(b=>b.onclick=()=>{clearSlot(b.dataset.clear);render();});
-  const tl=el.querySelector('[data-tl]'); if(tl)tl.onclick=()=>{st.lim=null;render();};
-  fitTitle();
-}
-// Shrink-to-fit instead of wrapping. scrollWidth/clientWidth gives the exact
-// overflow ratio, so one measurement suffices — no loop, no flicker.
-function fitTitle(){
-  const el=$('#ttl');
-  el.style.fontSize='';
-  const base=parseFloat(getComputedStyle(el).fontSize);
-  if(el.scrollWidth>el.clientWidth){
-    el.style.fontSize=Math.max(17,Math.floor(base*el.clientWidth/el.scrollWidth*10)/10-.3)+'px';
-  }
-}
-addEventListener('resize',fitTitle);
-
-// ---- V5: type the failure you care about ------------------------------------
-function markLim(html){
-  if(st.lim===null)return html;
-  const t=st.lim.replace(/[.*+?^${}()|[\]\\]/g,'\\$&').replace(/\s+/g,'\\s+');
-  const rx=new RegExp('('+t+')','ig');
-  return html.split(/(<[^>]+>)/).map(seg=>seg.startsWith('<')?seg:seg.replace(rx,'<i class="limhit">$1</i>')).join('');
-}
-
-// ---- inside this set, since last year --------------------------------------
-// The colleague-requested view: not "robotics grew" but "robotics moved from
-// RL-based to VLA-based". Same two-test rule, same lanes; the denominator is
-// the selection's own size in each edition, all counts from the abstract pass.
 let insTab='u';
 const INS_MIN=12;          // below this on either side, a year claim is noise
 function drawInside(){
@@ -2331,7 +2209,6 @@ function render(){
   $('#landing').hidden=!landing;
   $('#rail').hidden=landing;
   document.querySelector('.wrap').classList.toggle('withrail',!landing);
-  drawSentence();
   document.querySelector('.searchrow').hidden=landing;
   if(landing){
     $('#legend').hidden=true; $('#results').innerHTML=''; $('#inset').hidden=true;
@@ -2379,6 +2256,10 @@ function render(){
   drawInside();
   { const rt=$('#rtr'); if(rt){ rt.innerHTML=railSetCard(res);
       const g2=rt.querySelector('#grptog2'); if(g2)g2.onclick=()=>{st.grouped=!st.grouped;render();};
+      rt.querySelectorAll('[data-fc]').forEach(el=>el.onclick=()=>{
+        const ax=el.dataset.fc;
+        if(ax==='l')st.lim=null; else clearSlot(ax);
+        render();});
       rt.querySelectorAll('[data-ck]').forEach(el=>el.onclick=()=>{
         const id=+el.dataset.cid;
         if(el.dataset.ck==='d')st.ds=st.ds===id?null:id; else st.meth=st.meth===id?null:id;
@@ -2666,7 +2547,18 @@ function railSetCard(res){
   const tiers=(nOral||nSpot)
     ?`<div class="scsub">${nOral?`${nOral} oral${nOral>1?'s':''}`:''}`+
      `${nSpot?`${nOral?' · ':''}${nSpot} spotlight${nSpot>1?'s':''}`:''} — listed first</div>`:'';
-  return `<div class="setcard"><div class="rh">This set</div>`+
+  const V2=slotState();
+  const fch=[];
+  if(V2.k)fch.push(['k',V2.k]);
+  if(V2.d)fch.push(['d','for '+V2.d]);
+  if(V2.u)fch.push(['u','built on '+V2.u]);
+  if(V2.b)fch.push(['b','on '+V2.b]);
+  if(st.lim!==null)fch.push(['l','struggles: “'+st.lim+'”']);
+  const fchips=fch.length
+    ?`<div class="scchips" style="margin-bottom:8px">`+fch.map(([ax,l])=>
+       `<button class="scchip on2" data-fc="${ax}">${esc(l)} ×</button>`).join('')+`</div>`
+    :'';
+  return `<div class="setcard"><div class="rh">This set</div>`+fchips+
     `<div class="scn">${res.length.toLocaleString()}<small>papers</small></div>`+tiers+
     `<div class="scyr">${yrows}</div>`+
     (sib.length>1?`<div class="scsub">the same pick, in each edition — share of that year</div>`:'')+
@@ -2721,6 +2613,7 @@ const c=D.coverage;
 // is new" on the cards that have none. Stating them in place beats a block that
 // is read once and then ignored.
 
+$('#ttl').onclick=()=>{ if(st.corp!==null)go(null); };
 st.corp=corpFromHash();
 render();
 // prefetch the on-demand parts once the first paint is done — a reader on the
