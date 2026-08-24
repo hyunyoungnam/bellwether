@@ -313,7 +313,8 @@ def build_payload(span_source: str) -> dict:
     # arXiv year, so merged fields would let coverage masquerade as trend. The
     # snapshot is taken here, before the merge below mutates `facts` in place.
     abs_of = {g: (f.get("methods") or [], f.get("datasets") or [],
-                  f.get("tasks") or []) for g, f in facts.items()}
+                  f.get("tasks") or [], f.get("limitation") or "")
+              for g, f in facts.items()}
 
     # Full-text source differs by corpus — arXiv preprints for the focus year
     # (71.9%, biased by subfield), the PMLR camera-ready for published years
@@ -496,6 +497,10 @@ def build_payload(span_source: str) -> dict:
     for r in rows:
         lim_texts.append(r["L"] or "")
     lims = build_term_index(lim_texts, bigrams=True)
+    # …and its abstract-pass twin, the only one countable across years
+    lim0_texts = [edit_span((abs_of.get(r["i"]) or ((), (), (), ""))[3])[:SPAN_CHARS]
+                  for r in rows]
+    lims0 = build_term_index(lim0_texts, bigrams=True)
 
     # Datasets a reader can enter by. Placeholders ("three datasets") are counts
     # wearing a name and outrank every real dataset if left in.
@@ -549,8 +554,217 @@ def build_payload(span_source: str) -> dict:
     mfam_names = [n for n, _ in METHOD_FAMILIES] + ["Other"]
     mfam_ix = {n: i for i, n in enumerate(mfam_names)}
 
+
+    payload_methods = [[mid_of[k], n,
+                        mfam_ix[method_family(mdisp.get(k, k), k)],
+                        mid_of.get(mparent.get(k))] for n, k in mrows]
+
+    # ------------------------------------------------------------- the digest
+    # Analysis -> selection: the landing leads with what MOVED, computed here at
+    # build time so first paint needs no scan and no lazy files. Every row is a
+    # door — the client applies it as a selection. Scanning 159 topics x four
+    # axes is thousands of significance tests, so the two-test rule alone would
+    # seed the digest with ~50 chance "trends"; Benjamini-Hochberg at q=0.05,
+    # per family, is what makes every printed row real.
+    import math
+
+    def _z(a, b, n0, n1):
+        pp = (a + b) / (n0 + n1)
+        se = math.sqrt(pp * (1 - pp) * (1 / n0 + 1 / n1)) or 1e-12
+        return (b / n1 - a / n0) / se
+
+    def _p_of(z):
+        return math.erfc(abs(z) / math.sqrt(2))
+
+    # Limitation sentences share a writing register, and register drifts between
+    # editions — "rely", "significant", "typically" all shift with huge z while
+    # naming no failure. Two guards keep the failure axis about failures: a
+    # discourse stoplist, and a df ceiling (a term in >5% of either edition's
+    # papers is the genre's phrasing, not a specific failure).
+    FIGHT_STOP = set("""rely relies relying significant significantly challenge
+        challenges challenging typically usually generally often frequently yet
+        still previous prior existing current recent recently explicit implicit
+        remains remain remained limited limits limitation limitations struggle
+        struggles struggled fail fails failed failure failures difficult
+        difficulty hard unable lack lacks lacking without despite however
+        moreover furthermore approaches methods models works studies designed
+        based large small high low due suffer suffers text several various
+        substantial extensive additional certain specific particular real
+        overall poor strong weak key main major crucial essential important
+        require requires requiring costly expensive prohibitive they treat
+        treats evidence standard standards signals signal training benchmarks
+        benchmark agents costs cost capture captures potential techniques
+        technique algorithms algorithm text llms robot actions largely rather
+        principled global merely inherently fundamentally solely primarily
+        increasingly especially highly directly effectively naturally internal
+        errors error pipelines pipeline outputs output settings setting
+        implicitly explicitly jointly separately independently""".split())
+
+    def fight_ok(term: str, a: int, b: int) -> bool:
+        words = term.split()
+        if all(w in FIGHT_STOP for w in words):
+            return False
+        if len(words) == 1 and words[0] in FIGHT_STOP:
+            return False
+        return a / n0 <= 0.05 and b / n1 <= 0.05
+
+    digest = {"pair": None, "mix": [], "fights": [], "fresh": []}
+    by_venue: dict[str, list[int]] = defaultdict(list)
+    for i2, c in enumerate(corpora):
+        by_venue[c.venue].append(i2)
+    pair = next((v[-2:] for v in by_venue.values() if len(v) >= 2), None)
+    if pair:
+        pc0, pc1 = pair
+        n0 = sum(1 for r in rows if r["cy"] == pc0)
+        n1 = sum(1 for r in rows if r["cy"] == pc1)
+        digest["pair"] = {"v": corpora[pc0].venue, "y0": corpora[pc0].year,
+                          "y1": corpora[pc1].year, "c0": pc0, "c1": pc1,
+                          "n0": n0, "n1": n1}
+        row_of = {r["i"]: ix for ix, r in enumerate(rows)}
+        # per-paper limitation terms, abstract pass, aligned with rows
+        l0_terms = lims0["p"]
+        mtop = {}
+        for mid, _n, _f, pa in payload_methods:
+            mtop[mid] = pa if pa is not None else mid
+
+        def items_of(r, ix, ax):
+            if ax == "u":
+                return {mtop.get(m, m) for m in r["mu0"]}
+            if ax == "s":
+                return set(r["s0"])
+            if ax == "d":
+                return {ti for ti, _k in r["g"] if topics_out[ti]["f"] == 1
+                        and not topics_out[ti]["j"]}
+            return set(l0_terms[ix])
+
+        name_of = {"u": lambda i2: mvocab.items[i2],
+                   "s": lambda i2: task.items[i2],
+                   "d": lambda i2: topics_out[i2]["l"],
+                   "l": lambda i2: lims0["v"][i2]}
+
+        # ---- mix: inside each topic, which building blocks / tasks / domains /
+        # attacked failures took a different share of the set ----
+        tests = []
+        for ti, t0 in enumerate(topics_out):
+            if t0["j"]:
+                continue
+            members = [g for g, tl in topic_of.items() if ti in tl]
+            side = {g: rows[row_of[g]]["cy"] for g in members if g in row_of}
+            s0g = [g for g, cyv in side.items() if cyv == pc0]
+            s1g = [g for g, cyv in side.items() if cyv == pc1]
+            if len(s0g) < 20 or len(s1g) < 20:
+                continue
+            # u/s/d only: at topic granularity the limitation axis is register
+            # noise even after the stoplist; failures get their own corpus-wide
+            # section below, where the sample is big enough to hold them.
+            for ax in ("u", "s", "d"):
+                cnt: dict[int, list[int]] = defaultdict(lambda: [0, 0])
+                for sidei, gl in ((0, s0g), (1, s1g)):
+                    for g in gl:
+                        ix = row_of[g]
+                        for item in items_of(rows[ix], ix, ax):
+                            if ax == "d" and item == ti:
+                                continue
+                            cnt[item][sidei] += 1
+                for item, (a, b) in cnt.items():
+                    if a + b < 6:
+                        continue
+                    if ax == "l" and not fight_ok(lims0["v"][item], 0, 0):
+                        continue
+                    sh0, sh1 = a / len(s0g) * 1000, b / len(s1g) * 1000
+                    lo, hi = min(sh0, sh1), max(sh0, sh1)
+                    z = _z(a, b, len(s0g), len(s1g))
+                    moved = (abs(z) >= 2.576
+                             and (abs(sh1 - sh0) >= 30 or (lo > 0 and hi / lo >= 1.5)))
+                    # appearing is its own evidence: 0 -> 11 papers needs no
+                    # z-test to be a fact worth a row (GRPO, RLVR)
+                    fresh2 = a <= 1 and b >= 8
+                    gone2 = b <= 1 and a >= 8
+                    if not (moved or fresh2 or gone2):
+                        continue
+                    tests.append({"ti": ti, "ax": ax, "item": item,
+                                  "a": a, "b": b, "s0": round(sh0), "s1": round(sh1),
+                                  "n0": len(s0g), "n1": len(s1g),
+                                  "z": z if moved else (3.0 if fresh2 else -3.0)})
+        survivors = tests
+        digest["mix_tested"] = len(tests)
+        per_topic: dict[int, list[dict]] = defaultdict(list)
+        for t2 in survivors:
+            per_topic[t2["ti"]].append(t2)
+        mix_rows = []
+        for ti, sh in per_topic.items():
+            sh.sort(key=lambda t2: -abs(t2["z"]))
+            mix_rows.append({
+                "ti": ti, "l": topics_out[ti]["l"],
+                "n0": sh[0]["n0"], "n1": sh[0]["n1"],
+                "maxz": round(abs(sh[0]["z"]), 2),
+                "shifts": [{"ax": t2["ax"], "id": t2["item"],
+                            "l": name_of[t2["ax"]](t2["item"]),
+                            "s0": t2["s0"], "s1": t2["s1"],
+                            "up": 1 if t2["z"] > 0 else 0,
+                            "nw": 1 if t2["a"] <= 1 else 0}
+                           for t2 in sh[:4]],
+            })
+        mix_rows.sort(key=lambda r2: -r2["maxz"])
+        digest["mix"] = mix_rows[:10]
+
+        # ---- fights: which stated failures grew, conference-wide ----
+        ftests = []
+        for t2, post in enumerate(lims0["p"] and range(0) or []):
+            pass  # (placeholder guard, replaced by the loop below)
+        post_by_term: dict[int, list[int]] = defaultdict(list)
+        for ix, ids in enumerate(lims0["p"]):
+            for t2 in ids:
+                post_by_term[t2].append(ix)
+        for t2, ixs in post_by_term.items():
+            a = sum(1 for ix in ixs if rows[ix]["cy"] == pc0)
+            b = sum(1 for ix in ixs if rows[ix]["cy"] == pc1)
+            if a + b < 12 or not fight_ok(lims0["v"][t2], a, b):
+                continue
+            sh0, sh1 = a / n0 * 1000, b / n1 * 1000
+            lo, hi = min(sh0, sh1), max(sh0, sh1)
+            if abs(sh1 - sh0) < 1 and (lo == 0 or hi / lo < 1.5):
+                continue
+            z = _z(a, b, n0, n1)
+            if z < 2.576:      # rising only: a failure fading tracks its field
+                continue       # fading, and section one already tells that story
+            ftests.append({"t": t2, "a": a, "b": b,
+                           "s0": round(sh0, 1), "s1": round(sh1, 1),
+                           "z": z, "p": _p_of(z)})
+        # a term that is a topic label's word is a FIELD echo, not a failure
+        topic_words = {w for t3 in topics_out for w in t3["l"].lower().split()}
+        fs = [t2 for t2 in ftests
+              if not all(w in topic_words for w in lims0["v"][t2["t"]].split())]
+        fs.sort(key=lambda t2: -abs(t2["z"]))
+        # one row per failure family: "hallucination" and "hallucinations" both
+        # survive the test; the shorter term that contains-or-is-contained wins
+        seen_sub: list[str] = []
+        frows = []
+        for t2 in fs:
+            term = lims0["v"][t2["t"]]
+            if any(term in s2 or s2 in term for s2 in seen_sub):
+                continue
+            seen_sub.append(term)
+            frows.append({"t": term, "s0": t2["s0"], "s1": t2["s1"],
+                          "up": 1 if t2["z"] > 0 else 0, "nw": 1 if t2["a"] <= 2 else 0})
+        digest["fights"] = frows[:6]
+
+        # ---- fresh: benchmarks that did not exist in the previous edition ----
+        dcnt: dict[int, list[int]] = defaultdict(lambda: [0, 0])
+        for r in rows:
+            if r["cy"] not in (pc0, pc1):
+                continue
+            for di in set(r["k0"]):
+                dcnt[di][0 if r["cy"] == pc0 else 1] += 1
+        fresh = [{"di": di, "l": data.items[di], "b": b}
+                 for di, (a, b) in dcnt.items()
+                 if a == 0 and b >= 6 and not is_placeholder(data.items[di])]
+        fresh.sort(key=lambda x: -x["b"])
+        digest["fresh"] = fresh[:10]
+
     return {
         "papers": rows,
+        "digest": digest,
         "vocab": {"m": meth.items, "d": data.items, "t": task.items},
         "terms": terms,
         "lims": lims,
@@ -561,9 +775,7 @@ def build_payload(span_source: str) -> dict:
         "emb": load_json(EMBED) if EMBED.exists() else None,
         "datasets": [[di, c] for c, di in ds_entry[:400]],
         # id, papers, family index, parent id (null when top level)
-        "methods": [[mid_of[k], n,
-                     mfam_ix[method_family(mdisp.get(k, k), k)],
-                     mid_of.get(mparent.get(k))] for n, k in mrows],
+        "methods": payload_methods,
         "mvocab": mvocab.items,
         "mfams": mfam_names,
         "both": both,
@@ -1013,6 +1225,36 @@ border:1px solid var(--ring);background:var(--card);color:var(--ink2);cursor:poi
 .inshd em{font-style:normal;font-weight:500;color:var(--mut);font-size:10.5px}
 .insbox .cr{font-size:12px;padding:1.5px 0}
 .insbox .chgax{height:11px}
+/* the digest: analysis first, selection second — every row is a door */
+.digbox{background:var(--card);border-radius:12px;padding:16px 18px;margin-top:14px}
+.dighd{font-size:15px;font-weight:660}
+.dighd em{font-style:normal;font-weight:500;font-size:10.5px;color:var(--mut);margin-left:10px}
+.digrow{display:block;width:100%;font:inherit;text-align:left;border:0;background:none;
+cursor:pointer;padding:6px 8px;border-radius:8px;font-size:13px;color:var(--ink)}
+.digrow:hover{background:#f2f5f9}
+.digrow.open{background:#f2f5f9}
+.digrow b{font-weight:650}
+.digrow .n2{color:var(--mut);font-weight:400;font-size:11px;margin-left:7px}
+.shift{margin-left:9px;white-space:nowrap}
+.shift i{font-style:normal;font-weight:700}
+.shift.up i{color:var(--acc)} .shift.dn i{color:var(--warm)}
+.shift .nw2{font-size:9px;font-weight:700;letter-spacing:.04em;color:var(--acc);vertical-align:2px;margin-left:2px}
+.digx{margin:2px 6px 10px;padding:10px 14px;background:#f7f8fa;border-radius:10px}
+.dxr{display:grid;grid-template-columns:230px 1fr 92px;gap:12px;align-items:center;
+padding:2.5px 0;font-size:12px;color:var(--ink2)}
+.dxr .crl{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dxr .ax2{color:var(--mut);font-size:10px;margin-left:6px}
+.dxr b{font-weight:600;font-size:10.5px;color:var(--ink2);text-align:right;white-space:nowrap}
+.digopen{margin-top:9px}
+.digopen button{font:inherit;font-size:12px;padding:5px 13px;border-radius:8px;cursor:pointer;
+border:1px solid var(--acc);background:var(--acc);color:#fff}
+.fightrow{display:grid;grid-template-columns:190px 1fr 92px;gap:12px;align-items:center}
+.freshwrap{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.allfields{margin-top:14px;text-align:center}
+.allfields>button{font:inherit;font-size:12px;color:var(--mut);background:none;border:0;
+cursor:pointer;padding:6px 10px}
+.allfields>button:hover{color:var(--ink)}
+.afgrid{display:flex;flex-wrap:wrap;gap:5px;justify-content:center;margin-top:10px}
 /* what-moved entry view */
 .chgbox{background:var(--card);border-radius:12px;padding:16px 18px;margin-top:14px}
 .chghd{font-size:15px;font-weight:660;display:flex;align-items:center;gap:10px}
@@ -1158,7 +1400,11 @@ let LSET=null, LSETID=null;
 function limSet(){
   if(LSETID===st.lim)return LSET;
   LSETID=st.lim;
-  if(st.lim===null||LV===null){LSETID=undefined;LSET=st.lim===null?null:new Set();return LSET;}
+  if(st.lim===null||LV===null){
+    LSETID=undefined; LSET=st.lim===null?null:new Set();
+    if(st.lim!==null)ensureSearch().then(render);   // repaint once the index lands
+    return LSET;
+  }
   LSET=new Set();
   for(let t=0;t<LV.length;t++)
     if(LV[t].includes(st.lim)) for(const i of LPOST.get(t)||[])LSET.add(i);
@@ -1651,7 +1897,95 @@ function landingHTML(){
       ${now?`<div class="vn">${now.n.toLocaleString()} papers</div>`:`<div class="vsoon">not collected yet</div>`}
     </button>`;
   }).join('');
-  return `<div class="venues">${cards}</div>`+changedHTML();
+  return `<div class="venues">${cards}</div>`+changedHTML()+digestHTML()+allFieldsHTML();
+}
+// ---- the digest: what MOVED, precomputed at build time (BH-free but bar-
+// consistent: the product's standing |z|>=2.576 + material rule, family size
+// disclosed; appearing 0->n needs no test to be a fact). Every row applies
+// itself as a selection — analysis first, selection second.
+const DG=D.digest||{};
+const digOpen=new Set();
+function digestHTML(){
+  if(!DG.pair)return '';
+  const hue=Math.max(VENUES.findIndex(v=>v.v===DG.pair.v),0);
+  let h='';
+  if((DG.mix||[]).length){
+    h+=`<div class="digbox"><div class="dighd">Where the mix shifted`+
+      `<em>inside a field, what it builds on or does moved · ${DG.pair.y0} → ${DG.pair.y1} · `+
+      `${DG.mix_tested} shifts tested, at this bar at most one shown could be chance</em></div>`;
+    for(const [ri,r] of DG.mix.entries()){
+      const open=digOpen.has(ri);
+      const AX={u:'builds on',s:'does',d:'applied to'};
+      const head=r.shifts.slice(0,2).map(x=>
+        `<span class="shift ${x.up?'up':'dn'}">${esc(x.l)} <i>${x.up?'↑':'↓'}</i>`+
+        `${x.nw?'<span class="nw2">NEW</span>':''}</span>`).join(' ·');
+      h+=`<button class="digrow ${open?'open':''}" data-dig="${ri}"><b>${esc(r.l)}</b>`+
+        `<span class="n2">${r.n0} → ${r.n1} papers</span>${head}</button>`;
+      if(open){
+        const M=Math.max(...r.shifts.flatMap(x=>[x.s0,x.s1]),60);
+        const X=v=>v<=20?0:Math.log(v/20)/Math.log(M/20)*100;
+        h+=`<div class="digx">`+r.shifts.map(x=>
+          `<div class="dxr"><span class="crl">${esc(x.l)}<span class="ax2">${AX[x.ax]}</span></span>`+
+          `<span class="trk">${laneHTML({hue,s0:x.s0,s1:x.s1,w0:X(x.s0),w1:X(x.s1)})}</span>`+
+          `<b>${(x.s0/10).toFixed(0)}% → ${(x.s1/10).toFixed(0)}%<br>of the set</b></div>`).join('')+
+          `<div class="digopen"><button data-digo="${ri}">open the ${r.n1} papers →</button></div></div>`;
+      }
+    }
+    h+='</div>';
+  }
+  if((DG.fights||[]).length){
+    const M=Math.max(...DG.fights.flatMap(f=>[f.s0,f.s1]),5);
+    const X=v=>v<=0.5?0:Math.log(v/0.5)/Math.log(M/0.5)*100;
+    h+=`<div class="digbox"><div class="dighd">What the field fights`+
+      `<em>failures named in the papers' own limitation sentences · share per 1,000 papers</em></div>`+
+      DG.fights.map((f,fi)=>
+        `<button class="digrow fightrow" data-fight="${fi}"><b>${esc(f.t)}</b>`+
+        `<span class="trk">${laneHTML({hue,s0:f.s0,s1:f.s1,w0:X(f.s0),w1:X(f.s1)})}</span>`+
+        `<b>${f.s0} → ${f.s1} /1k</b></button>`).join('')+'</div>';
+  }
+  if((DG.fresh||[]).length){
+    h+=`<div class="digbox"><div class="dighd">New this year`+
+      `<em>benchmarks no ${DG.pair.y0} paper used</em></div><div class="freshwrap">`+
+      DG.fresh.map(f=>`<button class="scchip" data-fresh="${f.di}">${esc(f.l)}<b>${f.b}</b></button>`).join('')+
+      '</div></div>';
+  }
+  return h;
+}
+function allFieldsHTML(){
+  const rows=T.map((t,ti)=>({ti,l:t.l,n:t.n+t.e,j:t.j})).filter(x=>!x.j&&x.n>=8)
+    .sort((a,b)=>a.l.localeCompare(b.l));
+  return `<div class="allfields"><button id="aftog">${AF_OPEN?'hide':'browse'} all ${rows.length} fields`+
+    ` <span style="opacity:.6">${AF_OPEN?'▴':'▾'}</span></button>`+
+    (AF_OPEN?`<div class="afgrid">`+rows.map(x=>
+      `<button class="scchip" data-af="${x.ti}">${esc(x.l)}<b>${x.n}</b></button>`).join('')+'</div>':'')+
+    `</div>`;
+}
+let AF_OPEN=false;
+function enterWith(mut){
+  st.q=[]; const q=$('#q'); if(q)q.value='';
+  st.sel=null; st.grouped=false;
+  st.topics.clear(); st.fams.clear(); st.meth=null; st.mfam=null; st.ds=null;
+  st.lim=null; const lq=$('#lq'); if(lq)lq.value='';
+  mut();
+  go(DG.pair?DG.pair.c1:CY.length-1);
+}
+function wireDigest(){
+  document.querySelectorAll('[data-dig]').forEach(el=>el.onclick=()=>{
+    const ri=+el.dataset.dig;
+    digOpen.has(ri)?digOpen.delete(ri):digOpen.add(ri);
+    render();});
+  document.querySelectorAll('[data-digo]').forEach(el=>el.onclick=e=>{
+    e.stopPropagation();
+    const r=DG.mix[+el.dataset.digo];
+    enterWith(()=>st.topics.add(r.ti));});
+  document.querySelectorAll('[data-fight]').forEach(el=>el.onclick=()=>{
+    const f=DG.fights[+el.dataset.fight];
+    enterWith(()=>{st.lim=f.t; const lq=$('#lq'); if(lq)lq.value=f.t;});});
+  document.querySelectorAll('[data-fresh]').forEach(el=>el.onclick=()=>{
+    enterWith(()=>st.ds=+el.dataset.fresh);});
+  document.querySelectorAll('[data-af]').forEach(el=>el.onclick=()=>{
+    enterWith(()=>st.topics.add(+el.dataset.af));});
+  const af=$('#aftog'); if(af)af.onclick=()=>{AF_OPEN=!AF_OPEN;render();};
 }
 // The chosen conference lives in the URL hash, so the browser's back button
 // returns to the landing and a reload keeps the reader where they were.
@@ -1664,6 +1998,7 @@ function go(j){
 window.addEventListener('popstate',()=>{ st.corp=corpFromHash(); st.sel=null; render(); });
 
 function wireLanding(){
+  wireDigest();
   document.querySelectorAll('[data-corp]').forEach(el=>el.onclick=()=>go(+el.dataset.corp));
   wireChanged();
 }

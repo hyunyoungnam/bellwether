@@ -682,33 +682,37 @@ Still weak:
   carry reading instructions. (The "Since last year" chart went slopegraph →
   paired bars for exactly this reason: a slopegraph needs to be explained, two
   bars of different length do not.)
-- **The title is the query (2026-08-20).** The H1 reads "What's new in
-  [topic] for [domain] with [method] on [benchmark]?" and the bracketed slots
-  ARE the filter state: click to edit with a type-to-filter dropdown whose
-  candidates and counts are conditioned on the other slots (so a reachable
-  0-result combination cannot be picked from a menu), × to clear. The slots map
-  1:1 onto the same state the category menus set — the sentence and the menus
-  are two views of one selection, and the sentence doubles as the always-true
-  answer to "what am I looking at?". Free-text search words and the limitation
-  filter render into the sentence as a tail, same contract. Slots picked on the
-  landing route into the newest corpus.
-- **Inside-this-set, since last year (2026-08-23).** With a selection on
-  screen, a strip above the cards reruns the since-last-year grammar with the
-  SELECTION as the denominator: which building blocks / tasks / domains rose or
-  fell *within the field the reader picked* ("robotics moved from RL-based to
-  VLA-based"). Same two-test rule on the set's own sizes — a small set honestly
-  shows only its LARGEST anchors, whose bars still show the composition without
-  claiming a trend. Hidden entirely when either year-side holds < 12 papers.
-- **Filters and counts run on the abstract pass; cards display the merged
-  best-available (2026-08-23).** The payload ships abstract-only twins
-  (`mu0/k0/s0`) beside the display fields: match(), every menu count, the
-  landing chart and the inside-set view read ONLY the twins, because full-text
-  coverage differs by corpus (PMLR 99% vs arXiv 72%) and merged fields would
-  let coverage masquerade as trend — the methods/benchmarks tabs of the chart
-  had exactly that contamination before this. Consequence: a paper whose
-  method use is stated only in its full text will not match a method filter;
-  that recall loss is the price of comparable counts, and the card still shows
-  the full-text fields, marked.
+- **Analysis first, selection second (2026-08-24).** The landing leads with
+  what MOVED, and every printed fact is a door that applies itself as a
+  selection. Below the since-last-year chart: WHERE THE MIX SHIFTED (inside a
+  field, which building blocks / tasks / co-domains took a different share of
+  the set — "image generation: diffusion 48→25%, autoregressive new"), WHAT
+  THE FIELD FIGHTS (failures named in limitation sentences, share per 1,000),
+  NEW THIS YEAR (benchmarks no earlier-edition paper used), and a quiet
+  "browse all fields" index for the reader whose field did not move. Rows
+  expand in place to lanes plus an "open the N papers" button — preview before
+  commitment. All of it is precomputed at build time in `build_digest`-style
+  code inside `site.py`, so first paint scans nothing.
+- **The digest bar is the product's standing rule, disclosed — not FDR.**
+  Measured: the mix family is ~120 tests whose strongest true shifts sit at
+  z 2.6–3.2; Benjamini-Hochberg at q=.05 with that m zeroes the digest while
+  the top of the list is unmistakably real. So rows pass |z| ≥ 2.576 +
+  materiality, the caption states the family size and that at most about one
+  shown row could be chance. Appearing is its own evidence: 0 → 8+ papers
+  (GRPO, RLVR) earns a row with no test at all, as does vanishing.
+- **Limitation text is register, not only content — guard it.** "rely",
+  "significant", "typically" shift across editions with huge z while naming no
+  failure; a discourse stoplist plus a df ceiling (a term in >5% of either
+  edition is the genre's phrasing) and a topic-word echo guard (a term that is
+  a field's own name tracks the field, not a failure) keep the fights section
+  about failures. At topic granularity the failure axis stayed register noise
+  even after the guards — the mix section therefore scans builds-on / tasks /
+  co-domains only, and the failure axis lives at corpus level where the sample
+  carries it. The abstract-pass limitation index (`lims0`) is a build-time
+  instrument only and is not shipped.
+- **The title is a title again (2026-08-24).** The slot grammar ("What's new
+  in [topic] for [field]…") tested badly with its first reader and is gone;
+  the current selection still reads as removable chips under the title.
 - **"Who fights my problem" is an entry path (2026-08-20).** A second input
   searches ONLY the extracted limitation sentences (89% of papers state one; a
   salient-term index of unigrams + df>=5 bigrams ships in the payload). The
