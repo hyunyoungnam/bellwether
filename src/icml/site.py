@@ -708,6 +708,59 @@ def build_payload(span_source: str) -> dict:
         mix_rows.sort(key=lambda r2: -r2["maxz"])
         digest["mix"] = mix_rows[:10]
 
+        # Evidence papers make each claim inspectable in place: for a row's top
+        # shift, the latest-edition papers that CARRY it, orals first. Titles
+        # are already inline in the payload, so only gids ship.
+        gid_rows = {r["i"]: r for r in rows}
+        for r2 in digest["mix"]:
+            top = r2["shifts"][0]
+            members = [g for g, tl in topic_of.items()
+                       if r2["ti"] in tl and g in row_of
+                       and rows[row_of[g]]["cy"] == pc1]
+            hits = []
+            for g in members:
+                ix = row_of[g]
+                if top["id"] in items_of(rows[ix], ix, top["ax"]):
+                    hits.append(rows[ix])
+            hits.sort(key=lambda p2: (p2["o"] != 1, p2["o"] != 2, p2["t"]))
+            r2["ev"] = [p2["i"] for p2 in hits[:4]]
+
+        # Headline tiles: one rule-picked fact per angle, biggest first.
+        heads = []
+        tshares = []
+        for ti, t0 in enumerate(topics_out):
+            if t0["j"] or t0["f"] == 1:
+                continue
+            a2 = sum(1 for g, tl in topic_of.items()
+                     if ti in tl and g in row_of and rows[row_of[g]]["cy"] == pc0)
+            b2 = sum(1 for g, tl in topic_of.items()
+                     if ti in tl and g in row_of and rows[row_of[g]]["cy"] == pc1)
+            if a2 + b2 < 40:
+                continue
+            z2 = _z(a2, b2, n0, n1)
+            tshares.append((abs(z2), z2, ti, a2, b2))
+        tshares.sort(reverse=True)
+        if tshares:
+            _, z2, ti, a2, b2 = tshares[0]
+            heads.append({"kind": "topic", "l": topics_out[ti]["l"],
+                          "s0": round(a2 / n0 * 1000), "s1": round(b2 / n1 * 1000),
+                          "sub": "of the conference", "ti": ti})
+        if digest["mix"]:
+            r2 = digest["mix"][0]
+            top = r2["shifts"][0]
+            heads.append({"kind": "mix", "l": top["l"],
+                          "s0": top["s0"], "s1": top["s1"],
+                          "sub": f"of {r2['l']}", "ti": r2["ti"]})
+            news = [(x["s1"], r3["ti"], x, r3) for r3 in digest["mix"]
+                    for x in r3["shifts"] if x["nw"] and r3["ti"] != r2["ti"]]
+            news.sort(key=lambda n4: -n4[0])
+            if news:
+                _s1, ti3, x3, r3 = news[0]
+                heads.append({"kind": "mix", "l": x3["l"],
+                              "s0": x3["s0"], "s1": x3["s1"],
+                              "sub": f"enters {r3['l']}", "ti": ti3})
+        digest["heads"] = heads
+
         # ---- fights: which stated failures grew, conference-wide ----
         ftests = []
         for t2, post in enumerate(lims0["p"] and range(0) or []):
@@ -748,6 +801,13 @@ def build_payload(span_source: str) -> dict:
             frows.append({"t": term, "s0": t2["s0"], "s1": t2["s1"],
                           "up": 1 if t2["z"] > 0 else 0, "nw": 1 if t2["a"] <= 2 else 0})
         digest["fights"] = frows[:6]
+        if digest["fights"]:
+            f2 = digest["fights"][0]
+            digest["heads"].append({"kind": "fight", "l": f"“{f2['t']}”",
+                                    "s0": f2["s0"], "s1": f2["s1"],
+                                    "sub": "papers fighting it, per 1,000",
+                                    "t": f2["t"]})
+        digest["heads"] = digest["heads"][:4]
 
         # ---- fresh: benchmarks that did not exist in the previous edition ----
         dcnt: dict[int, list[int]] = defaultdict(lambda: [0, 0])
@@ -1187,7 +1247,7 @@ border:1px solid var(--ring);background:var(--card);color:var(--ink2);display:fl
 .scn{font-size:20px;font-weight:700;letter-spacing:-.02em}
 .scn small{font-size:11px;font-weight:500;color:var(--mut);margin-left:5px}
 .scyr{margin:8px 0 2px}
-.scyrow{display:grid;grid-template-columns:34px 1fr 70px;gap:8px;align-items:center;
+.scyrow{display:grid;grid-template-columns:minmax(34px,auto) 1fr 70px;gap:8px;align-items:center;
   font-size:11px;color:var(--ink2);padding:1.5px 0}
 .scyrow .yb{position:relative;height:7px}
 .scyrow .yb i{position:absolute;left:0;top:0;height:100%;border-radius:2px}
@@ -1211,6 +1271,20 @@ border:1px solid var(--ring);background:var(--card);color:var(--ink2);cursor:poi
 .inshd em{font-style:normal;font-weight:500;color:var(--mut);font-size:10.5px}
 .insbox .cr{font-size:12px;padding:1.5px 0}
 .insbox .chgax{height:11px}
+/* headline tiles */
+.heads{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:2px}
+@media(max-width:860px){.heads{grid-template-columns:repeat(2,1fr)}}
+.head{font:inherit;text-align:left;border:0;border-radius:13px;padding:14px 16px;cursor:pointer;
+background:var(--card);box-shadow:0 1px 3px rgba(0,0,0,.05)}
+.head:hover{box-shadow:0 3px 10px rgba(0,0,0,.10)}
+.hl2{font-size:13px;font-weight:650;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hn{font-size:23px;font-weight:750;letter-spacing:-.02em;margin:2px 0}
+.hn small{font-size:12px;font-weight:500;color:var(--mut)}
+.ha{font-weight:400;font-size:16px}
+.ha.up{color:var(--acc)} .ha.dn{color:var(--warm)}
+.hs{font-size:10.5px;color:var(--mut);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.vhead{font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--mut);
+margin:18px 0 6px;text-align:center}
 /* the digest: analysis first, selection second — every row is a door */
 .digbox{background:var(--card);border-radius:12px;padding:16px 18px;margin-top:14px}
 .dighd{font-size:15px;font-weight:660}
@@ -1231,6 +1305,13 @@ padding:2.5px 0;font-size:12px;color:var(--ink2)}
 .dxr .crl{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .dxr .ax2{color:var(--mut);font-size:10px;margin-left:6px}
 .dxr b{font-weight:600;font-size:10.5px;color:var(--ink2);text-align:right;white-space:nowrap}
+.evh{font-size:9.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--mut);
+margin:10px 0 3px}
+.evrow{display:block;width:100%;font:inherit;font-size:12px;text-align:left;border:0;
+background:none;cursor:pointer;padding:2.5px 0;color:var(--ink2);white-space:nowrap;
+overflow:hidden;text-overflow:ellipsis}
+.evrow:hover{color:var(--acc)}
+.evrow .badge{margin-left:7px}
 .digopen{margin-top:9px}
 .digopen button{font:inherit;font-size:12px;padding:5px 13px;border-radius:8px;cursor:pointer;
 border:1px solid var(--acc);background:var(--acc);color:#fff}
@@ -1481,7 +1562,7 @@ function baseSet(skip){
   const out=new Set(), hits=queryHits();
   for(let i=0;i<P.length;i++){
     const p=P[i];
-    if(st.corp!==null&&p.cy!==st.corp)continue;
+    if(st.corp!==null&&st.corp>=0&&p.cy!==st.corp)continue;
     if(skip!=='ds'&&st.ds!==null&&!p.k0.includes(st.ds))continue;
     if(skip!=='meth'&&!methPass(p))continue;
     if(skip!=='topics'&&!facetPass(p,false))continue;
@@ -1532,7 +1613,7 @@ function facetPass(p,wantDomain){
 function match(i,hits,corp){
   const p=P[i];
   const cc=corp===undefined?st.corp:corp;
-  if(cc!==null&&p.cy!==cc)return false;
+  if(cc!==null&&cc>=0&&p.cy!==cc)return false;
   if(st.ds!==null&&!p.k0.includes(st.ds))return false;
   if(!methPass(p))return false;
   // Within a facet the picks are OR — two topics widen the set. ACROSS facets
@@ -1881,7 +1962,25 @@ function landingHTML(){
       ${now?`<div class="vn">${now.n.toLocaleString()} papers</div>`:`<div class="vsoon">not collected yet</div>`}
     </button>`;
   }).join('');
-  return `<div class="venues">${cards}</div>`+changedHTML()+digestHTML()+allFieldsHTML();
+  return headsHTML()+changedHTML()+digestHTML()+allFieldsHTML()+
+    `<div class="vhead">one conference at a time</div><div class="venues">${cards}</div>`;
+}
+// Headline tiles: one rule-picked fact per angle (top topic mover, top mix
+// shift, top arrival, top rising failure) — the report's front page, and every
+// tile is a door into the ALL-scope set behind it.
+function headsHTML(){
+  const hs=DG.heads||[];
+  if(!hs.length)return '';
+  return `<div class="heads">`+hs.map((h,i)=>{
+    const up=h.s1>=h.s0;
+    return `<button class="head" data-head="${i}">
+      <div class="hl2">${esc(h.l)}</div>
+      <div class="hn">${h.kind==='fight'
+        ?`${h.s0} <span class="ha ${up?'up':'dn'}">→</span> ${h.s1}<small>/1k</small>`
+        :`${(h.s0/10).toFixed(h.s0<100?1:0)} <span class="ha ${up?'up':'dn'}">→</span> ${(h.s1/10).toFixed(h.s1<100?1:0)}<small>%</small>`}</div>
+      <div class="hs">${esc(h.sub)} · ${DG.pair.y0} → ${DG.pair.y1}</div>
+    </button>`;
+  }).join('')+'</div>';
 }
 // ---- the digest: what MOVED, precomputed at build time (BH-free but bar-
 // consistent: the product's standing |z|>=2.576 + material rule, family size
@@ -1912,6 +2011,9 @@ function digestHTML(){
           `<div class="dxr"><span class="crl">${esc(x.l)}<span class="ax2">${AX[x.ax]}</span></span>`+
           `<span class="trk">${laneHTML({hue,s0:x.s0,s1:x.s1,w0:X(x.s0),w1:X(x.s1)})}</span>`+
           `<b>${(x.s0/10).toFixed(0)}% → ${(x.s1/10).toFixed(0)}%<br>of the set</b></div>`).join('')+
+          ((r.ev||[]).length?`<div class="evh">the papers carrying the shift — orals first</div>`+
+            r.ev.map(g=>`<button class="evrow" data-ev="${g}" data-evti="${r.ti}">${esc(P[BYID[g]].t)}`+
+              `${P[BYID[g]].o===1?'<span class="badge">Oral</span>':''}</button>`).join(''):'')+
           `<div class="digopen"><button data-digo="${ri}">open the ${r.n1} papers →</button></div></div>`;
       }
     }
@@ -1951,9 +2053,13 @@ function enterWith(mut){
   st.topics.clear(); st.fams.clear(); st.meth=null; st.mfam=null; st.ds=null;
   st.lim=null;
   mut();
-  go(DG.pair?DG.pair.c1:CY.length-1);
+  go(-1);
 }
 function wireDigest(){
+  document.querySelectorAll('[data-head]').forEach(el=>el.onclick=()=>{
+    const h=DG.heads[+el.dataset.head];
+    if(h.kind==='fight')enterWith(()=>{st.lim=h.t;});
+    else enterWith(()=>st.topics.add(h.ti));});
   document.querySelectorAll('[data-dig]').forEach(el=>el.onclick=()=>{
     const ri=+el.dataset.dig;
     digOpen.has(ri)?digOpen.delete(ri):digOpen.add(ri);
@@ -1962,6 +2068,11 @@ function wireDigest(){
     e.stopPropagation();
     const r=DG.mix[+el.dataset.digo];
     enterWith(()=>st.topics.add(r.ti));});
+  document.querySelectorAll('[data-ev]').forEach(el=>el.onclick=e=>{
+    e.stopPropagation();
+    const g=+el.dataset.ev, ti=+el.dataset.evti;
+    enterWith(()=>{st.topics.add(ti); st.sel=BYID[g];});
+    setTimeout(()=>document.querySelector('.p.sel')?.scrollIntoView({block:'center'}),120);});
   document.querySelectorAll('[data-fight]').forEach(el=>el.onclick=()=>{
     const f=DG.fights[+el.dataset.fight];
     enterWith(()=>{st.lim=f.t;});});
@@ -1973,10 +2084,14 @@ function wireDigest(){
 }
 // The chosen conference lives in the URL hash, so the browser's back button
 // returns to the landing and a reload keeps the reader where they were.
-const corpFromHash=()=>{const j=CY.findIndex(c=>c.k===location.hash.slice(1));return j<0?null:j;};
+const corpFromHash=()=>{
+  const h=location.hash.slice(1);
+  if(h==='all')return -1;
+  const j=CY.findIndex(c=>c.k===h);return j<0?null:j;};
 function go(j){
   st.corp=j; st.sel=null; st.grouped=false;
-  history.pushState(null,'',j===null?location.pathname+location.search:'#'+CY[j].k);
+  history.pushState(null,'',j===null?location.pathname+location.search
+                             :'#'+(j===-1?'all':CY[j].k));
   render(); window.scrollTo({top:0});
 }
 window.addEventListener('popstate',()=>{ st.corp=corpFromHash(); st.sel=null; render(); });
@@ -2136,7 +2251,8 @@ function drawInside(){
   const el=$('#inset'); if(!el)return;
   el.hidden=true;
   if(qPending())return;
-  const pr=venuePairs().find(p=>p.c1===st.corp||p.c0===st.corp);
+  const prs=venuePairs();
+  const pr=st.corp===-1?prs[0]:prs.find(p=>p.c1===st.corp||p.c0===st.corp);
   if(!pr)return;
   const hits=queryHits(), keep=st.corp; st.corp=null;
   const S=[new Set(),new Set()];
@@ -2226,7 +2342,9 @@ function render(){
   // The landing is used once; after that the rail moves between venues freely.
   // Filters survive a switch — the vocabulary is shared, so "robotics" means the
   // same thing at the next conference.
-  $('#rail').innerHTML=VENUES.map(ven=>{
+  $('#rail').innerHTML=
+    `<button class="rv ${st.corp===-1?'on':''}" data-rv="-1">All<span>${P.length.toLocaleString()}</span></button>`+
+    VENUES.map(ven=>{
     const yrs=CY.map((c,j)=>({...c,j})).filter(c=>c.v===ven.v);
     const now=yrs[yrs.length-1];
     if(!now)return `<span class="rv dim">${esc(ven.v)}</span>`;
@@ -2244,7 +2362,7 @@ function render(){
   $('#legend').hidden=!on;
   if(!on){
     $('#results').innerHTML=`<div class="start">Fill a blank in the title, or search.`+
-      `<span>Nothing is listed until you do — ${CY[st.corp].n.toLocaleString()} papers is the problem, not the answer.</span></div>`;
+      `<span>Nothing is listed until you do — ${(st.corp===-1?P.length:CY[st.corp].n).toLocaleString()} papers is the problem, not the answer.</span></div>`;
     $('#inset').hidden=true;
     const rt=$('#rtr'); if(rt){ rt.innerHTML=railTrend();
       rt.querySelectorAll('[data-tid]').forEach(el=>el.onclick=()=>{
@@ -2480,7 +2598,8 @@ function applyChgRow(k,id){
 // two-test rule as the landing, one pair-lane each. A row IS a filter — clicking
 // it applies the topic, because a trend a reader cannot act on is trivia.
 function railTrend(){
-  const pr=venuePairs().find(p=>p.c1===st.corp||p.c0===st.corp);
+  const prs=venuePairs();
+  const pr=st.corp===-1?prs[0]:prs.find(p=>p.c1===st.corp||p.c0===st.corp);
   if(!pr)return '';
   const rows=[];
   for(const r of changedRows(pr.c0,pr.c1).t){
@@ -2510,18 +2629,19 @@ function railTrend(){
 // scoped tighter than the corpus-wide menus above the results.
 function railSetCard(res){
   const hits=queryHits();
-  const cur=CY[st.corp];
-  const hue=Math.max(VENUES.findIndex(v=>v.v===cur.v),0);
-  const sib=CY.map((c,j)=>({c,j})).filter(x=>x.c.v===cur.v);
+  const all=st.corp===-1;
+  const sib=CY.map((c,j)=>({c,j})).filter(x=>all||x.c.v===CY[st.corp].v);
   const ys=sib.map(({c,j})=>{
     let n=0; for(let i=0;i<P.length;i++) if(match(i,hits,j))n++;
-    return {y:c.y,n,sh:n/CYN[j]*1000};
+    return {y:c.y,v:c.v,n,sh:n/CYN[j]*1000,
+            hue:Math.max(VENUES.findIndex(v2=>v2.v===c.v),0),
+            last:c.y===Math.max(...CY.filter(c2=>c2.v===c.v).map(c2=>c2.y))};
   });
   const mx=Math.max(...ys.map(r=>r.sh),1e-9);
-  const yrows=ys.map((r,ix)=>{
-    const col=ix===ys.length-1?`var(--v${hue})`
-              :`color-mix(in srgb, var(--v${hue}) 26%, var(--card))`;
-    return `<div class="scyrow"><span>${r.y}</span>`+
+  const yrows=ys.map(r=>{
+    const col=r.last?`var(--v${r.hue})`
+              :`color-mix(in srgb, var(--v${r.hue}) 26%, var(--card))`;
+    return `<div class="scyrow"><span>${all?esc(r.v)+' ':''}${r.y}</span>`+
       `<span class="yb"><i style="width:${Math.max(r.sh/mx*100,1.5).toFixed(1)}%;background:${col}"></i></span>`+
       `<b>${r.n} · ${(r.sh/10).toFixed(1)}%</b></div>`;
   }).join('');
@@ -2561,8 +2681,7 @@ function wireChanged(){
     chgTab=el.dataset.tab; render();});
   document.querySelectorAll('.cr[data-id]').forEach(el=>el.onclick=()=>{
     applyChgRow(el.dataset.k,+el.dataset.id);
-    const j=CY.length-1;
-    if(st.corp!==j)go(j); else render();
+    if(st.corp===null)go(-1); else render();
   });
 }
 

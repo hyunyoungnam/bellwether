@@ -682,6 +682,16 @@ Still weak:
   carry reading instructions. (The "Since last year" chart went slopegraph →
   paired bars for exactly this reason: a slopegraph needs to be explained, two
   bars of different length do not.)
+- **The main page is every conference, analysis only (2026-08-24).** Headline
+  tiles (one rule-picked fact per angle) lead; the sections follow; the venue
+  cards sit at the BOTTOM as scope filters ("one conference at a time"), and
+  papers are never browsed on the main page itself. Scope -1 ("#all") is a
+  results screen over the union — every digest door lands there, with the
+  venue-year stamp telling papers apart; a venue card scopes the same screen
+  to one conference. The ladder from analysis to papers: a digest row expands
+  in place (lanes + the papers CARRYING the shift, orals first) → clicking an
+  evidence title opens the ALL screen scrolled to that paper's card → "open
+  the N papers" opens the whole set.
 - **Analysis first, selection second (2026-08-24).** The landing leads with
   what MOVED, and every printed fact is a door that applies itself as a
   selection. Below the since-last-year chart: WHERE THE MIX SHIFTED (inside a
