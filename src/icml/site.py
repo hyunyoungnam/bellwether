@@ -1768,29 +1768,23 @@ function openSlot(btn,ax){
   };
 }
 function drawSentence(){
+  // The title is a title again — the slot grammar tested badly. What survives
+  // from it is the part that worked: the CURRENT selection reads as removable
+  // chips right under the title, so "what am I looking at?" keeps its one home.
   const V=slotState();
-  const any=V.k||V.d||V.u||V.b;
-  const seg=(ax,word,filled,ghost)=>filled
-    ?` <span class="tand">${word}</span> <button class="tslot" data-ax="${ax}">${esc(filled)}<span class="x">×</span></button>`
-    :` <span class="tand">${word}</span> <button class="tslot ghost" data-ax="${ax}">${ghost}</button>`;
-  let h=`<span id="home">What's new</span>`;
-  h+=V.k?seg('k','in',V.k):` <span class="tand">in</span> <button class="tslot ${any?'ghost':''}" data-ax="k">${any?'a topic':'AI research'}</button>`;
-  h+=seg('d','for',V.d,'a field');
-  h+=seg('u','with',V.u,'a method');
-  if(any||V.b)h+=seg('b','on',V.b,'a benchmark');
-  h+='<span class="tand">?</span>';
+  const chip=(label,ax)=>` <button class="tslot" data-clear="${ax}">${esc(label)}<span class="x">×</span></button>`;
   const tail=[];
-  if(st.q.length)tail.push(`<span class="tand">mentioning</span> <button class="tslot" data-tq>“${esc(st.q.join(' '))}”<span class="x">×</span></button>`);
-  if(st.lim!==null)tail.push(`<span class="tand">— prior work struggles with</span> <button class="tslot lim" data-tl>“${esc(st.lim)}”<span class="x">×</span></button>`);
-  if(tail.length)h+=`<span class="ttail">${tail.join(' ')}</span>`;
-  const el=$('#ttl'); el.innerHTML=h;
+  if(V.k)tail.push(chip(V.k,'k'));
+  if(V.d)tail.push(chip('for '+V.d,'d'));
+  if(V.u)tail.push(chip('built on '+V.u,'u'));
+  if(V.b)tail.push(chip('on '+V.b,'b'));
+  if(st.q.length)tail.push(` <button class="tslot" data-tq>“${esc(st.q.join(' '))}”<span class="x">×</span></button>`);
+  if(st.lim!==null)tail.push(` <button class="tslot lim" data-tl>struggles with “${esc(st.lim)}”<span class="x">×</span></button>`);
+  const el=$('#ttl');
+  el.innerHTML=`<span id="home">What's new in AI research</span>`+
+    (tail.length?`<span class="ttail">${tail.join(' ')}</span>`:'');
   el.querySelector('#home').onclick=()=>{ if(st.corp!==null)go(null); };
-  el.querySelectorAll('.tslot[data-ax]').forEach(b=>b.onclick=e=>{
-    e.stopPropagation();
-    const ax=b.dataset.ax;
-    if(b.querySelector('.x')&&!b.classList.contains('ghost')){ clearSlot(ax); render(); return; }
-    openSlot(b,ax);
-  });
+  el.querySelectorAll('[data-clear]').forEach(b=>b.onclick=()=>{clearSlot(b.dataset.clear);render();});
   const tq=el.querySelector('[data-tq]'); if(tq)tq.onclick=()=>{st.q=[];$('#q').value='';render();};
   const tl=el.querySelector('[data-tl]'); if(tl)tl.onclick=()=>{st.lim=null;$('#lq').value='';render();};
   fitTitle();
@@ -1806,6 +1800,7 @@ function fitTitle(){
   }
 }
 addEventListener('resize',fitTitle);
+
 // ---- V5: type the failure you care about ------------------------------------
 function limBase(){
   const keep=st.lim; st.lim=null;
