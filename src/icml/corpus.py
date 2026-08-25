@@ -25,7 +25,7 @@ from .common import FOCUS_YEAR, INTERIM, PROCESSED, read_jsonl
 # exist yet (its feed is a placeholder with ~200 rows).
 ACTIVE = (
     ("ICML", 2025), ("ICML", 2026),
-    ("NeurIPS", 2025),
+    ("NeurIPS", 2024), ("NeurIPS", 2025),
     ("ICLR", 2025), ("ICLR", 2026),
 )
 ACTIVE_YEARS = tuple(sorted({y for _, y in ACTIVE}))

@@ -1974,7 +1974,7 @@ function venueLegendHTML(){
   const single=VENUES.map((v,hue)=>({v,hue}))
     .filter(x=>CY.some(c=>c.v===x.v.v)&&!prs.some(p=>p.v===x.v.v))
     .map(x=>{const c=CY.find(c2=>c2.v===x.v.v);
-      return `<span><i style="background:color-mix(in srgb, var(--v${x.hue}) 26%, var(--card))"></i>`+
+      return `<span><i style="background:color-mix(in srgb, var(--v${x.hue}) 34%, var(--card))"></i>`+
         `${esc(x.v.v)} <em>${c.y} only</em></span>`;});
   return `<div class="vleg">`+prs.map(p=>
       `<span><i style="background:var(--v${p.hue})"></i>${esc(p.v)} <em>from ${p.y0} to ${p.y1}</em></span>`).join('')+
@@ -2266,7 +2266,7 @@ function railSetCard(res){
   const mx=Math.max(...ys.map(r=>r.sh),1e-9);
   const yrows=ys.map(r=>{
     const col=r.last?`var(--v${r.hue})`
-              :`color-mix(in srgb, var(--v${r.hue}) 26%, var(--card))`;
+              :`color-mix(in srgb, var(--v${r.hue}) 34%, var(--card))`;
     return `<div class="scyrow"><span>${all?esc(r.v)+' ':''}${r.y}</span>`+
       `<span class="yb"><i style="width:${Math.max(r.sh/mx*100,1.5).toFixed(1)}%;background:${col}"></i></span>`+
       `<b>${r.n} · ${(r.sh/10).toFixed(1)}%</b></div>`;
@@ -2545,7 +2545,7 @@ const CHG_F=1;   // floor, per-1,000
 function logX(M){ return v=>v<=CHG_F?0:Math.log(v/CHG_F)/Math.log(M/CHG_F)*100; }
 function laneHTML(x){
   const dark=`var(--v${x.hue})`;
-  const pale=`color-mix(in srgb, var(--v${x.hue}) 26%, var(--card))`;
+  const pale=`color-mix(in srgb, var(--v${x.hue}) 34%, var(--card))`;
   if(x.lone)
     return `<span class="lane" title="${(x.s0/10).toFixed(1)}% — single edition, no year pair">`+
       `<i style="width:${Math.max(x.w0,.6).toFixed(1)}%;background:${pale}"></i></span>`;
@@ -2617,12 +2617,20 @@ function changedHTML(){
       `<b class="mvn">${(u0/10).toFixed(1)}→${(u1/10).toFixed(1)}%</b></button>`+pills;
   }).join('')).join('');
   const leg=S.pairs.length>1?''
-    :`<div class="chgleg"><span><i style="background:color-mix(in srgb, var(--v${S.pairs[0].hue}) 26%, var(--card))"></i>${S.pairs[0].y0}</span>`+
+    :`<div class="chgleg"><span><i style="background:color-mix(in srgb, var(--v${S.pairs[0].hue}) 34%, var(--card))"></i>${S.pairs[0].y0}</span>`+
      `<span><i style="background:var(--v${S.pairs[0].hue})"></i>${S.pairs[0].y1}</span></div>`;
   const tab=(k,l)=>`<button class="chgtab ${chgTab===k?'on':''}" data-tab="${k}">${l}</button>`;
   return `<div class="chgbox"><div class="chghd">What moved — since last year`+
     `<span class="chgtabs">${tab('t','fields')}${tab('m','methods')}${tab('d','benchmarks')}</span></div>`+
     `<div class="chgplot mv">${grid}${body}</div>${axis}${leg}</div>`;
+}
+// One chart pick replaces the whole selection: the reader asked a new question.
+function applyChgRow(k,id){
+  st.q=[]; const q=$('#q'); if(q)q.value='';
+  st.sel=null; st.grouped=false;
+  st.topics.clear(); st.fams.clear(); st.meth=null; st.mfam=null; st.ds=null;
+  st.lim=null;
+  if(k==='t')st.topics.add(id); else if(k==='m')st.meth=id; else st.ds=id;
 }
 function wireChanged(){
   document.querySelectorAll('[data-tab]').forEach(el=>el.onclick=()=>{
