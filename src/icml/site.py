@@ -789,9 +789,18 @@ def build_payload(span_source: str) -> dict:
                 exs.append({"t": rows[ix]["t"][:90], "s": sent[:200]})
                 if len(exs) == 2:
                     break
+            ncorp = Counter(r2["cy"] for r2 in rows)
+            t_ixs = post_by_term[t2["t"]]
+            lanes = []
+            for c0p, c1p in pairs_all:
+                ap = sum(1 for ix in t_ixs if rows[ix]["cy"] == c0p)
+                bp = sum(1 for ix in t_ixs if rows[ix]["cy"] == c1p)
+                lanes.append({"v": corpora[c1p].venue,
+                              "s0": round(ap / ncorp[c0p] * 1000, 1),
+                              "s1": round(bp / ncorp[c1p] * 1000, 1)})
             frows.append({"t": term, "s0": t2["s0"], "s1": t2["s1"],
                           "up": 1 if t2["z"] > 0 else 0, "nw": 1 if t2["a"] <= 2 else 0,
-                          "ex": exs})
+                          "ex": exs, "lanes": lanes})
         digest["fights"] = frows[:6]
 
 
@@ -1286,7 +1295,7 @@ padding:2.5px 0;font-size:12px;color:var(--ink2)}
 .dxr b{font-weight:600;font-size:10.5px;color:var(--ink2);text-align:right;white-space:nowrap}
 .digopen button{font:inherit;font-size:12px;padding:5px 13px;border-radius:8px;cursor:pointer;
 border:1px solid var(--acc);background:var(--acc);color:#fff}
-.fightrow{display:grid;grid-template-columns:190px 1fr 92px;gap:12px;align-items:center}
+.fightrow{display:grid;grid-template-columns:190px 1fr;gap:12px;align-items:center}
 .vleg{display:flex;flex-wrap:wrap;gap:8px 22px;justify-content:center;align-items:center;
 margin:12px 0 2px;font-size:14px;font-weight:600;color:var(--ink)}
 .vleg i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:7px;vertical-align:-1px}
@@ -2065,9 +2074,12 @@ function digestHTML(){
           `<span class="tipt">${esc(x.t)}</span>`+
           `<span class="tips">${esc(x.s).replace(rx,'<i class="limhit">$1</i>')}…</span>`).join('')+
           `</span>`:'';
-        return `<button class="digrow fightrow" data-fight="${fi}" title="${esc(f.t)}"><b>${esc(disp(f.t))}</b>`+
-        `<span class="trk">${laneHTML({hue,s0:f.s0,s1:f.s1,w0:X(f.s0),w1:X(f.s1)})}</span>`+
-        `<b>${f.s0} → ${f.s1} /1k</b>${tip}</button>`;
+        const lanes=(f.lanes&&f.lanes.length?f.lanes:[{v:DG.pair.v,s0:f.s0,s1:f.s1}])
+          .map(L=>laneHTML({hue:Math.max(VENUES.findIndex(v=>v.v===L.v),0),
+                            s0:L.s0,s1:L.s1,w0:X(L.s0),w1:X(L.s1)})).join('');
+        return `<button class="digrow fightrow" data-fight="${fi}" `+
+        `title="${esc(f.t)} · ${f.s0} → ${f.s1} per 1,000 across the paired venues">`+
+        `<b>${esc(disp(f.t))}</b><span class="trk">${lanes}</span>${tip}</button>`;
       }).join('')+'</div>';
   }
   if((DG.fresh||[]).length){
@@ -2611,12 +2623,17 @@ function changedHTML(){
   const S=sections(chgTab);
   if(!S)return '';
   const MIXBY={}; (DG.mix||[]).forEach(r=>MIXBY[r.ti]=r);
-  const rawT=chgTab==='t'?changedRows(S.pairs[0].c0,S.pairs[0].c1).t:null;
   // fields whose own share never moved but whose INSIDE did (image generation)
+  // — lanes from EVERY venue pair, exactly like the rule-selected rows
   const shifted=chgTab==='t'
     ?(DG.mix||[]).filter(r=>![...S.rising,...S.fresh,...S.falling].some(e=>e.id===r.ti))
-       .map(r=>{const raw=rawT.find(x=>x.id===r.ti);
-                return raw&&{l:r.l,id:r.ti,lanes:[{hue:S.pairs[0].hue,s0:raw.s0,s1:raw.s1}],gn:0};})
+       .map(r=>{
+         const lanes=[];
+         for(const pr of S.pairs){
+           const raw=changedRows(pr.c0,pr.c1).t.find(x=>x.id===r.ti);
+           if(raw&&(raw.s0>0||raw.s1>0))lanes.push({hue:pr.hue,s0:raw.s0,s1:raw.s1});
+         }
+         return lanes.length?{l:r.l,id:r.ti,lanes,gn:0}:null;})
        .filter(Boolean)
     :[];
   const secs=[['rising',S.rising],['shifting inside',shifted],['new',S.fresh],['falling',S.falling]]
