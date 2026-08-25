@@ -1372,6 +1372,7 @@ cursor:pointer;padding:6px 10px}
 /* what-moved entry view */
 .chgbox{background:var(--card);border-radius:12px;padding:16px 18px;margin-top:14px}
 .chghd{font-size:17px;font-weight:660;display:flex;align-items:center;gap:10px}
+.chghd em{font-style:normal;font-weight:500;font-size:11.5px;color:var(--mut)}
 .chgtabs{margin-left:auto;display:flex;gap:4px}
 .chgtab{font-size:11px;padding:2px 9px;border-radius:6px;border:1px solid var(--ring);
 background:none;cursor:pointer;color:var(--ink2)}
@@ -2741,7 +2742,7 @@ function changedHTML(){
     :`<div class="chgleg"><span><i style="background:color-mix(in srgb, var(--v${S.pairs[0].hue}) 34%, var(--card))"></i>${S.pairs[0].y0}</span>`+
      `<span><i style="background:var(--v${S.pairs[0].hue})"></i>${S.pairs[0].y1}</span></div>`;
   const tab=(k,l)=>`<button class="chgtab ${chgTab===k?'on':''}" data-tab="${k}">${l}</button>`;
-  return `<div class="chgbox"><div class="chghd">What moved — since last year`+
+  return `<div class="chgbox"><div class="chghd">Shifts<em>since last year</em>`+
     `<span class="chgtabs">${tab('t','fields')}${tab('m','methods')}${tab('d','benchmarks')}</span></div>`+
     `${axis.replace('chgax','chgax top')}<div class="chgplot mv">${grid}${body}</div>${axis}${leg}</div>`;
 }
@@ -2771,7 +2772,7 @@ function wireChanged(){
     const k=el.dataset.k, id=+el.dataset.id;
     if(st.corp===null){
       const nm=k==='t'?T[id].l:k==='m'?MV[id]:dname(id);
-      STORY={label:`<b>${esc(nm)}</b>`,sub:'picked from What moved',
+      STORY={label:`<b>${esc(nm)}</b>`,sub:'picked from Shifts',
              ...(k==='t'?{ti:id}:k==='d'?{di:id}:{})};
     }
     applyChgRow(k,id);
