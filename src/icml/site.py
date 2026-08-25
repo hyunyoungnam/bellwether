@@ -1260,6 +1260,12 @@ border:1px solid var(--ring);background:var(--card);color:var(--ink2);cursor:poi
 .inshd em{font-style:normal;font-weight:500;color:var(--mut);font-size:10.5px}
 .insbox .cr{font-size:12px;padding:1.5px 0}
 .insbox .chgax{height:11px}
+.axtag{font-size:9px;font-weight:700;letter-spacing:.04em;padding:1px 7px;border-radius:9px;
+margin-left:7px;vertical-align:1px}
+.axtag.v0{background:#e8effc;color:var(--v0)}
+.axtag.v1{background:#e2f3ef;color:var(--v1)}
+.axtag.v2{background:#f0eafa;color:var(--v2)}
+.insleg .axtag{margin-left:5px}
 /* the arrival banner: the clicked claim, restated where the reader lands */
 .story{background:linear-gradient(90deg,#e8effc,#f2f6fc 70%,var(--card));border-left:4px solid var(--acc);
 border-radius:12px;padding:12px 16px;margin:0 0 12px;display:grid;
@@ -2202,7 +2208,13 @@ function drawStory(){
   el.querySelector('.syx').onclick=()=>{STORY=null;render();};
 }
 
-let insTab='u';const INS_MIN=12;          // below this on either side, a year claim is noise
+const INS_MIN=12;          // below this on either side, a year claim is noise
+// One panel, all three axes at once — the tabs made readers click to compare.
+// Axis is carried by hue (the validated triple, reused panel-locally: builds
+// on = blue, does = teal, applied to = purple) AND by a written tag on every
+// row, so colour is never the only channel. When a second venue's data lands
+// this panel goes venue-laned and the axis returns to tags alone.
+const INS_AX={u:{hue:0,tag:'builds on'},s:{hue:1,tag:'does'},d:{hue:2,tag:'applied to'}};
 function drawInside(){
   const el=$('#inset'); if(!el)return;
   el.hidden=true;
@@ -2219,7 +2231,8 @@ function drawInside(){
   st.corp=keep;
   const n0=S[0].size, n1=S[1].size;
   if(Math.min(n0,n1)<INS_MIN)return;
-  const items=(ax)=>{
+  const rows=[];
+  for(const ax of ['u','s','d']){
     const cnt=new Map();
     for(const side of [0,1]) for(const i of S[side]){
       const p=P[i]; const seen=new Set();
@@ -2229,52 +2242,52 @@ function drawInside(){
       for(const id of ids){ if(seen.has(id))continue; seen.add(id);
         let c=cnt.get(id); if(!c)cnt.set(id,c=[0,0]); c[side]++; }
     }
-    return cnt;
-  };
-  const name=ax=>ax==='u'?(id=>MV[id]):ax==='s'?(id=>tname(id)):(id=>T[id].l);
-  const cnt=items(insTab), nm=name(insTab);
-  const rows=[];
-  for(const [id,[a,b]] of cnt){
-    if(a+b<5)continue;
-    const s0=a/n0*1000, s1=b/n1*1000;
-    const pp=(a+b)/(n0+n1), se=Math.sqrt(pp*(1-pp)*(1/n0+1/n1));
-    const z=se?(b/n1-a/n0)/se:0;
-    const lo=Math.min(s0,s1), hi=Math.max(s0,s1);
-    // material inside a set: >=3 points of the set, or a 1.5x fold
-    const mat=Math.abs(s1-s0)>=30||(lo>0?hi/lo:1e9)>=1.5;
-    rows.push({id,l:nm(id),a,b,s0,s1,z,mat,nw:a<=1&&b>2,gn:b<=1&&a>2});
+    const nm=ax==='u'?(id=>MV[id]):ax==='s'?(id=>tname(id)):(id=>T[id].l);
+    for(const [id,[a,b]] of cnt){
+      if(a+b<5)continue;
+      const s0=a/n0*1000, s1=b/n1*1000;
+      const pp=(a+b)/(n0+n1), se=Math.sqrt(pp*(1-pp)*(1/n0+1/n1));
+      const z=se?(b/n1-a/n0)/se:0;
+      const lo=Math.min(s0,s1), hi=Math.max(s0,s1);
+      const mat=Math.abs(s1-s0)>=30||(lo>0&&hi/lo>=1.5);
+      rows.push({ax,id,l:nm(id),a,b,s0,s1,z,mat,nw:a<=1&&b>2,gn:b<=1&&a>2});
+    }
   }
   if(!rows.length)return;
-  const up=rows.filter(r=>r.z>=Z_SHOW&&r.mat&&!r.nw).sort((x,y)=>y.z-x.z).slice(0,4);
-  const fresh=rows.filter(r=>r.z>=Z_SHOW&&r.mat&&r.nw).sort((x,y)=>y.s1-x.s1).slice(0,4);
-  const dn=rows.filter(r=>r.z<=-Z_SHOW&&r.mat).sort((x,y)=>x.z-y.z).slice(0,4);
+  const up=rows.filter(r=>r.z>=Z_SHOW&&r.mat&&!r.nw).sort((x,y)=>y.z-x.z).slice(0,6);
+  const fresh=rows.filter(r=>r.z>=Z_SHOW&&r.mat&&r.nw).sort((x,y)=>y.s1-x.s1).slice(0,6);
+  const dn=rows.filter(r=>r.z<=-Z_SHOW&&r.mat).sort((x,y)=>x.z-y.z).slice(0,6);
   const inSec=new Set([...up,...fresh,...dn]);
-  const largest=rows.filter(r=>!inSec.has(r)).sort((x,y)=>y.s1-x.s1).slice(0,2);
+  // one anchor per axis, so the biggest tool, task and domain all stay visible
+  const largest=['u','s','d'].map(ax=>rows.filter(r=>r.ax===ax&&!inSec.has(r))
+    .sort((x,y)=>y.s1-x.s1)[0]).filter(Boolean);
   const secs=[['largest of the rest',largest],['rising',up],['new',fresh],['falling',dn]]
     .filter(x=>x[1].length);
   if(!up.length&&!fresh.length&&!dn.length)
-    secs.length=Math.min(secs.length,1);   // nothing moved: anchors only
-  const M=Math.max(...secs.flatMap(x=>x[1]).flatMap(r=>[r.s0,r.s1]),50);
-  const F=20;    // 2% of the set — in-set shares live an order above corpus ones
+    secs.length=Math.min(secs.length,1);
+  const all=secs.flatMap(x=>x[1]);
+  const M=Math.max(...all.flatMap(r=>[r.s0,r.s1]),50);
+  const F=20;
   const X=v=>v<=F?0:Math.log(v/F)/Math.log(M/F)*100;
   const ticks=[20,50,100,200,500,1000].filter(t=>t>=F&&t<=M*1.04);
   const grid='<div class="chgg">'+ticks.map(t=>`<i style="left:${X(t).toFixed(2)}%"></i>`).join('')+'</div>';
   const axis='<div class="chgax">'+ticks.map(t=>`<b style="left:${X(t).toFixed(2)}%">${t/10}%</b>`).join('')+'</div>';
-  const kind={u:'m',s:null,d:'t'}[insTab];
   const body=secs.map(([nm2,rs])=>`<div class="chgsec">${nm2}</div>`+rs.map(r=>{
-    const lane=laneHTML({hue:pr.hue,s0:r.s0,s1:r.s1,w0:X(r.s0),w1:X(r.s1)});
+    const A=INS_AX[r.ax];
+    const lane=laneHTML({hue:A.hue,s0:r.s0,s1:r.s1,w0:X(r.s0),w1:X(r.s1)});
     const tag=r.gn?'<em class="tag gone">gone</em>':'';
+    const kind={u:'m',s:null,d:'t'}[r.ax];
     const attrs=kind?`data-k="${kind}" data-id="${r.id}"`:'disabled style="cursor:default"';
-    return `<button class="cr" ${attrs}><span class="crl" title="${esc(r.l)}">${esc(r.l)}${tag}</span>`+
+    return `<button class="cr" ${attrs}><span class="crl" title="${esc(r.l)}">${esc(r.l)}${tag}`+
+      `<span class="axtag v${A.hue}">${A.tag}</span></span>`+
       `<span class="trk">${lane}</span></button>`;
   }).join('')).join('');
-  const tab=(k,l)=>`<button class="chgtab ${insTab===k?'on':''}" data-instab="${k}">${l}</button>`;
+  const leg=`<span class="chgtabs insleg">`+Object.values(INS_AX).map(A=>
+    `<span class="axtag v${A.hue}">${A.tag}</span>`).join('')+`</span>`;
   el.innerHTML=`<div class="inshd">Inside this set — since last year`+
-    `<em>share of the ${n0} (${pr.y0}) and ${n1} (${pr.y1}) papers picked</em>`+
-    `<span class="chgtabs">${tab('u','builds on')}${tab('s','tasks')}${tab('d','domains')}</span></div>`+
+    `<em>share of the ${n0} (${pr.y0}) and ${n1} (${pr.y1}) papers picked</em>${leg}</div>`+
     `<div class="chgplot">${grid}${body}</div>${axis}`;
   el.hidden=false;
-  el.querySelectorAll('[data-instab]').forEach(b=>b.onclick=()=>{insTab=b.dataset.instab;render();});
   el.querySelectorAll('.cr[data-id]').forEach(b=>b.onclick=()=>{
     const k=b.dataset.k, id=+b.dataset.id;
     if(k==='m'){ st.meth=st.meth===id?null:id; st.mfam=null; }
