@@ -725,41 +725,6 @@ def build_payload(span_source: str) -> dict:
             hits.sort(key=lambda p2: (p2["o"] != 1, p2["o"] != 2, p2["t"]))
             r2["ev"] = [p2["i"] for p2 in hits[:4]]
 
-        # Headline tiles: one rule-picked fact per angle, biggest first.
-        heads = []
-        tshares = []
-        for ti, t0 in enumerate(topics_out):
-            if t0["j"] or t0["f"] == 1:
-                continue
-            a2 = sum(1 for g, tl in topic_of.items()
-                     if ti in tl and g in row_of and rows[row_of[g]]["cy"] == pc0)
-            b2 = sum(1 for g, tl in topic_of.items()
-                     if ti in tl and g in row_of and rows[row_of[g]]["cy"] == pc1)
-            if a2 + b2 < 40:
-                continue
-            z2 = _z(a2, b2, n0, n1)
-            tshares.append((abs(z2), z2, ti, a2, b2))
-        tshares.sort(reverse=True)
-        if tshares:
-            _, z2, ti, a2, b2 = tshares[0]
-            heads.append({"kind": "topic", "l": topics_out[ti]["l"],
-                          "s0": round(a2 / n0 * 1000), "s1": round(b2 / n1 * 1000),
-                          "sub": "of the conference", "ti": ti})
-        if digest["mix"]:
-            r2 = digest["mix"][0]
-            top = r2["shifts"][0]
-            heads.append({"kind": "mix", "l": top["l"],
-                          "s0": top["s0"], "s1": top["s1"],
-                          "sub": f"of {r2['l']}", "ti": r2["ti"]})
-            news = [(x["s1"], r3["ti"], x, r3) for r3 in digest["mix"]
-                    for x in r3["shifts"] if x["nw"] and r3["ti"] != r2["ti"]]
-            news.sort(key=lambda n4: -n4[0])
-            if news:
-                _s1, ti3, x3, r3 = news[0]
-                heads.append({"kind": "mix", "l": x3["l"],
-                              "s0": x3["s0"], "s1": x3["s1"],
-                              "sub": f"enters {r3['l']}", "ti": ti3})
-        digest["heads"] = heads
 
         # ---- fights: which stated failures grew, conference-wide ----
         ftests = []
@@ -798,16 +763,23 @@ def build_payload(span_source: str) -> dict:
             if any(term in s2 or s2 in term for s2 in seen_sub):
                 continue
             seen_sub.append(term)
+            # two of the papers' own sentences, so hover can say what the
+            # term MEANS here without us writing a definition (Guardrail 2)
+            exs = []
+            for ix in post_by_term[t2["t"]]:
+                if rows[ix]["cy"] != pc1:
+                    continue
+                sent = (lim0_texts[ix] or "").strip()
+                if len(sent) < 40:
+                    continue
+                exs.append({"t": rows[ix]["t"][:90], "s": sent[:200]})
+                if len(exs) == 2:
+                    break
             frows.append({"t": term, "s0": t2["s0"], "s1": t2["s1"],
-                          "up": 1 if t2["z"] > 0 else 0, "nw": 1 if t2["a"] <= 2 else 0})
+                          "up": 1 if t2["z"] > 0 else 0, "nw": 1 if t2["a"] <= 2 else 0,
+                          "ex": exs})
         digest["fights"] = frows[:6]
-        if digest["fights"]:
-            f2 = digest["fights"][0]
-            digest["heads"].append({"kind": "fight", "l": f"“{f2['t']}”",
-                                    "s0": f2["s0"], "s1": f2["s1"],
-                                    "sub": "papers fighting it, per 1,000",
-                                    "t": f2["t"]})
-        digest["heads"] = digest["heads"][:4]
+
 
         # ---- fresh: benchmarks that did not exist in the previous edition ----
         dcnt: dict[int, list[int]] = defaultdict(lambda: [0, 0])
@@ -1278,20 +1250,6 @@ grid-template-columns:1fr auto;gap:4px 14px;align-items:center}
 .story .syx{grid-column:2;grid-row:1/span 3;font:inherit;font-size:16px;border:0;
 background:none;cursor:pointer;color:var(--mut);padding:4px 8px}
 .story .syx:hover{color:var(--warm)}
-/* headline tiles */
-.heads{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:2px}
-@media(max-width:860px){.heads{grid-template-columns:repeat(2,1fr)}}
-.head{font:inherit;text-align:left;border:0;border-radius:13px;padding:14px 16px;cursor:pointer;
-background:var(--card);box-shadow:0 1px 3px rgba(0,0,0,.05)}
-.head:hover{box-shadow:0 3px 10px rgba(0,0,0,.10)}
-.hl2{font-size:13px;font-weight:650;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.hn{font-size:23px;font-weight:750;letter-spacing:-.02em;margin:2px 0}
-.hn small{font-size:12px;font-weight:500;color:var(--mut)}
-.ha{font-weight:400;font-size:16px}
-.ha.up{color:var(--acc)} .ha.dn{color:var(--warm)}
-.hs{font-size:10.5px;color:var(--mut);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.vhead{font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--mut);
-margin:18px 0 6px;text-align:center}
 /* the digest: analysis first, selection second — every row is a door */
 .digbox{background:var(--card);border-radius:12px;padding:16px 18px;margin-top:14px}
 .dighd{font-size:15px;font-weight:660}
@@ -1312,18 +1270,36 @@ padding:2.5px 0;font-size:12px;color:var(--ink2)}
 .dxr .crl{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .dxr .ax2{color:var(--mut);font-size:10px;margin-left:6px}
 .dxr b{font-weight:600;font-size:10.5px;color:var(--ink2);text-align:right;white-space:nowrap}
-.evh{font-size:9.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--mut);
-margin:10px 0 3px}
-.evrow{display:block;width:100%;font:inherit;font-size:12px;text-align:left;border:0;
-background:none;cursor:pointer;padding:2.5px 0;color:var(--ink2);white-space:nowrap;
-overflow:hidden;text-overflow:ellipsis}
-.evrow:hover{color:var(--acc)}
-.evrow .badge{margin-left:7px}
-.digopen{margin-top:9px}
 .digopen button{font:inherit;font-size:12px;padding:5px 13px;border-radius:8px;cursor:pointer;
 border:1px solid var(--acc);background:var(--acc);color:#fff}
 .fightrow{display:grid;grid-template-columns:190px 1fr 92px;gap:12px;align-items:center}
 .freshwrap{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+/* merged What-moved rows: field dumbbell reads big, its inner shifts as pills */
+.cr.mv{grid-template-columns:200px 1fr 84px;font-size:13.5px;padding:4px 0}
+.cr.mv .crl{font-weight:600}
+.mvn{font-weight:650;font-size:11px;color:var(--ink2);text-align:right;white-space:nowrap}
+.chgplot.mv .lane{height:10px}
+.pillrow{display:flex;flex-wrap:wrap;gap:5px;align-items:center;margin:1px 0 7px 212px;position:relative}
+.pillhd{font-size:9px;letter-spacing:.07em;text-transform:uppercase;color:var(--mut);margin-right:2px}
+.pill{font:inherit;font-size:11px;padding:2.5px 9px;border-radius:20px;border:0;cursor:pointer;
+background:#eef1f5;color:var(--ink2)}
+.pill i{font-style:normal;font-weight:700}
+.pill b{font-weight:650}
+.pill.up{background:#e5edfa;color:#1d4f9c} .pill.up i{color:var(--acc)}
+.pill.dn{background:#faece3;color:#8f3d13} .pill.dn i{color:var(--warm)}
+.pill:hover{filter:brightness(.96)}
+.pill[disabled]{cursor:default}
+.pill .nw2{font-size:8px;font-weight:800;letter-spacing:.05em;margin-left:4px;vertical-align:1px}
+@media(max-width:700px){.cr.mv{grid-template-columns:130px 1fr 70px}.pillrow{margin-left:0}}
+/* the fights hover card: the papers' own sentences define the term */
+.fightrow{position:relative}
+.tip{display:none;position:absolute;left:180px;top:100%;z-index:50;width:min(520px,80vw);
+background:var(--card);border:1px solid var(--ring);border-radius:12px;
+box-shadow:0 12px 34px rgba(0,0,0,.16);padding:11px 14px;text-align:left;cursor:default}
+.fightrow:hover .tip{display:block}
+.tipt{display:block;font-size:10.5px;font-weight:650;color:var(--ink);margin-top:7px}
+.tipt:first-child{margin-top:0}
+.tips{display:block;font-size:11.5px;color:var(--ink2);font-weight:400;line-height:1.45;margin-top:1px}
 .allfields{margin-top:14px;text-align:center}
 .allfields>button{font:inherit;font-size:12px;color:var(--mut);background:none;border:0;
 cursor:pointer;padding:6px 10px}
@@ -1982,72 +1958,47 @@ function landingHTML(){
       ${now?`<div class="vn">${now.n.toLocaleString()} papers</div>`:`<div class="vsoon">not collected yet</div>`}
     </button>`;
   }).join('');
-  return headsHTML()+changedHTML()+digestHTML()+allFieldsHTML()+
-    `<div class="vhead">one conference at a time</div><div class="venues">${cards}</div>`;
+  return `<div class="venues">${cards}</div>`+changedHTML()+digestHTML()+allFieldsHTML();
 }
-// Headline tiles: one rule-picked fact per angle (top topic mover, top mix
-// shift, top arrival, top rising failure) — the report's front page, and every
-// tile is a door into the ALL-scope set behind it.
-function headsHTML(){
-  const hs=DG.heads||[];
-  if(!hs.length)return '';
-  return `<div class="heads">`+hs.map((h,i)=>{
-    const up=h.s1>=h.s0;
-    return `<button class="head" data-head="${i}">
-      <div class="hl2">${esc(h.l)}</div>
-      <div class="hn">${h.kind==='fight'
-        ?`${h.s0} <span class="ha ${up?'up':'dn'}">→</span> ${h.s1}<small>/1k</small>`
-        :`${(h.s0/10).toFixed(h.s0<100?1:0)} <span class="ha ${up?'up':'dn'}">→</span> ${(h.s1/10).toFixed(h.s1<100?1:0)}<small>%</small>`}</div>
-      <div class="hs">${esc(h.sub)} · ${DG.pair.y0} → ${DG.pair.y1}</div>
-    </button>`;
-  }).join('')+'</div>';
-}
+
 // ---- the digest: what MOVED, precomputed at build time (BH-free but bar-
 // consistent: the product's standing |z|>=2.576 + material rule, family size
 // disclosed; appearing 0->n needs no test to be a fact). Every row applies
 // itself as a selection — analysis first, selection second.
 const DG=D.digest||{};
-const digOpen=new Set();
+// The chosen scope lives in the URL hash: '#all' is the union, '#icml-2026'
+// one corpus; back returns to the landing and reload keeps the reader put.
+const corpFromHash=()=>{
+  const h=location.hash.slice(1);
+  if(h==='all')return -1;
+  const j=CY.findIndex(c=>c.k===h);return j<0?null:j;};
+function go(j){
+  st.corp=j; st.sel=null; st.grouped=false;
+  history.pushState(null,'',j===null?location.pathname+location.search
+                             :'#'+(j===-1?'all':CY[j].k));
+  render();
+}
+window.addEventListener('popstate',()=>{ st.corp=corpFromHash(); st.sel=null; render(); });
+
 function digestHTML(){
   if(!DG.pair)return '';
   const hue=Math.max(VENUES.findIndex(v=>v.v===DG.pair.v),0);
   let h='';
-  if((DG.mix||[]).length){
-    h+=`<div class="digbox"><div class="dighd">Where the mix shifted`+
-      `<em>inside a field, what it builds on or does moved · ${DG.pair.y0} → ${DG.pair.y1} · `+
-      `${DG.mix_tested} shifts tested, at this bar at most one shown could be chance</em></div>`;
-    for(const [ri,r] of DG.mix.entries()){
-      const open=digOpen.has(ri);
-      const AX={u:'builds on',s:'does',d:'applied to'};
-      const head=r.shifts.slice(0,2).map(x=>
-        `<span class="shift ${x.up?'up':'dn'}">${esc(x.l)} <i>${x.up?'↑':'↓'}</i>`+
-        `${x.nw?'<span class="nw2">NEW</span>':''}</span>`).join(' ·');
-      h+=`<button class="digrow ${open?'open':''}" data-dig="${ri}"><b>${esc(r.l)}</b>`+
-        `<span class="n2">${r.n0} → ${r.n1} papers</span>${head}</button>`;
-      if(open){
-        const M=Math.max(...r.shifts.flatMap(x=>[x.s0,x.s1]),60);
-        const X=v=>v<=20?0:Math.log(v/20)/Math.log(M/20)*100;
-        h+=`<div class="digx">`+r.shifts.map(x=>
-          `<div class="dxr"><span class="crl">${esc(x.l)}<span class="ax2">${AX[x.ax]}</span></span>`+
-          `<span class="trk">${laneHTML({hue,s0:x.s0,s1:x.s1,w0:X(x.s0),w1:X(x.s1)})}</span>`+
-          `<b>${(x.s0/10).toFixed(0)}% → ${(x.s1/10).toFixed(0)}%<br>of the set</b></div>`).join('')+
-          ((r.ev||[]).length?`<div class="evh">the papers carrying the shift — orals first</div>`+
-            r.ev.map(g=>`<button class="evrow" data-ev="${g}" data-evti="${r.ti}">${esc(P[BYID[g]].t)}`+
-              `${P[BYID[g]].o===1?'<span class="badge">Oral</span>':''}</button>`).join(''):'')+
-          `<div class="digopen"><button data-digo="${ri}">open the ${r.n1} papers →</button></div></div>`;
-      }
-    }
-    h+='</div>';
-  }
   if((DG.fights||[]).length){
     const M=Math.max(...DG.fights.flatMap(f=>[f.s0,f.s1]),5);
     const X=v=>v<=0.5?0:Math.log(v/0.5)/Math.log(M/0.5)*100;
     h+=`<div class="digbox"><div class="dighd">What the field fights`+
-      `<em>failures named in the papers' own limitation sentences · share per 1,000 papers</em></div>`+
-      DG.fights.map((f,fi)=>
-        `<button class="digrow fightrow" data-fight="${fi}"><b>${esc(f.t)}</b>`+
+      `<em>failures named in the papers' own limitation sentences · share per 1,000 papers · hover for the sentences themselves</em></div>`+
+      DG.fights.map((f,fi)=>{
+        const rx=new RegExp('('+f.t.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+')','ig');
+        const tip=(f.ex||[]).length?`<span class="tip">`+f.ex.map(x=>
+          `<span class="tipt">${esc(x.t)}</span>`+
+          `<span class="tips">${esc(x.s).replace(rx,'<i class="limhit">$1</i>')}…</span>`).join('')+
+          `</span>`:'';
+        return `<button class="digrow fightrow" data-fight="${fi}"><b>${esc(f.t)}</b>`+
         `<span class="trk">${laneHTML({hue,s0:f.s0,s1:f.s1,w0:X(f.s0),w1:X(f.s1)})}</span>`+
-        `<b>${f.s0} → ${f.s1} /1k</b></button>`).join('')+'</div>';
+        `<b>${f.s0} → ${f.s1} /1k</b>${tip}</button>`;
+      }).join('')+'</div>';
   }
   if((DG.fresh||[]).length){
     h+=`<div class="digbox"><div class="dighd">New this year`+
@@ -2075,41 +2026,14 @@ function enterWith(mut){
   mut();
   go(-1);
 }
+function mixStoryFor(r,x){
+  const hue=Math.max(VENUES.findIndex(v=>v.v===DG.pair.v),0);
+  return {label:`inside <b>${esc(r.l)}</b>, ${esc(x.l)} ${x.up?'rose':'fell'}`,
+          sub:'share of the set',s0:x.s0,s1:x.s1,unit:'%',
+          fmt:v=>((v/10).toFixed(v<100?1:0)),
+          hue,y0:DG.pair.y0,y1:DG.pair.y1,ti:r.ti};
+}
 function wireDigest(){
-  document.querySelectorAll('[data-head]').forEach(el=>el.onclick=()=>{
-    const h=DG.heads[+el.dataset.head];
-    const hue=Math.max(VENUES.findIndex(v=>v.v===DG.pair.v),0);
-    if(h.kind==='fight'){
-      STORY={label:`prior work struggles with <b>${esc(h.t)}</b>`,sub:'papers per 1,000',
-             s0:h.s0,s1:h.s1,unit:'/1k',fmt:v=>v,hue,y0:DG.pair.y0,y1:DG.pair.y1,lim:h.t};
-      enterWith(()=>{st.lim=h.t;});
-    }else{
-      STORY={label:`<b>${esc(h.l)}</b>`,sub:h.sub,
-             s0:h.s0,s1:h.s1,unit:'%',fmt:v=>((v/10).toFixed(v<100?1:0)),hue,y0:DG.pair.y0,y1:DG.pair.y1,ti:h.ti};
-      enterWith(()=>st.topics.add(h.ti));
-    }});
-  document.querySelectorAll('[data-dig]').forEach(el=>el.onclick=()=>{
-    const ri=+el.dataset.dig;
-    digOpen.has(ri)?digOpen.delete(ri):digOpen.add(ri);
-    render();});
-  const mixStory=r=>{
-    const x=r.shifts[0];
-    const hue=Math.max(VENUES.findIndex(v=>v.v===DG.pair.v),0);
-    return {label:`inside <b>${esc(r.l)}</b>, ${esc(x.l)} ${x.up?'rose':'fell'}`,
-            sub:'share of the set',s0:x.s0,s1:x.s1,unit:'%',fmt:v=>((v/10).toFixed(v<100?1:0)),
-            hue,y0:DG.pair.y0,y1:DG.pair.y1,ti:r.ti};
-  };
-  document.querySelectorAll('[data-digo]').forEach(el=>el.onclick=e=>{
-    e.stopPropagation();
-    const r=DG.mix[+el.dataset.digo];
-    STORY=mixStory(r);
-    enterWith(()=>st.topics.add(r.ti));});
-  document.querySelectorAll('[data-ev]').forEach(el=>el.onclick=e=>{
-    e.stopPropagation();
-    const g=+el.dataset.ev, ti=+el.dataset.evti;
-    const r=DG.mix.find(r2=>r2.ti===ti); if(r)STORY=mixStory(r);
-    enterWith(()=>{st.topics.add(ti); st.sel=BYID[g];});
-    setTimeout(()=>document.querySelector('.p.sel')?.scrollIntoView({block:'center'}),120);});
   document.querySelectorAll('[data-fight]').forEach(el=>el.onclick=()=>{
     const f=DG.fights[+el.dataset.fight];
     const hue=Math.max(VENUES.findIndex(v=>v.v===DG.pair.v),0);
@@ -2126,20 +2050,6 @@ function wireDigest(){
     enterWith(()=>st.topics.add(+el.dataset.af));});
   const af=$('#aftog'); if(af)af.onclick=()=>{AF_OPEN=!AF_OPEN;render();};
 }
-// The chosen conference lives in the URL hash, so the browser's back button
-// returns to the landing and a reload keeps the reader where they were.
-const corpFromHash=()=>{
-  const h=location.hash.slice(1);
-  if(h==='all')return -1;
-  const j=CY.findIndex(c=>c.k===h);return j<0?null:j;};
-function go(j){
-  st.corp=j; st.sel=null; st.grouped=false;
-  history.pushState(null,'',j===null?location.pathname+location.search
-                             :'#'+(j===-1?'all':CY[j].k));
-  render(); window.scrollTo({top:0});
-}
-window.addEventListener('popstate',()=>{ st.corp=corpFromHash(); st.sel=null; render(); });
-
 function wireLanding(){
   wireDigest();
   document.querySelectorAll('[data-corp]').forEach(el=>el.onclick=()=>go(+el.dataset.corp));
@@ -2257,14 +2167,8 @@ function drawInside(){
   const up=rows.filter(r=>r.z>=Z_SHOW&&r.mat&&!r.nw).sort((x,y)=>y.z-x.z).slice(0,6);
   const fresh=rows.filter(r=>r.z>=Z_SHOW&&r.mat&&r.nw).sort((x,y)=>y.s1-x.s1).slice(0,6);
   const dn=rows.filter(r=>r.z<=-Z_SHOW&&r.mat).sort((x,y)=>x.z-y.z).slice(0,6);
-  const inSec=new Set([...up,...fresh,...dn]);
-  // one anchor per axis, so the biggest tool, task and domain all stay visible
-  const largest=['u','s','d'].map(ax=>rows.filter(r=>r.ax===ax&&!inSec.has(r))
-    .sort((x,y)=>y.s1-x.s1)[0]).filter(Boolean);
-  const secs=[['largest of the rest',largest],['rising',up],['new',fresh],['falling',dn]]
-    .filter(x=>x[1].length);
-  if(!up.length&&!fresh.length&&!dn.length)
-    secs.length=Math.min(secs.length,1);
+  const secs=[['rising',up],['new',fresh],['falling',dn]].filter(x=>x[1].length);
+  if(!secs.length)return;
   const all=secs.flatMap(x=>x[1]);
   const M=Math.max(...all.flatMap(r=>[r.s0,r.s1]),50);
   const F=20;
@@ -2516,9 +2420,7 @@ function sections(tab){
     .sort((x,y)=>y.s1u-x.s1u).slice(0,LABEL_CAP);
   const falling=rows.filter(e=>e.dn&&!e.up)
     .sort((x,y)=>y.maxz-x.maxz).slice(0,LABEL_CAP);
-  const inSec=new Set([...rising,...fresh,...falling]);
-  const largest=rows.filter(e=>!inSec.has(e)).sort((x,y)=>y.s1u-x.s1u).slice(0,2);
-  return {pairs,largest,rising,fresh,falling};
+  return {pairs,rising,fresh,falling,all:rows};
 }
 // Log x. The linear form could not show both size and growth: length is an
 // absolute encoding, so 0.2->0.9% (a 4.5x rise) was invisible next to a big
@@ -2541,139 +2443,69 @@ function laneHTML(x){
 function changedHTML(){
   const S=sections(chgTab);
   if(!S)return '';
-  const secs=[['largest of the rest',S.largest],['rising',S.rising],['new',S.fresh],['falling',S.falling]]
+  const MIXBY={}; (DG.mix||[]).forEach(r=>MIXBY[r.ti]=r);
+  const rawT=chgTab==='t'?changedRows(S.pairs[0].c0,S.pairs[0].c1).t:null;
+  // fields whose own share never moved but whose INSIDE did (image generation)
+  const shifted=chgTab==='t'
+    ?(DG.mix||[]).filter(r=>![...S.rising,...S.fresh,...S.falling].some(e=>e.id===r.ti))
+       .map(r=>{const raw=rawT.find(x=>x.id===r.ti);
+                return raw&&{l:r.l,id:r.ti,lanes:[{hue:S.pairs[0].hue,s0:raw.s0,s1:raw.s1}],gn:0};})
+       .filter(Boolean)
+    :[];
+  const secs=[['rising',S.rising],['shifting inside',shifted],['new',S.fresh],['falling',S.falling]]
     .filter(x=>x[1].length);
   if(!secs.length)return '';
   const all=secs.flatMap(x=>x[1]);
   const M=Math.max(...all.flatMap(e=>e.lanes.flatMap(x=>[x.s0,x.s1])),CHG_F*2);
   const X=logX(M);
   const ticks=[1,3,10,30,100].filter(t=>t<=M*1.04);
-  const grid='<div class="chgg">'+ticks.map(t=>`<i style="left:${X(t).toFixed(2)}%"></i>`).join('')+'</div>';
-  const axis='<div class="chgax">'+ticks.map(t=>`<b style="left:${X(t).toFixed(2)}%">${t/10}%</b>`).join('')+'</div>';
+  const grid='<div class="chgg mv">'+ticks.map(t=>`<i style="left:${X(t).toFixed(2)}%"></i>`).join('')+'</div>';
+  const axis='<div class="chgax mv">'+ticks.map(t=>`<b style="left:${X(t).toFixed(2)}%">${t/10}%</b>`).join('')+'</div>';
+  const pill=(x,ti)=>{
+    const kind=x.ax==='u'?'m':x.ax==='d'?'t':null;
+    const attrs=kind?`data-pill="${ti}:${x.ax}:${x.id}"`:'disabled';
+    return `<button class="pill ${x.up?'up':'dn'}" ${attrs}>${esc(x.l)} `+
+      `<i>${x.up?'↑':'↓'}</i> <b>${(x.s0/10).toFixed(0)}→${(x.s1/10).toFixed(0)}%</b>`+
+      `${x.nw?'<span class="nw2">NEW</span>':''}</button>`;
+  };
   const body=secs.map(([name,rows])=>`<div class="chgsec">${name}</div>`+rows.map(e=>{
     const lanes=e.lanes.map(x=>laneHTML({...x,w0:X(x.s0),w1:X(x.s1)})).join('');
     const tag=e.gn?'<em class="tag gone">gone</em>':'';
-    return `<button class="cr" data-k="${chgTab}" data-id="${e.id}">`+
-      `<span class="crl" title="${esc(e.l)}">${esc(e.l)}${tag}</span><span class="trk">${lanes}</span></button>`;
+    const L=e.lanes[0];
+    const mix=chgTab==='t'?MIXBY[e.id]:null;
+    const pills=mix?`<div class="pillrow"><span class="pillhd">inside</span>`+
+      mix.shifts.slice(0,3).map(x=>pill(x,e.id)).join('')+`</div>`:'';
+    return `<button class="cr mv" data-k="${chgTab}" data-id="${e.id}">`+
+      `<span class="crl" title="${esc(e.l)}">${esc(e.l)}${tag}</span>`+
+      `<span class="trk">${lanes}</span>`+
+      `<b class="mvn">${(L.s0/10).toFixed(1)}→${(L.s1/10).toFixed(1)}%</b></button>`+pills;
   }).join('')).join('');
-  const multi=S.pairs.length>1;
-  const leg=multi
-    ?`<div class="chgleg">${S.pairs.map(p=>`<span><i style="background:var(--v${p.hue})"></i>${esc(p.v)}</span>`).join('')}</div>`
-    :`<div class="chgleg"><span><i style="background:color-mix(in srgb, var(--v${S.pairs[0].hue}) 26%, var(--card))"></i>${S.pairs[0].y0}</span>`+
-     `<span><i style="background:var(--v${S.pairs[0].hue})"></i>${S.pairs[0].y1}</span></div>`;
+  const leg=`<div class="chgleg"><span><i style="background:color-mix(in srgb, var(--v${S.pairs[0].hue}) 26%, var(--card))"></i>${S.pairs[0].y0}</span>`+
+   `<span><i style="background:var(--v${S.pairs[0].hue})"></i>${S.pairs[0].y1}</span></div>`;
   const tab=(k,l)=>`<button class="chgtab ${chgTab===k?'on':''}" data-tab="${k}">${l}</button>`;
-  return `<div class="chgbox"><div class="chghd">Since last year`+
-    `<span class="chgtabs">${tab('t','topics')}${tab('m','methods')}${tab('d','benchmarks')}</span></div>`+
-    `<div class="chgplot">${grid}${body}</div>${axis}${leg}</div>`;
-}
-function applyChgRow(k,id){
-  st.q=[]; const q=$('#q'); if(q)q.value='';
-  st.sel=null; st.grouped=false;
-  st.topics.clear(); st.fams.clear(); st.meth=null; st.mfam=null; st.ds=null;
-  st.lim=null;
-  if(k==='t')st.topics.add(id); else if(k==='m')st.meth=id; else st.ds=id;
-}
-// The rail's before-a-pick view: this venue's own significant movers, the same
-// two-test rule as the landing, one pair-lane each. A row IS a filter — clicking
-// it applies the topic, because a trend a reader cannot act on is trivia.
-function railTrend(){
-  const prs=venuePairs();
-  const pr=st.corp===-1?prs[0]:prs.find(p=>p.c1===st.corp||p.c0===st.corp);
-  if(!pr)return '';
-  const rows=[];
-  for(const r of changedRows(pr.c0,pr.c1).t){
-    const n0=CYN[pr.c0], n1=CYN[pr.c1];
-    const pp=(r.a+r.b)/(n0+n1), se=Math.sqrt(pp*(1-pp)*(1/n0+1/n1));
-    const z=se?(r.b/n1-r.a/n0)/se:0;
-    const lo=Math.min(r.s0,r.s1), hi=Math.max(r.s0,r.s1);
-    const mat=Math.abs(r.s1-r.s0)>=D_MIN||(lo>0?hi/lo:1e9)>=FOLD_MIN;
-    if(Math.max(r.s0,r.s1)>=3&&Math.abs(z)>=Z_SHOW&&mat)rows.push({...r,z});
-  }
-  rows.sort((x,y)=>Math.abs(y.z)-Math.abs(x.z));
-  const top=rows.slice(0,8);
-  if(!top.length)return '';
-  const M=Math.max(...top.flatMap(r=>[r.s0,r.s1]),CHG_F*2);
-  const X=logX(M);
-  return `<div class="rh">Since last year <em>${pr.y0} → ${pr.y1}</em></div>`+
-    top.map(r=>{
-      const tag=r.a<=2&&r.b>2?'<em class="tag">new</em>'
-               :r.b<=2&&r.a>2?'<em class="tag gone">gone</em>':'';
-      return `<button class="mrr" data-tid="${r.id}"><span class="mrl" title="${esc(r.l)}">${esc(r.l)}${tag}</span>`+
-        `<span class="mrt">${laneHTML({hue:pr.hue,s0:r.s0,s1:r.s1,w0:X(r.s0),w1:X(r.s1)})}</span></button>`;
-    }).join('');
-}
-// After a pick: what the chosen set is MADE OF, held sticky while the list
-// scrolls. Same selection counted in each edition of this venue (share of that
-// year — sizes differ 2x), then the vocabulary that recurs inside the set,
-// scoped tighter than the corpus-wide menus above the results.
-function railSetCard(res){
-  const hits=queryHits();
-  const all=st.corp===-1;
-  const sib=CY.map((c,j)=>({c,j})).filter(x=>all||x.c.v===CY[st.corp].v);
-  const ys=sib.map(({c,j})=>{
-    let n=0; for(let i=0;i<P.length;i++) if(match(i,hits,j))n++;
-    return {y:c.y,v:c.v,n,sh:n/CYN[j]*1000,
-            hue:Math.max(VENUES.findIndex(v2=>v2.v===c.v),0),
-            last:c.y===Math.max(...CY.filter(c2=>c2.v===c.v).map(c2=>c2.y))};
-  });
-  const mx=Math.max(...ys.map(r=>r.sh),1e-9);
-  const yrows=ys.map(r=>{
-    const col=r.last?`var(--v${r.hue})`
-              :`color-mix(in srgb, var(--v${r.hue}) 26%, var(--card))`;
-    return `<div class="scyrow"><span>${all?esc(r.v)+' ':''}${r.y}</span>`+
-      `<span class="yb"><i style="width:${Math.max(r.sh/mx*100,1.5).toFixed(1)}%;background:${col}"></i></span>`+
-      `<b>${r.n} · ${(r.sh/10).toFixed(1)}%</b></div>`;
-  }).join('');
-  const dk=new Map(), mk=new Map();
-  const par=new Map(); for(const [id,,,pa] of MS)par.set(id,pa==null?id:pa);
-  for(const i of res){
-    for(const d of new Set(P[i].k0)) if(DSSET.has(d)&&d!==st.ds)dk.set(d,(dk.get(d)||0)+1);
-    const seen=new Set();
-    for(const m of (P[i].mu0||[])){ const t2=par.get(m)??m;
-      if(seen.has(t2))continue; seen.add(t2);
-      if(t2!==st.meth)mk.set(t2,(mk.get(t2)||0)+1); }
-  }
-  const chips=(map,kind,name)=>[...map.entries()].filter(([,c])=>c>=2)
-    .sort((a,b)=>b[1]-a[1]).slice(0,4)
-    .map(([id,c])=>`<button class="scchip" data-ck="${kind}" data-cid="${id}">${esc(name(id))}<b>${c}</b></button>`).join('');
-  const dch=chips(dk,'d',dname), mch=chips(mk,'m',i=>MV[i]);
-  const nf=res.filter(i=>P[i].f).length;
-  // Orals are not a filter — the tier shows as a badge, the list is already
-  // ordered orals first, and this line says how many the selection holds.
-  let nOral=0,nSpot=0;
-  for(const i of res){ if(P[i].o===1)nOral++; else if(P[i].o===2)nSpot++; }
-  const tiers=(nOral||nSpot)
-    ?`<div class="scsub">${nOral?`${nOral} oral${nOral>1?'s':''}`:''}`+
-     `${nSpot?`${nOral?' · ':''}${nSpot} spotlight${nSpot>1?'s':''}`:''} — listed first</div>`:'';
-  const V2=slotState();
-  const fch=[];
-  if(V2.k)fch.push(['k',V2.k]);
-  if(V2.d)fch.push(['d','for '+V2.d]);
-  if(V2.u)fch.push(['u','built on '+V2.u]);
-  if(V2.b)fch.push(['b','on '+V2.b]);
-  if(st.lim!==null)fch.push(['l','struggles: “'+st.lim+'”']);
-  const fchips=fch.length
-    ?`<div class="scchips" style="margin-bottom:8px">`+fch.map(([ax,l])=>
-       `<button class="scchip on2" data-fc="${ax}">${esc(l)} ×</button>`).join('')+`</div>`
-    :'';
-  return `<div class="setcard"><div class="rh">This set</div>`+fchips+
-    `<div class="scn">${res.length.toLocaleString()}<small>papers</small></div>`+tiers+
-    `<div class="scyr">${yrows}</div>`+
-    (sib.length>1?`<div class="scsub">the same pick, in each edition — share of that year</div>`:'')+
-    (dch?`<div class="rh" style="margin-top:11px">Tested on <em>in this set</em></div><div class="scchips">${dch}</div>`:'')+
-    (mch?`<div class="rh" style="margin-top:11px">Builds on <em>in this set</em></div><div class="scchips">${mch}</div>`:'')+
-    (nf?`<div class="scsub" style="margin-top:9px">${nf} of ${res.length} cards use full text</div>`:'')+
-    `<button class="scsplit ${st.grouped?'on':''}" id="grptog2">${st.grouped?'Show papers':'Split into subgroups'}</button>`+
-    `</div>`;
+  return `<div class="chgbox"><div class="chghd">What moved — since last year`+
+    `<span class="chgtabs">${tab('t','fields')}${tab('m','methods')}${tab('d','benchmarks')}</span></div>`+
+    `<div class="chgplot mv">${grid}${body}</div>${axis}${leg}</div>`;
 }
 function wireChanged(){
   document.querySelectorAll('[data-tab]').forEach(el=>el.onclick=()=>{
     chgTab=el.dataset.tab; render();});
+  document.querySelectorAll('[data-pill]').forEach(el=>el.onclick=e=>{
+    e.stopPropagation();
+    const [ti,ax,id]=el.dataset.pill.split(':').map((v,ix)=>ix===1?v:+v);
+    const r=(DG.mix||[]).find(r2=>r2.ti===ti);
+    if(r)STORY=mixStoryFor(r,r.shifts.find(x=>x.ax===ax&&x.id===id)||r.shifts[0]);
+    if(st.corp===null){
+      enterWith(()=>{st.topics.add(ti); if(ax==='u')st.meth=id; else if(ax==='d')st.topics.add(id);});
+    }else{
+      st.topics.add(ti); if(ax==='u'){st.meth=id;st.mfam=null;} else if(ax==='d')st.topics.add(id);
+      render();
+    }});
   document.querySelectorAll('.cr[data-id]').forEach(el=>el.onclick=()=>{
     const k=el.dataset.k, id=+el.dataset.id;
     if(st.corp===null){
       const nm=k==='t'?T[id].l:k==='m'?MV[id]:dname(id);
-      STORY={label:`<b>${esc(nm)}</b>`,sub:'picked from the since-last-year chart',
+      STORY={label:`<b>${esc(nm)}</b>`,sub:'picked from What moved',
              ...(k==='t'?{ti:id}:k==='d'?{di:id}:{})};
     }
     applyChgRow(k,id);
