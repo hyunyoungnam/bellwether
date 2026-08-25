@@ -530,18 +530,24 @@ every record).
 **Abstracts:** server-rendered at `https://icml.cc/virtual/<year>/poster/<id>`
 inside `<div class="abstract-content">`. ~5 req/s. 45 pages fail persistently.
 
-**Search is bought, not built (2026-08-25).** Meilisearch (single binary in
-`bin/`, DB in `data/meili/`, master key file beside it) serves typo-tolerant,
-relevance-ranked search over title+abstract of every corpus; documents are
-keyed by gid. `scripts/search_index.py` (re)indexes — rerun it whenever a
-corpus is added or re-normalized. The page reaches it through
-`scripts/serve.py`, which now serves reports/ AND proxies exactly one path,
-POST `/meili/search`, injecting a search-only key server-side — no other
-Meilisearch endpoint is exposed through the tunnel. While a query's engine
-round-trip is in flight the list says "searching…" and matches nothing;
-if the engine is down the shipped abstract-term index takes over (word-AND,
-no typo tolerance). Result order is engine relevance while a query is live,
-the tiers order otherwise. Restart after reboot:
+**Search AND similar are bought, not built (2026-08-25).** Meilisearch (single
+binary in `bin/`, DB in `data/meili/`, master key file beside it) serves
+typo-tolerant, relevance-ranked search over title+abstract of every corpus,
+and `/similar` over the same BGE-M3 vectors uploaded as a `userProvided`
+embedder; documents are keyed by gid. `.venv/bin/python
+scripts/search_index.py` (re)indexes both text and vectors — rerun it whenever
+a corpus is added, re-normalized, or re-embedded (vectors ride the SAME
+document upload; a separate vector pass would be dropped by the next full
+reindex, since POST /documents replaces). Registering the embedder on an index
+whose documents lack `_vectors` fails validation — papers without an abstract
+carry `_vectors: {bge: null}` to opt out. The page reaches the engine through
+`scripts/serve.py`, which serves reports/ AND proxies exactly two paths, POST
+`/meili/search` and POST `/meili/similar`, injecting a search-only key
+server-side — no other Meilisearch endpoint is exposed through the tunnel.
+Both features degrade the same way: engine down → search falls back to the
+shipped abstract-term index (word-AND, no typo tolerance), the Similar panel
+falls back to the shipped 20-neighbour list. Result order is engine relevance
+while a query is live, the tiers order otherwise. Restart after reboot:
 `setsid nohup ./bin/meilisearch --db-path data/meili/db --http-addr
 127.0.0.1:7700 --master-key "$(cat data/meili/master_key)" --no-analytics &`
 then `setsid nohup python3 scripts/serve.py &`.
@@ -572,6 +578,14 @@ then `setsid nohup python3 scripts/serve.py &`.
 
 ## Traps — each cost real time
 
+- **gid order is SORTED corpus key, not ACTIVE declaration order.** `icml.embed`
+  stacked per-corpus embedding blocks in `available()` order (ICML first) while
+  gid sorts rows by key string ("iclr" < "icml" < "neurips"). The two orders
+  coincided for four corpora and silently diverged when ICLR joined — every
+  paper wore another paper's neighbours, and nothing crashed. Rows are now
+  placed by index (`emb[idx] = block`), never stacked. Anything new that joins
+  per-corpus arrays onto gid must be checked against `union.json` order, not
+  against the corpus loop.
 - **NeurIPS and ICLR give an oral's second listing a SYNTHETIC OpenReview id**
   (`2025-Oral--451-87f1fe27`) where ICML repeats the real one — so keying
   dedup on the id left every ICLR/NeurIPS oral double-counted (210 surviving

@@ -83,19 +83,24 @@ def main() -> int:
     # Cached per corpus, not per union: adding a seventh conference must not
     # re-embed the six already done. The count is in the name so a corpus that
     # grew cannot silently reuse a stale matrix.
-    blocks = []
+    #
+    # Rows are placed by index, never stacked: rows are sorted by corpus KEY
+    # ("iclr" < "icml" < "neurips") while `corpora` follows the ACTIVE
+    # declaration (ICML first). vstack in loop order silently shifted every
+    # vector by a corpus once ICLR joined — every gid wore another paper's
+    # neighbours.
+    emb = np.empty((len(rows), 1024), dtype="float32")
     for c in corpora:
         idx = [i for i, k in enumerate(keys) if k == c.key]
         cache = PROCESSED / f"emb_{c.key}_{len(idx)}_{args.model.replace('/', '_')}.npy"
         if cache.exists():
             print(f"  {c.key}: cached")
-            blocks.append(np.load(cache).astype("float32"))
+            emb[idx] = np.load(cache).astype("float32")
             continue
         print(f"  {c.key}: embedding {len(idx):,}…")
         e = _embed([rows[i][2] for i in idx], args.model, args.batch, args.device)
         np.save(cache, e)
-        blocks.append(e)
-    emb = np.vstack(blocks)
+        emb[idx] = e
     emb /= np.linalg.norm(emb, axis=1, keepdims=True).clip(1e-9)
     assert emb.shape[0] == len(rows)
 

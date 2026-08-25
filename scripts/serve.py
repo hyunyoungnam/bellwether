@@ -2,9 +2,10 @@
 
 The cloudflared quick tunnel forwards exactly one local port, so the static
 site (reports/) and Meilisearch must share it. This proxy serves the files and
-forwards ONE path — POST /meili/search — to the local Meilisearch with a
-search-only key injected server-side. Nothing else of Meilisearch is exposed:
-no write endpoints, no keys in the client, no other indexes.
+forwards TWO paths — POST /meili/search and POST /meili/similar — to the local
+Meilisearch with a search-only key injected server-side. Nothing else of
+Meilisearch is exposed: no write endpoints, no keys in the client, no other
+indexes.
 
     python3 scripts/serve.py          # port 8001, same as the old http.server
 """
@@ -17,7 +18,9 @@ ROOT = Path(__file__).resolve().parent.parent
 KEY = (ROOT / "data/meili/search_key").read_text().strip()
 DOCS = str(ROOT / "reports")
 PORT = 8001
-MEILI = "http://127.0.0.1:7700/indexes/papers/search"
+MEILI_BASE = "http://127.0.0.1:7700/indexes/papers"
+ROUTES = {"/meili/search": MEILI_BASE + "/search",
+          "/meili/similar": MEILI_BASE + "/similar"}
 
 
 class Handler(SimpleHTTPRequestHandler):
@@ -28,7 +31,8 @@ class Handler(SimpleHTTPRequestHandler):
         pass
 
     def do_POST(self):
-        if self.path != "/meili/search":
+        MEILI = ROUTES.get(self.path)
+        if MEILI is None:
             self.send_error(404)
             return
         try:

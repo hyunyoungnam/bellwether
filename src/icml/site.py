@@ -1919,33 +1919,52 @@ function card(i){
 // topics.json keeps "the paper said so" and "it sits near the centre" apart, and
 // the page must too — otherwise a chip labelled 51 quietly returns 102.
 // The panel is a view onto one paper's neighbours; it never changes the result set.
+//
+// Similar is bought like search is (2026-08-25): the engine's /similar over the
+// same BGE-M3 vectors answers first — unbounded depth, one index to keep fresh —
+// and the shipped 20-neighbour list is the fallback when the engine is down.
+const SIMC=new Map(); let SIM_DOWN=false;
+function simOf(g){
+  if(g>=D.nemb)return Promise.resolve([]);        // no abstract, no vector
+  if(SIMC.has(g))return Promise.resolve(SIMC.get(g));
+  if(SIM_DOWN)return Promise.resolve(null);
+  return fetch('meili/similar',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({id:g,embedder:'bge',limit:NEIGHBOURS_SHOWN+7})})
+    .then(r=>{ if(!r.ok)throw 0; return r.json(); })
+    .then(d=>{ const ids=(d.hits||[]).map(h=>h.id); SIMC.set(g,ids); return ids; })
+    .catch(()=>{ SIM_DOWN=true; return null; });
+}
 function openPanel(i){
-  if(!NBR){
-    ensureEmb().then(()=>openPanel(i));
-    $('#panel').hidden=false;
-    $('#pbody').innerHTML='<div style="color:var(--mut);font-size:12px;padding:10px 0">loading the embedding neighbours…</div>';
-    return;
-  }
   st.panel=i;
   const p=P[i];
-  // Five, not twelve. The panel is a nudge sideways, not a second result list —
-  // past the first handful the neighbours stop being obviously related anyway.
-  const rows=nbrsOf(p.i).slice(0,NEIGHBOURS_SHOWN).map(id=>{
-    const j=BYID[id]; if(j===undefined)return '';
-    const q=P[j];
-    return `<div class="nb" data-go="${j}">${esc(q.t)}`+
-           `<span class="nbm">${st.corp!==null&&q.cy!==st.corp?CY[q.cy].y+' · ':''}`+
-           `${esc(q.b||q.a||'')}${q.o===1?' · Oral':q.o===2?' · Spotlight':''}</span></div>`;
-  }).join('');
-  $('#pbody').innerHTML=`<div class="pseed">${esc(p.t)}</div>`+
-    (rows||'<div style="color:var(--mut);font-size:12px">No neighbours for this paper.</div>');
   $('#panel').hidden=false; document.body.classList.add('haspanel');
-  $('#pbody').querySelectorAll('[data-go]').forEach(el=>el.onclick=()=>{
-    const j=+el.dataset.go;
-    if($(`.p[data-i="${j}"]`)){
-      st.sel=j; render(); openPanel(st.panel);
-      $(`.p[data-i="${j}"]`)?.scrollIntoView({block:'center',behavior:'smooth'});
-    } else openPanel(j);          // not in the current set — walk on to its neighbours
+  const paint=ids=>{
+    if(st.panel!==i)return;
+    // Five, not twelve. The panel is a nudge sideways, not a second result list —
+    // past the first handful the neighbours stop being obviously related anyway.
+    const rows=ids.slice(0,NEIGHBOURS_SHOWN).map(id=>{
+      const j=BYID[id]; if(j===undefined)return '';
+      const q=P[j];
+      return `<div class="nb" data-go="${j}">${esc(q.t)}`+
+             `<span class="nbm">${st.corp!==null&&q.cy!==st.corp?CY[q.cy].y+' · ':''}`+
+             `${esc(q.b||q.a||'')}${q.o===1?' · Oral':q.o===2?' · Spotlight':''}</span></div>`;
+    }).join('');
+    $('#pbody').innerHTML=`<div class="pseed">${esc(p.t)}</div>`+
+      (rows||'<div style="color:var(--mut);font-size:12px">No neighbours for this paper.</div>');
+    $('#pbody').querySelectorAll('[data-go]').forEach(el=>el.onclick=()=>{
+      const j=+el.dataset.go;
+      if($(`.p[data-i="${j}"]`)){
+        st.sel=j; render(); openPanel(st.panel);
+        $(`.p[data-i="${j}"]`)?.scrollIntoView({block:'center',behavior:'smooth'});
+      } else openPanel(j);        // not in the current set — walk on to its neighbours
+    });
+  };
+  if(!SIMC.has(p.i))
+    $('#pbody').innerHTML='<div style="color:var(--mut);font-size:12px;padding:10px 0">finding similar papers…</div>';
+  simOf(p.i).then(ids=>{
+    if(ids&&ids.length){ paint(ids); return; }
+    if(NBR){ paint(nbrsOf(p.i)); return; }        // engine down -> shipped list
+    ensureEmb().then(()=>{ if(st.panel===i)paint(nbrsOf(p.i)); });
   });
 }
 function closePanel(){ st.panel=null; $('#panel').hidden=true;
@@ -2144,12 +2163,13 @@ const corpFromHash=()=>{
   if(h==='all')return -1;
   const j=CY.findIndex(c=>c.k===h);return j<0?null:j;};
 function go(j){
+  if(j===null)clearPicks();          // going home ends the selection…
   st.corp=j; st.sel=null; st.grouped=false;
   history.pushState(null,'',j===null?location.pathname+location.search
                              :'#'+(j===-1?'all':CY[j].k));
   render();
 }
-window.addEventListener('popstate',()=>{ st.corp=corpFromHash(); st.sel=null; render(); });
+window.addEventListener('popstate',()=>{ st.corp=corpFromHash(); clearPicks(); render(); });  // …and so does the back button
 
 function digestHTML(){
   if(!DG.pair)return '';
@@ -2164,6 +2184,9 @@ function digestHTML(){
     const ticks=[1,2,5,10,20,50].filter(t=>t<=M);
     const grid='<div class="chgg fg">'+ticks.map(t=>`<i style="left:${X(t).toFixed(2)}%"></i>`).join('')+'</div>';
     const axis='<div class="chgax fg">'+ticks.map(t=>`<b style="left:${X(t).toFixed(2)}%">${t/10}%</b>`).join('')+'</div>';
+    // the reader is a full screen below the legend under the cards by now —
+    // repeat which hue is which venue right where these lanes start
+    h+=venueLegendHTML();
     h+=`<div class="digbox"><div class="dighd">Struggles`+
       `<em>failures named in the papers' own limitation sentences · papers per 1,000 naming each (not a breakdown — one paper can name several)</em></div>`+
       `${axis.replace('chgax fg','chgax fg top')}<div class="chgplot fgp">${grid}`+
@@ -2793,12 +2816,18 @@ function changedHTML(){
     `<span class="chgtabs">${tab('t','fields')}${tab('m','methods')}${tab('d','benchmarks')}</span></div>`+
     `${axis.replace('chgax','chgax top')}<div class="chgplot mv">${grid}${body}</div>${axis}${leg}</div>`;
 }
-// One chart pick replaces the whole selection: the reader asked a new question.
-function applyChgRow(k,id){
+// The whole selection, dropped at once: a chart pick replaces it (the reader
+// asked a new question), and leaving a screen ends it (the title and the back
+// button both mean "start over" — a stale toggle greeting the reader on return
+// reads as a bug).
+function clearPicks(){
   st.q=[]; st.qraw=''; const q=$('#q'); if(q)q.value='';
   st.sel=null; st.grouped=false;
   st.topics.clear(); st.fams.clear(); st.meth=null; st.mfam=null; st.ds=null;
-  st.lim=null;
+  st.lim=null; STORY=null;
+}
+function applyChgRow(k,id){
+  clearPicks();
   if(k==='t')st.topics.add(id); else if(k==='m')st.meth=id; else st.ds=id;
 }
 function wireChanged(){
