@@ -1467,6 +1467,8 @@ background:none;cursor:pointer;color:var(--ink2)}
 @media (max-width:980px){.cmpgrid{grid-template-columns:1fr}}
 .cmptag{font-size:10px;letter-spacing:.07em;text-transform:uppercase;color:var(--mut);margin:0 0 6px 2px}
 .cmpgrid .p{margin:0}
+.nb.cmpon{color:var(--acc);font-weight:600}
+.nb.cmpon .nbm{font-weight:400}
 </style></head><body><div class="wrap">
 <header><h1 id="ttl"><span id="ttlx">What's new in AI research</span></h1></header>
 
@@ -1984,6 +1986,8 @@ function openPanel(i){
   st.panel=i;
   const p=P[i];
   $('#panel').hidden=false; document.body.classList.add('haspanel');
+  $('#panel').querySelector('.phd span').textContent='Closest papers';
+  $('#panel').querySelector('.phow').hidden=false;
   const paint=ids=>{
     if(st.panel!==i)return;
     // Five, not twelve. The panel is a nudge sideways, not a second result list —
@@ -2042,7 +2046,6 @@ function renderCmp(){
   $('#legend').hidden=true; $('#story').hidden=true; $('#inset').hidden=true;
   $('#xref').hidden=true;
   $('#results').innerHTML='';
-  closePanel();
   ensureSpans(new Set([P[CMP.a].cy,P[CMP.b].cy]));
   const shared=sharedChips(CMP.a,CMP.b);
   const el=$('#cmp'); el.hidden=false;
@@ -2054,7 +2057,8 @@ function renderCmp(){
     `<div><div class="cmptag">the paper you were reading</div>${card(CMP.a)}</div>`+
     `<div><div class="cmptag">the similar paper you picked</div>${card(CMP.b)}</div>`+
     `</div>`;
-  $('#cmpx').onclick=()=>{ CMP=null; render(); };
+  cmpPanel();
+  $('#cmpx').onclick=()=>{ const back=CMP.a; CMP=null; render(); openPanel(back); };
   // Similar on either card keeps the walk going: back to the list view with
   // that paper's neighbours open.
   el.querySelectorAll('[data-sim]').forEach(b=>b.onclick=ev=>{ ev.stopPropagation();
@@ -2067,6 +2071,35 @@ function renderCmp(){
       document.body.appendChild(t2); t2.select(); document.execCommand('copy'); t2.remove(); }
     b.textContent='copied'; b.classList.add('done');
     setTimeout(()=>{ b.textContent=was; b.classList.remove('done'); },1200);});
+}
+// The panel stays during compare — it is what says WHAT is being compared and
+// offers the alternatives: the anchor on top, its neighbours below, the one on
+// the right card marked; clicking another neighbour swaps the right card.
+function cmpPanel(){
+  const a=CMP.a;
+  $('#panel').hidden=false; document.body.classList.add('haspanel');
+  $('#panel').querySelector('.phd span').textContent='Comparing';
+  $('#panel').querySelector('.phow').hidden=true;
+  const paint=ids=>{
+    if(!CMP||CMP.a!==a)return;
+    const rows=ids.slice(0,NEIGHBOURS_SHOWN).map(id=>{
+      const j=BYID[id]; if(j===undefined)return '';
+      const q=P[j], on=j===CMP.b;
+      return `<div class="nb ${on?'cmpon':''}" data-cb="${j}">${esc(q.t)}`+
+             `<span class="nbm">${esc(CY[q.cy].v)} ${CY[q.cy].y}`+
+             `${q.o===1?' · Oral':q.o===2?' · Spotlight':''}${on?' · on the right':''}</span></div>`;
+    }).join('');
+    $('#pbody').innerHTML=
+      `<div class="pseed">${esc(P[a].t)}</div>`+
+      `<div class="pseedm">on the left — click a row below to swap the right card</div>`+rows;
+    $('#pbody').querySelectorAll('[data-cb]').forEach(el2=>el2.onclick=()=>{
+      CMP={a,b:+el2.dataset.cb}; renderCmp(); });
+  };
+  simOf(P[a].i).then(ids=>{
+    if(ids&&ids.length){ paint(ids); return; }
+    if(NBR){ paint(nbrsOf(P[a].i)); return; }
+    ensureEmb().then(()=>paint(nbrsOf(P[a].i)));
+  });
 }
 
 function nearBadge(p){
@@ -2945,7 +2978,7 @@ function clearPicks(){
   st.q=[]; st.qraw=''; const q=$('#q'); if(q)q.value='';
   st.sel=null; st.grouped=false;
   st.topics.clear(); st.fams.clear(); st.meth=null; st.mfam=null; st.ds=null;
-  st.lim=null; STORY=null; CMP=null;
+  st.lim=null; STORY=null; CMP=null; closePanel();
 }
 function applyChgRow(k,id){
   clearPicks();
@@ -3006,7 +3039,7 @@ $('#q').addEventListener('input',e=>{
   st.qraw=e.target.value.trim();
   st.q=e.target.value.toLowerCase().split(/\s+/).filter(Boolean);
   clearTimeout(QT); QT=setTimeout(render,180);});
-$('#pclose').onclick=closePanel;
+$('#pclose').onclick=()=>{ if(CMP){ CMP=null; closePanel(); render(); } else closePanel(); };
 
 const c=D.coverage;
 // The coverage caveats are no longer a paragraph at the foot of the page. Each
