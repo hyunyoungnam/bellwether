@@ -1366,7 +1366,7 @@ border:1px solid var(--acc);background:var(--acc);color:#fff}
 .chgg.fg{left:211px;right:9px}
 .chgax.fg{margin:8px 0 0 211px}
 .chgax.fg.top{margin:4px 0 6px 211px}
-.vleg{display:flex;flex-wrap:wrap;gap:8px 44px;justify-content:center;align-items:center;
+.vleg{display:flex;flex-wrap:wrap;gap:8px 72px;justify-content:center;align-items:center;
 margin:12px 0 2px;font-size:14px;font-weight:600;color:var(--ink)}
 .vleg i{display:inline-block;width:12px;height:12px;border-radius:3px;margin:0 5px 0 8px;vertical-align:-1px}
 .vleg em{font-style:normal;font-weight:500;color:var(--ink2)}
