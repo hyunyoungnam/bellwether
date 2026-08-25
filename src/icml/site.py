@@ -2468,7 +2468,7 @@ function railTrend(){
   // years wear their swatches, exactly like the landing legend — the pale one
   // is the earlier edition, and no arrow or sentence is needed
   const pale=`color-mix(in srgb, var(--v${pr.hue}) 34%, var(--card))`;
-  return `<div class="rh">Since last year <em class="rleg">`+
+  return `<div class="rh">${esc(pr.v)} <em class="rleg">`+
     `<i style="background:${pale}"></i>${pr.y0}`+
     `<i style="background:var(--v${pr.hue})"></i>${pr.y1}</em></div>`+
     top.map(r=>{
