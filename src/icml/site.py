@@ -1451,6 +1451,22 @@ background:none;cursor:pointer;color:var(--ink2)}
 
 .famchip.sel .per{color:#fff}
 .pfoot{display:flex;align-items:center;gap:8px;margin-top:7px}
+
+/* ---- compare: two cards side by side, everything else out of the way ---- */
+#cmp{animation:cmpin .18s ease}
+@keyframes cmpin{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.cmpbar{display:flex;align-items:baseline;gap:14px;margin:4px 0 12px}
+.cmpbar button{border:1px solid var(--ring);background:var(--card);border-radius:8px;
+  padding:6px 12px;font:inherit;font-size:12px;cursor:pointer;color:var(--ink)}
+.cmpbar button:hover{border-color:var(--acc);color:var(--acc)}
+.cmphd{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--mut)}
+.cmpsh{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:baseline;margin:0 0 12px;
+  padding:9px 13px;background:var(--card);border:1px solid var(--ring);border-radius:10px;font-size:12px}
+.cmpsh>b{font-size:10px;letter-spacing:.07em;text-transform:uppercase;color:var(--mut);font-weight:700}
+.cmpgrid{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start}
+@media (max-width:980px){.cmpgrid{grid-template-columns:1fr}}
+.cmptag{font-size:10px;letter-spacing:.07em;text-transform:uppercase;color:var(--mut);margin:0 0 6px 2px}
+.cmpgrid .p{margin:0}
 </style></head><body><div class="wrap">
 <header><h1 id="ttl"><span id="ttlx">What's new in AI research</span></h1></header>
 
@@ -1478,6 +1494,8 @@ background:none;cursor:pointer;color:var(--ink2)}
 <div class="insbox" id="inset" hidden></div>
 
 <div class="res" id="results"></div>
+
+<div id="cmp" hidden></div>
 
 <aside class="panel" id="panel" hidden>
   <div class="phd"><span>Closest papers</span><button id="pclose">Close</button></div>
@@ -1979,12 +1997,12 @@ function openPanel(i){
     }).join('');
     $('#pbody').innerHTML=`<div class="pseed">${esc(p.t)}</div>`+
       (rows||'<div style="color:var(--mut);font-size:12px">No neighbours for this paper.</div>');
+    // Picking a neighbour opens the compare view: the paper being read on the
+    // left, the picked one on the right — the reader judges the difference from
+    // the papers' own sentences, side by side.
     $('#pbody').querySelectorAll('[data-go]').forEach(el=>el.onclick=()=>{
-      const j=+el.dataset.go;
-      if($(`.p[data-i="${j}"]`)){
-        st.sel=j; render(); openPanel(st.panel);
-        $(`.p[data-i="${j}"]`)?.scrollIntoView({block:'center',behavior:'smooth'});
-      } else openPanel(j);        // not in the current set — walk on to its neighbours
+      CMP={a:i,b:+el.dataset.go};
+      renderCmp();
     });
   };
   if(!SIMC.has(p.i))
@@ -1997,6 +2015,59 @@ function openPanel(i){
 }
 function closePanel(){ st.panel=null; $('#panel').hidden=true;
   document.body.classList.remove('haspanel'); }
+
+// ---- compare view: the read paper and the picked neighbour, side by side ----
+// The sidebars leave: at this moment the reader's question is "what is the
+// difference between these two", not "what is in the set". The selection state
+// is untouched, so leaving restores the list exactly as it was.
+let CMP=null;
+function sharedChips(a,b){
+  // overlap of what the two CARDS show — the same merged fields the reader
+  // sees on them, so a chip visible on both is always marked
+  const A=P[a],B=P[b];
+  const ov=(xa,xb,fn)=>{const s2=new Set(xb);
+    return [...new Set(xa.filter(x=>s2.has(x)))].map(x=>esc(abbr(fn(x)))).join(', ');};
+  const m=ov([...A.p,...A.u,...A.v],[...B.p,...B.u,...B.v],mname);
+  const d=ov(A.k,B.k,dname);
+  const t=ov(A.s,B.s,tname);
+  return [m?`<span class="tm"><b>methods</b>${m}</span>`:'',
+          d?`<span class="tm eff"><b>data</b>${d}</span>`:'',
+          t?`<span class="tm"><b>tasks</b>${t}</span>`:''].filter(Boolean).join('');
+}
+function renderCmp(){
+  if(!CMP)return;
+  document.querySelector('.wrap').classList.remove('withrail');
+  $('#rail').hidden=true;
+  document.querySelector('.searchrow').hidden=true;
+  $('#legend').hidden=true; $('#story').hidden=true; $('#inset').hidden=true;
+  $('#xref').hidden=true;
+  $('#results').innerHTML='';
+  closePanel();
+  ensureSpans(new Set([P[CMP.a].cy,P[CMP.b].cy]));
+  const shared=sharedChips(CMP.a,CMP.b);
+  const el=$('#cmp'); el.hidden=false;
+  el.innerHTML=
+    `<div class="cmpbar"><button id="cmpx">← back to the list</button>`+
+    `<span class="cmphd">side by side</span></div>`+
+    (shared?`<div class="cmpsh"><b>both papers</b>${shared}</div>`:'')+
+    `<div class="cmpgrid">`+
+    `<div><div class="cmptag">the paper you were reading</div>${card(CMP.a)}</div>`+
+    `<div><div class="cmptag">the similar paper you picked</div>${card(CMP.b)}</div>`+
+    `</div>`;
+  $('#cmpx').onclick=()=>{ CMP=null; render(); };
+  // Similar on either card keeps the walk going: back to the list view with
+  // that paper's neighbours open.
+  el.querySelectorAll('[data-sim]').forEach(b=>b.onclick=ev=>{ ev.stopPropagation();
+    const j=+b.dataset.sim; CMP=null; render(); openPanel(j); });
+  el.querySelectorAll('[data-mail]').forEach(b=>b.onclick=async ev=>{
+    ev.stopPropagation();
+    const addr=b.dataset.mail, was=b.textContent;
+    try{ await navigator.clipboard.writeText(addr); }
+    catch(e){ const t2=document.createElement('textarea'); t2.value=addr;
+      document.body.appendChild(t2); t2.select(); document.execCommand('copy'); t2.remove(); }
+    b.textContent='copied'; b.classList.add('done');
+    setTimeout(()=>{ b.textContent=was; b.classList.remove('done'); },1200);});
+}
 
 function nearBadge(p){
   if(!st.topics.size)return '';
@@ -2543,6 +2614,10 @@ function railSetCard(res){
     `</div>`;
 }
 function render(){
+  // While comparing, every repaint (spans arriving, etc.) repaints the compare
+  // view; everything else stays put underneath until the reader leaves it.
+  if(CMP){ renderCmp(); return; }
+  $('#cmp').hidden=true;
   const landing=st.corp===null;
   $('#landing').hidden=!landing;
   $('#rail').hidden=landing;
@@ -2870,7 +2945,7 @@ function clearPicks(){
   st.q=[]; st.qraw=''; const q=$('#q'); if(q)q.value='';
   st.sel=null; st.grouped=false;
   st.topics.clear(); st.fams.clear(); st.meth=null; st.mfam=null; st.ds=null;
-  st.lim=null; STORY=null;
+  st.lim=null; STORY=null; CMP=null;
 }
 function applyChgRow(k,id){
   clearPicks();

@@ -772,6 +772,15 @@ Still weak:
   paper data — visually separated and labelled "our gloss", with the papers'
   own sentences beneath as evidence. Guardrail 2 still governs everything
   attributed to a paper; the gloss never is.
+- **Picking a similar paper opens a side-by-side compare (2026-08-25).** The
+  Similar panel's neighbour click no longer scrolls-or-walks: it opens a
+  two-card split view — the read paper left, the picked one right, a "both
+  papers" strip naming their shared methods/data/tasks above. The sidebars
+  leave (the question at that moment is "what differs between these two",
+  not "what is in the set"); selection state is untouched and × restores the
+  list exactly. No signal may say which side is better — left is only "what
+  you were reading". Similar on either card exits to that paper's panel, so
+  the walk continues.
 - **"Who fights my problem" is an entry path (2026-08-20).** A second input
   searches ONLY the extracted limitation sentences (89% of papers state one; a
   salient-term index of unigrams + df>=5 bigrams ships in the payload). The
