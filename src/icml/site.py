@@ -1366,11 +1366,10 @@ border:1px solid var(--acc);background:var(--acc);color:#fff}
 .chgg.fg{left:211px;right:9px}
 .chgax.fg{margin:8px 0 0 211px}
 .chgax.fg.top{margin:4px 0 6px 211px}
-.vleg{display:flex;flex-wrap:wrap;gap:8px 22px;justify-content:center;align-items:center;
+.vleg{display:flex;flex-wrap:wrap;gap:8px 44px;justify-content:center;align-items:center;
 margin:12px 0 2px;font-size:14px;font-weight:600;color:var(--ink)}
 .vleg i{display:inline-block;width:12px;height:12px;border-radius:3px;margin:0 5px 0 8px;vertical-align:-1px}
 .vleg em{font-style:normal;font-weight:500;color:var(--ink2)}
-.vleg .varr{margin:0 2px;color:var(--mut)}
 .vlone{font-size:11.5px;font-weight:500;color:var(--mut)}
 .freshwrap{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
 /* merged What-moved rows: field dumbbell reads big, its inner shifts as pills */
@@ -2177,7 +2176,7 @@ function venueLegendHTML(){
       return `<span>${esc(x.v.v)} <i style="background:${pale(x.hue)}"></i><em>${c.y} only</em></span>`;});
   return `<div class="vleg">`+prs.map(p=>
       `<span>${esc(p.v)} <i style="background:${pale(p.hue)}"></i><em>${p.y0}</em>`+
-      `<em class="varr">→</em><i style="background:var(--v${p.hue})"></i><em>${p.y1}</em></span>`).join('')+
+      `<i style="background:var(--v${p.hue})"></i><em>${p.y1}</em></span>`).join('')+
     single.join('')+`</div>`;
 }
 
