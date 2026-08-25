@@ -422,7 +422,7 @@ Built and validated. Reusable under the new framing.
 | `data/processed/emb_6592_*.npy` | 6,592 × 1024 | BGE-M3 embeddings → neighbours, field-by-example |
 | `data/interim/facts_abstract.jsonl` | 6,590 | census extraction: tasks/methods/datasets + evidence |
 | `data/interim/facts_fulltext.jsonl` | 4,579 | richer extraction from arXiv PDFs |
-| `data/raw/pdf/` | 4,770 (26 GB) | full text for 71.9% of papers |
+| `data/interim/fulltext*.jsonl` | 286 MB | parsed full text (PDFs deleted after parsing) |
 | `config/term_aliases.json` | 2,446 acronyms | deterministic vocabulary normalization |
 | `data/processed/topics.json` | 91 topics | level-3 multi-label tags, explicit + expanded |
 | `data/processed/neighbors.json` | 6,592 × 20 | precomputed "more like this" (1.6 MB) |
@@ -529,6 +529,19 @@ every record).
 
 **Abstracts:** server-rendered at `https://icml.cc/virtual/<year>/poster/<id>`
 inside `<div class="abstract-content">`. ~5 req/s. 45 pages fail persistently.
+
+**Full text routes (decided 2026-08-25, measured):**
+- **PDFs are an intermediate, never an archive.** Parse -> keep the sectioned
+  JSONL (286 MB for both ICML passes) -> delete the PDF. The 39 GB of raw
+  PDFs were deleted after integrity-checking the parsed text; re-download is
+  the recovery path if the parser ever changes materially.
+- **arXiv HTML is the primary route for new venues, PDF the fallback.**
+  Sampled 50 papers against their own verified spans: HTML available 98%,
+  line-break-hyphen artifacts 264 -> 3 per 100k chars (the noise class that
+  faked the 40.7% hallucination rate), richer text (82k vs 34k chars). The
+  crude test parser refound only 84% of PDF-verified spans (math and inline
+  tags), so the switch is GATED: the production HTML parser must refind >=95%
+  before it becomes primary.
 
 **Dead ends — do not retry:**
 - **OpenReview API** (`api2.openreview.net`) → 403 ChallengeRequiredError. A bot
