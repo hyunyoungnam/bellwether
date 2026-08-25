@@ -2047,8 +2047,18 @@ function renderCmp(){
   document.querySelector('.wrap').classList.add('withrail');
   drawRail();
   { const rt=$('#rtr');
-    if(rt){ rt.innerHTML=(chosen()&&!qPending())?railSetCard(results()):railTrend();
-            wireRtr(rt); } }
+    if(rt){
+      if(chosen()&&!qPending()){
+        // the set, recounted over the venues of the two compared papers —
+        // picking a NeurIPS neighbour must move the numbers on the left
+        const vset=new Set([CY[P[CMP.a].cy].v,CY[P[CMP.b].cy].v]);
+        const hits=queryHits();
+        const cys=[...new Set([P[CMP.a].cy,P[CMP.b].cy])];
+        const res2=[];
+        for(let i2=0;i2<P.length;i2++) if(cys.some(j2=>match(i2,hits,j2)))res2.push(i2);
+        rt.innerHTML=railSetCard(res2,vset);
+      } else rt.innerHTML=railTrend();
+      wireRtr(rt); } }
   document.querySelector('.searchrow').hidden=true;
   $('#legend').hidden=true; $('#story').hidden=true; $('#inset').hidden=true;
   $('#xref').hidden=true;
@@ -2595,10 +2605,13 @@ function railTrend(){
 // scrolls. Same selection counted in each edition of this venue (share of that
 // year — sizes differ 2x), then the vocabulary that recurs inside the set,
 // scoped tighter than the corpus-wide menus above the results.
-function railSetCard(res){
+function railSetCard(res,vset){
   const hits=queryHits();
   const all=st.corp===-1;
-  const sib=CY.map((c,j)=>({c,j})).filter(x=>all||x.c.v===CY[st.corp].v);
+  // vset (compare view): the venues of the two compared papers — the stats
+  // follow the pair, not the scope the reader arrived from
+  const sib=CY.map((c,j)=>({c,j}))
+    .filter(x=>vset?vset.has(x.c.v):(all||x.c.v===CY[st.corp].v));
   const ys=sib.map(({c,j})=>{
     let n=0; for(let i=0;i<P.length;i++) if(match(i,hits,j))n++;
     return {y:c.y,v:c.v,n,sh:n/CYN[j]*1000,
@@ -2609,7 +2622,7 @@ function railSetCard(res){
   const yrows=ys.map(r=>{
     const col=r.last?`var(--v${r.hue})`
               :`color-mix(in srgb, var(--v${r.hue}) 34%, var(--card))`;
-    return `<div class="scyrow"><span>${all?esc(r.v)+' ':''}${r.y}</span>`+
+    return `<div class="scyrow"><span>${(all||(vset&&vset.size>1))?esc(r.v)+' ':''}${r.y}</span>`+
       `<span class="yb"><i style="width:${Math.max(r.sh/mx*100,1.5).toFixed(1)}%;background:${col}"></i></span>`+
       `<b>${r.n} · ${(r.sh/10).toFixed(1)}%</b></div>`;
   }).join('');
