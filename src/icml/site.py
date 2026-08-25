@@ -608,12 +608,16 @@ def build_payload(span_source: str) -> dict:
         poorly adequately properly reliably practical practically critical
         critically across throughout inherent notable notably leaving leaves
         left remaining remains yielding yields fixed predefined
-        predetermined""".split())
+        predetermined constrained constraint constraints""".split())
 
     FIGHT_GLOSS = {
         "static": "assumes data, environments or benchmarks stay fixed, so the method cannot follow change after training",
         "brittle": "small perturbations or setting changes are enough to break performance",
         "drift": "the data or environment distribution moves over time, invalidating what was learned",
+        "fidelity": "the output loses detail or faithfulness to the source, condition, or physics it must preserve",
+        "overhead": "the extra computation, memory or communication a method adds threatens to outweigh its benefit",
+        "heuristic": "the method leans on hand-crafted rules rather than learned or principled choices, capping robustness and generality",
+        "heuristics": "the method leans on hand-crafted rules rather than learned or principled choices, capping robustness and generality",
         "mismatch": "two pieces are trained or evaluated under conditions that do not line up — train vs test, objective vs metric",
         "rlvr": "reinforcement learning from verifiable rewards: the training signal exists only where answers can be checked automatically",
         "bottleneck": "one component or resource caps what the whole system can do",
@@ -800,6 +804,22 @@ def build_payload(span_source: str) -> dict:
         topic_words = {w for t3 in topics_out for w in t3["l"].lower().split()}
         fs = [t2 for t2 in ftests
               if not all(w in topic_words for w in lims0["v"][t2["t"]].split())]
+        # and a term that NAMES a method or a benchmark is the SUBJECT being
+        # criticised, not the failure — "GRPO suffers from entropy collapse"
+        # fights entropy collapse, not GRPO. Those terms belong to the mix
+        # section, where GRPO indeed shows as rising.
+        artifact_names = ({m.lower() for m in mvocab.items}
+                          | {d.lower() for d in data.items})
+        # the vocabularies store canonical names ("group relative policy
+        # optimization") while limitation sentences write the acronym ("GRPO",
+        # "RLVR") — fold the method/dataset acronym spellings in too. Task
+        # acronyms stay out: "ood" names a failure condition, not an artifact.
+        _al = load_json(ROOT / "config" / "term_aliases.json")
+        for grp in ("methods", "datasets"):
+            acr = _al.get(grp, {}).get("acronyms", {})
+            artifact_names |= {k.lower() for k in acr}
+            artifact_names |= {v.lower() for v in acr.values()}
+        fs = [t2 for t2 in fs if lims0["v"][t2["t"]] not in artifact_names]
         fs.sort(key=lambda t2: -abs(t2["z"]))
         # one row per failure family: "hallucination" and "hallucinations" both
         # survive the test; the shorter term that contains-or-is-contained wins
@@ -836,6 +856,12 @@ def build_payload(span_source: str) -> dict:
                           "ex": exs, "lanes": lanes,
                           "g": FIGHT_GLOSS.get(term)})
         digest["fights"] = frows[:5]
+        # the gloss dict is curated by hand; a surfaced term without one ships
+        # a hover with no definition — say so at build time instead of shipping
+        # the gap silently
+        for f2 in digest["fights"]:
+            if not f2["g"]:
+                print(f"  NOTE: Struggles term '{f2['t']}' has no FIGHT_GLOSS entry")
 
 
         # ---- fresh: benchmarks that did not exist in the previous edition ----
