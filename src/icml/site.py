@@ -2165,7 +2165,7 @@ function digestHTML(){
     const grid='<div class="chgg fg">'+ticks.map(t=>`<i style="left:${X(t).toFixed(2)}%"></i>`).join('')+'</div>';
     const axis='<div class="chgax fg">'+ticks.map(t=>`<b style="left:${X(t).toFixed(2)}%">${t/10}%</b>`).join('')+'</div>';
     h+=`<div class="digbox"><div class="dighd">Struggles`+
-      `<em>failures named in the papers' own limitation sentences · papers per 1,000 naming each (not a breakdown — one paper can name several) · hover: what it means</em></div>`+
+      `<em>failures named in the papers' own limitation sentences · papers per 1,000 naming each (not a breakdown — one paper can name several)</em></div>`+
       `${axis.replace('chgax fg','chgax fg top')}<div class="chgplot fgp">${grid}`+
       DG.fights.map((f,fi)=>{
         const rx=new RegExp('('+f.t.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+')','ig');
