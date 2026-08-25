@@ -1431,7 +1431,7 @@ const hasVec=g=>EMB&&g<EMB.n;
 // via an idle prefetch), so the growing corpus set does not grow first paint.
 const PART={};                              // name -> Promise
 function part(name){
-  return PART[name]??=fetch('data/'+name).then(r=>{
+  return PART[name]??=fetch('data/'+name+'?v='+(D.pv||0)).then(r=>{
     if(!r.ok)throw new Error(name+' '+r.status);
     return r.json();});
 }
@@ -1971,9 +1971,11 @@ function landingHTML(){
 function venueLegendHTML(){
   const prs=venuePairs();
   if(prs.length<2)return '';
-  const single=VENUES.filter(v=>CY.some(c=>c.v===v.v)&&!prs.some(p=>p.v===v.v))
-    .map(v=>{const c=CY.find(c2=>c2.v===v.v);
-      return `<span class="vlone">${esc(v.v)} — ${c.y} only</span>`;});
+  const single=VENUES.map((v,hue)=>({v,hue}))
+    .filter(x=>CY.some(c=>c.v===x.v.v)&&!prs.some(p=>p.v===x.v.v))
+    .map(x=>{const c=CY.find(c2=>c2.v===x.v.v);
+      return `<span><i style="background:color-mix(in srgb, var(--v${x.hue}) 26%, var(--card))"></i>`+
+        `${esc(x.v.v)} <em>${c.y} only</em></span>`;});
   return `<div class="vleg">`+prs.map(p=>
       `<span><i style="background:var(--v${p.hue})"></i>${esc(p.v)} <em>from ${p.y0} to ${p.y1}</em></span>`).join('')+
     single.join('')+
@@ -2347,7 +2349,7 @@ function render(){
   drawXref();
   $('#legend').hidden=!on;
   if(!on){
-    $('#results').innerHTML=`<div class="start">Fill a blank in the title, or search.`+
+    $('#results').innerHTML=`<div class="start">Search above, pick a mover on the left — or go back for the full digest.`+
       `<span>Nothing is listed until you do — ${(st.corp===-1?P.length:CY[st.corp].n).toLocaleString()} papers is the problem, not the answer.</span></div>`;
     $('#inset').hidden=true; $('#story').hidden=true;
     $('#q').placeholder='';
@@ -2544,6 +2546,9 @@ function logX(M){ return v=>v<=CHG_F?0:Math.log(v/CHG_F)/Math.log(M/CHG_F)*100; 
 function laneHTML(x){
   const dark=`var(--v${x.hue})`;
   const pale=`color-mix(in srgb, var(--v${x.hue}) 26%, var(--card))`;
+  if(x.lone)
+    return `<span class="lane" title="${(x.s0/10).toFixed(1)}% — single edition, no year pair">`+
+      `<i style="width:${Math.max(x.w0,.6).toFixed(1)}%;background:${pale}"></i></span>`;
   const t=`title="${(x.s0/10).toFixed(1)}% → ${(x.s1/10).toFixed(1)}%"`;
   const w0=x.w0.toFixed(1), w1=Math.max(x.w1,.6).toFixed(1);
   return `<span class="lane" ${t}>`+
@@ -2580,8 +2585,26 @@ function changedHTML(){
       `<i>${x.up?'↑':'↓'}</i> <b>${(x.s0/10).toFixed(0)}→${(x.s1/10).toFixed(0)}%</b>`+
       `${x.nw?'<span class="nw2">NEW</span>':''}</button>`;
   };
+  // venues holding a single edition (NeurIPS 2025) draw one pale bar: where
+  // they stand, with no year tail — a position can be shown, a trend cannot
+  const singles=VENUES.map((v,hue)=>({v:v.v,hue,cs:CY.map((c,j)=>({c,j})).filter(x=>x.c.v===v.v)}))
+    .filter(x=>x.cs.length===1).map(x=>({hue:x.hue,ci:x.cs[0].j,n:CYN[x.cs[0].j]}));
+  const singleShare=(sg,id)=>{
+    let c=0;
+    for(let i=0;i<P.length;i++){
+      const p=P[i]; if(p.cy!==sg.ci)continue;
+      if(chgTab==='t'){ for(const [ti] of p.g) if(ti===id){c++;break;} }
+      else if(chgTab==='m'){ for(const m of (p.mu0||[])) if(mtop(m)===id){c++;break;} }
+      else { if(p.k0.includes(id))c++; }
+    }
+    return c/sg.n*1000;
+  };
   const body=secs.map(([name,rows])=>`<div class="chgsec">${name}</div>`+rows.map(e=>{
-    const lanes=e.lanes.map(x=>laneHTML({...x,w0:X(x.s0),w1:X(x.s1)})).join('');
+    let lanes=e.lanes.map(x=>laneHTML({...x,w0:X(x.s0),w1:X(x.s1)})).join('');
+    for(const sg of singles){
+      const sh=singleShare(sg,e.id);
+      if(sh>0)lanes+=laneHTML({hue:sg.hue,s0:sh,w0:X(sh),lone:1});
+    }
     const tag=e.gn?'<em class="tag gone">gone</em>':'';
     const u0=e.s0u!==undefined?e.s0u:e.lanes[0].s0;
     const u1=e.s1u!==undefined?e.s1u:e.lanes[0].s1;
@@ -2729,6 +2752,9 @@ def main() -> int:
                               "neighbors": payload.pop("neighbors"),
                               "nemb": payload["nemb"]})
 
+    import zlib
+    payload["pv"] = zlib.crc32("|".join(
+        f"{n}:{len(b)}" for n, b in sorted(parts.items())).encode())
     html = HTML.replace("__DATA__", dump(payload))
     out = REPORTS / "index.html" if args.out is None else Path(args.out)
     out.parent.mkdir(parents=True, exist_ok=True)
