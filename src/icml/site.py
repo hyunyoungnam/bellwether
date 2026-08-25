@@ -1260,6 +1260,18 @@ border:1px solid var(--ring);background:var(--card);color:var(--ink2);cursor:poi
 .inshd em{font-style:normal;font-weight:500;color:var(--mut);font-size:10.5px}
 .insbox .cr{font-size:12px;padding:1.5px 0}
 .insbox .chgax{height:11px}
+/* the arrival banner: the clicked claim, restated where the reader lands */
+.story{background:linear-gradient(90deg,#e8effc,#f2f6fc 70%,var(--card));border-left:4px solid var(--acc);
+border-radius:12px;padding:12px 16px;margin:0 0 12px;display:grid;
+grid-template-columns:1fr auto;gap:4px 14px;align-items:center}
+.story .sy1{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--acc);font-weight:700}
+.story .sy2{font-size:15.5px;font-weight:650;grid-column:1}
+.story .sy2 em{font-style:normal;font-weight:500;color:var(--ink2)}
+.story .sy2 b.dn{color:var(--warm)} .story .sy2 b.up{color:var(--acc)}
+.story .sytrk{grid-column:1;max-width:520px;margin-top:3px}
+.story .syx{grid-column:2;grid-row:1/span 3;font:inherit;font-size:16px;border:0;
+background:none;cursor:pointer;color:var(--mut);padding:4px 8px}
+.story .syx:hover{color:var(--warm)}
 /* headline tiles */
 .heads{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:2px}
 @media(max-width:860px){.heads{grid-template-columns:repeat(2,1fr)}}
@@ -1364,6 +1376,8 @@ background:none;cursor:pointer;color:var(--ink2)}
   <span class="sw"><span class="hl new">what is new</span></span>
   <span class="sw"><span class="hl eff">what it achieved</span></span>
   <span>— the paper's own sentences, cut but never rewritten. The colours and the order are ours.</span></div>
+
+<div class="story" id="story" hidden></div>
 
 <div class="insbox" id="inset" hidden></div>
 
@@ -1481,6 +1495,9 @@ function papersWithWord(w){
 // arrival is the problem this product exists to remove, not a neutral default.
 const MAX_SHOWN=80, NEIGHBOURS_SHOWN=5;
 const st={corp:null,q:[],topics:new Set(),fams:new Set(),sel:null,panel:null,ds:null,meth:null,mfam:null,grouped:false,lim:null};
+// The claim the reader clicked to get here — the door's face, carried to the
+// destination so "why am I looking at this set?" never needs remembering.
+let STORY=null;
 // A conference pick alone is NOT a selection. Picking "ICML 2026" leaves 6,637
 // papers, which is the problem this product exists to remove — the reader still
 // has to say what their field is.
@@ -2055,26 +2072,50 @@ function enterWith(mut){
 function wireDigest(){
   document.querySelectorAll('[data-head]').forEach(el=>el.onclick=()=>{
     const h=DG.heads[+el.dataset.head];
-    if(h.kind==='fight')enterWith(()=>{st.lim=h.t;});
-    else enterWith(()=>st.topics.add(h.ti));});
+    const hue=Math.max(VENUES.findIndex(v=>v.v===DG.pair.v),0);
+    if(h.kind==='fight'){
+      STORY={label:`prior work struggles with <b>${esc(h.t)}</b>`,sub:'papers per 1,000',
+             s0:h.s0,s1:h.s1,unit:'/1k',fmt:v=>v,hue,y0:DG.pair.y0,y1:DG.pair.y1,lim:h.t};
+      enterWith(()=>{st.lim=h.t;});
+    }else{
+      STORY={label:`<b>${esc(h.l)}</b>`,sub:h.sub,
+             s0:h.s0,s1:h.s1,unit:'%',fmt:v=>((v/10).toFixed(v<100?1:0)),hue,y0:DG.pair.y0,y1:DG.pair.y1,ti:h.ti};
+      enterWith(()=>st.topics.add(h.ti));
+    }});
   document.querySelectorAll('[data-dig]').forEach(el=>el.onclick=()=>{
     const ri=+el.dataset.dig;
     digOpen.has(ri)?digOpen.delete(ri):digOpen.add(ri);
     render();});
+  const mixStory=r=>{
+    const x=r.shifts[0];
+    const hue=Math.max(VENUES.findIndex(v=>v.v===DG.pair.v),0);
+    return {label:`inside <b>${esc(r.l)}</b>, ${esc(x.l)} ${x.up?'rose':'fell'}`,
+            sub:'share of the set',s0:x.s0,s1:x.s1,unit:'%',fmt:v=>((v/10).toFixed(v<100?1:0)),
+            hue,y0:DG.pair.y0,y1:DG.pair.y1,ti:r.ti};
+  };
   document.querySelectorAll('[data-digo]').forEach(el=>el.onclick=e=>{
     e.stopPropagation();
     const r=DG.mix[+el.dataset.digo];
+    STORY=mixStory(r);
     enterWith(()=>st.topics.add(r.ti));});
   document.querySelectorAll('[data-ev]').forEach(el=>el.onclick=e=>{
     e.stopPropagation();
     const g=+el.dataset.ev, ti=+el.dataset.evti;
+    const r=DG.mix.find(r2=>r2.ti===ti); if(r)STORY=mixStory(r);
     enterWith(()=>{st.topics.add(ti); st.sel=BYID[g];});
     setTimeout(()=>document.querySelector('.p.sel')?.scrollIntoView({block:'center'}),120);});
   document.querySelectorAll('[data-fight]').forEach(el=>el.onclick=()=>{
     const f=DG.fights[+el.dataset.fight];
+    const hue=Math.max(VENUES.findIndex(v=>v.v===DG.pair.v),0);
+    STORY={label:`prior work struggles with <b>${esc(f.t)}</b>`,sub:'papers per 1,000',
+           s0:f.s0,s1:f.s1,unit:'/1k',fmt:v=>v,hue,y0:DG.pair.y0,y1:DG.pair.y1,lim:f.t};
     enterWith(()=>{st.lim=f.t;});});
   document.querySelectorAll('[data-fresh]').forEach(el=>el.onclick=()=>{
-    enterWith(()=>st.ds=+el.dataset.fresh);});
+    const di=+el.dataset.fresh;
+    const f=DG.fresh.find(x=>x.di===di);
+    STORY={label:`<b>${esc(dname(di))}</b> — a benchmark no ${DG.pair.y0} paper used`,
+           sub:f?`${f.b} papers in ${DG.pair.y1}`:'',di};
+    enterWith(()=>st.ds=di);});
   document.querySelectorAll('[data-af]').forEach(el=>el.onclick=()=>{
     enterWith(()=>st.topics.add(+el.dataset.af));});
   const af=$('#aftog'); if(af)af.onclick=()=>{AF_OPEN=!AF_OPEN;render();};
@@ -2131,8 +2172,37 @@ function clearSlot(ax){
   if(ax==='u'){ st.meth=null; st.mfam=null; }
   if(ax==='b')st.ds=null;
 }
-let insTab='u';
-const INS_MIN=12;          // below this on either side, a year claim is noise
+// STORY: {kind, label, sub, s0, s1, unit, hue, y0, y1, ti?, lim?, di?}
+// Valid only while the filter it set is still active; cleared by its own x.
+function storyValid(){
+  if(!STORY)return false;
+  if(STORY.ti!==undefined)return st.topics.has(STORY.ti);
+  if(STORY.lim!==undefined)return st.lim===STORY.lim;
+  if(STORY.di!==undefined)return st.ds===STORY.di;
+  return true;
+}
+function drawStory(){
+  const el=$('#story'); if(!el)return;
+  if(!storyValid()){ el.hidden=true; if(!STORY)return; return; }
+  const y=STORY.y0!==undefined?` · ${STORY.y0} → ${STORY.y1}`:'';
+  const dirUp=STORY.s1>=STORY.s0;
+  const nums=STORY.s0!==undefined
+    ?` <b class="${dirUp?'up':'dn'}">${STORY.fmt(STORY.s0)} → ${STORY.fmt(STORY.s1)}${STORY.unit}</b>`
+    :'';
+  let lane='';
+  if(STORY.s0!==undefined){
+    const M=Math.max(STORY.s0,STORY.s1)*1.15, F=Math.min(STORY.s0,STORY.s1,M/8)/2;
+    const X=v=>v<=F?0:Math.log(v/F)/Math.log(M/F)*100;
+    lane=`<span class="sytrk">${laneHTML({hue:STORY.hue||0,s0:STORY.s0,s1:STORY.s1,w0:X(STORY.s0),w1:X(STORY.s1)})}</span>`;
+  }
+  el.innerHTML=`<div class="sy1">you picked</div>`+
+    `<div class="sy2">${STORY.label}${nums} <em>${esc(STORY.sub||'')}${y}</em></div>`+
+    lane+`<button class="syx" title="dismiss">×</button>`;
+  el.hidden=false;
+  el.querySelector('.syx').onclick=()=>{STORY=null;render();};
+}
+
+let insTab='u';const INS_MIN=12;          // below this on either side, a year claim is noise
 function drawInside(){
   const el=$('#inset'); if(!el)return;
   el.hidden=true;
@@ -2220,6 +2290,7 @@ function render(){
   document.querySelector('.searchrow').hidden=landing;
   if(landing){
     $('#legend').hidden=true; $('#results').innerHTML=''; $('#inset').hidden=true;
+    $('#story').hidden=true;
     $('#landing').innerHTML=landingHTML();
     wireLanding();
     return;
@@ -2248,7 +2319,7 @@ function render(){
   if(!on){
     $('#results').innerHTML=`<div class="start">Fill a blank in the title, or search.`+
       `<span>Nothing is listed until you do — ${(st.corp===-1?P.length:CY[st.corp].n).toLocaleString()} papers is the problem, not the answer.</span></div>`;
-    $('#inset').hidden=true;
+    $('#inset').hidden=true; $('#story').hidden=true;
     const rt=$('#rtr'); if(rt){ rt.innerHTML=railTrend();
       rt.querySelectorAll('[data-tid]').forEach(el=>el.onclick=()=>{
         applyChgRow('t',+el.dataset.tid); render();}); }
@@ -2261,6 +2332,7 @@ function render(){
     const rt0=$('#rtr'); if(rt0)rt0.innerHTML='';
     return;
   }
+  drawStory();
   drawInside();
   { const rt=$('#rtr'); if(rt){ rt.innerHTML=railSetCard(res);
       const g2=rt.querySelector('#grptog2'); if(g2)g2.onclick=()=>{st.grouped=!st.grouped;render();};
@@ -2580,7 +2652,13 @@ function wireChanged(){
   document.querySelectorAll('[data-tab]').forEach(el=>el.onclick=()=>{
     chgTab=el.dataset.tab; render();});
   document.querySelectorAll('.cr[data-id]').forEach(el=>el.onclick=()=>{
-    applyChgRow(el.dataset.k,+el.dataset.id);
+    const k=el.dataset.k, id=+el.dataset.id;
+    if(st.corp===null){
+      const nm=k==='t'?T[id].l:k==='m'?MV[id]:dname(id);
+      STORY={label:`<b>${esc(nm)}</b>`,sub:'picked from the since-last-year chart',
+             ...(k==='t'?{ti:id}:k==='d'?{di:id}:{})};
+    }
+    applyChgRow(k,id);
     if(st.corp===null)go(-1); else render();
   });
 }
