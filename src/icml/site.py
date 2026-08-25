@@ -1336,6 +1336,10 @@ padding:2.5px 0;font-size:12px;color:var(--ink2)}
 .digopen button{font:inherit;font-size:12px;padding:5px 13px;border-radius:8px;cursor:pointer;
 border:1px solid var(--acc);background:var(--acc);color:#fff}
 .fightrow{display:grid;grid-template-columns:190px 1fr;gap:12px;align-items:center}
+.chgplot.fgp{position:relative}
+.chgg.fg{left:211px;right:9px}
+.chgax.fg{margin:8px 0 0 211px}
+.chgax.fg.top{margin:4px 0 6px 211px}
 .vleg{display:flex;flex-wrap:wrap;gap:8px 22px;justify-content:center;align-items:center;
 margin:12px 0 2px;font-size:14px;font-weight:600;color:var(--ink)}
 .vleg i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:7px;vertical-align:-1px}
@@ -2152,10 +2156,17 @@ function digestHTML(){
   const hue=Math.max(VENUES.findIndex(v=>v.v===DG.pair.v),0);
   let h='';
   if((DG.fights||[]).length){
-    const M=Math.max(...DG.fights.flatMap(f=>[f.s0,f.s1]),5);
+    // scale on the LANE values — a single venue's share can exceed the union's,
+    // and the old union-based max let bars overflow the box
+    const M=Math.max(...DG.fights.flatMap(f=>
+      (f.lanes&&f.lanes.length?f.lanes:[f]).flatMap(L=>[L.s0,L.s1])),5)*1.04;
     const X=v=>v<=0.5?0:Math.log(v/0.5)/Math.log(M/0.5)*100;
+    const ticks=[1,2,5,10,20,50].filter(t=>t<=M);
+    const grid='<div class="chgg fg">'+ticks.map(t=>`<i style="left:${X(t).toFixed(2)}%"></i>`).join('')+'</div>';
+    const axis='<div class="chgax fg">'+ticks.map(t=>`<b style="left:${X(t).toFixed(2)}%">${t/10}%</b>`).join('')+'</div>';
     h+=`<div class="digbox"><div class="dighd">Struggles`+
       `<em>failures named in the papers' own limitation sentences · papers per 1,000 naming each (not a breakdown — one paper can name several) · hover: what it means</em></div>`+
+      `${axis.replace('chgax fg','chgax fg top')}<div class="chgplot fgp">${grid}`+
       DG.fights.map((f,fi)=>{
         const rx=new RegExp('('+f.t.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+')','ig');
         const tip=((f.ex||[]).length||f.g)?`<span class="tip">`+
@@ -2169,7 +2180,7 @@ function digestHTML(){
                             s0:L.s0,s1:L.s1,w0:X(L.s0),w1:X(L.s1)})).join('');
         return `<button class="digrow fightrow" data-fight="${fi}">`+
         `<b>${esc(disp(f.t))}</b><span class="trk">${lanes}</span>${tip}</button>`;
-      }).join('')+'</div>';
+      }).join('')+`</div>${axis}</div>`;
   }
   return h;
 }
