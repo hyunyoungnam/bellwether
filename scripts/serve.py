@@ -30,6 +30,13 @@ class Handler(SimpleHTTPRequestHandler):
     def log_message(self, *a):  # quiet
         pass
 
+    def end_headers(self):
+        # Without this the browser caches index.html heuristically and users
+        # keep running week-old JS. no-cache means revalidate, not re-download:
+        # an unchanged file answers 304, so the cost is one round-trip.
+        self.send_header("Cache-Control", "no-cache")
+        super().end_headers()
+
     def do_POST(self):
         MEILI = ROUTES.get(self.path)
         if MEILI is None:
