@@ -1275,7 +1275,8 @@ border:1px solid var(--acc);background:var(--acc);color:#fff}
 .fightrow{display:grid;grid-template-columns:190px 1fr 92px;gap:12px;align-items:center}
 .freshwrap{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
 /* merged What-moved rows: field dumbbell reads big, its inner shifts as pills */
-.cr.mv{grid-template-columns:200px 1fr 84px;font-size:13.5px;padding:4px 0}
+.cr.mv{grid-template-columns:200px 1fr 84px;font-size:13.5px;padding:5px 8px;border-radius:8px}
+.cr.mv:hover{background:#f2f5f9}
 .cr.mv .crl{font-weight:600}
 .mvn{font-weight:650;font-size:11px;color:var(--ink2);text-align:right;white-space:nowrap}
 .chgplot.mv .lane{height:10px}
