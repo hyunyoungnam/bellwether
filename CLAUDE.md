@@ -530,6 +530,22 @@ every record).
 **Abstracts:** server-rendered at `https://icml.cc/virtual/<year>/poster/<id>`
 inside `<div class="abstract-content">`. ~5 req/s. 45 pages fail persistently.
 
+**Search is bought, not built (2026-08-25).** Meilisearch (single binary in
+`bin/`, DB in `data/meili/`, master key file beside it) serves typo-tolerant,
+relevance-ranked search over title+abstract of every corpus; documents are
+keyed by gid. `scripts/search_index.py` (re)indexes — rerun it whenever a
+corpus is added or re-normalized. The page reaches it through
+`scripts/serve.py`, which now serves reports/ AND proxies exactly one path,
+POST `/meili/search`, injecting a search-only key server-side — no other
+Meilisearch endpoint is exposed through the tunnel. While a query's engine
+round-trip is in flight the list says "searching…" and matches nothing;
+if the engine is down the shipped abstract-term index takes over (word-AND,
+no typo tolerance). Result order is engine relevance while a query is live,
+the tiers order otherwise. Restart after reboot:
+`setsid nohup ./bin/meilisearch --db-path data/meili/db --http-addr
+127.0.0.1:7700 --master-key "$(cat data/meili/master_key)" --no-analytics &`
+then `setsid nohup python3 scripts/serve.py &`.
+
 **Full text routes (decided 2026-08-25, measured):**
 - **PDFs are an intermediate, never an archive.** Parse -> keep the sectioned
   JSONL (286 MB for both ICML passes) -> delete the PDF. The 39 GB of raw

@@ -11,3 +11,4 @@ __pycache__/
 *.pyc
 nohup.out
 bin/
+data/meili/

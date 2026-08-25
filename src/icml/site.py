@@ -1587,7 +1587,7 @@ function papersWithWord(w){
 // Papers are shown only once the reader has asked for some. Listing all 6,637 on
 // arrival is the problem this product exists to remove, not a neutral default.
 const MAX_SHOWN=80, NEIGHBOURS_SHOWN=5;
-const st={corp:null,q:[],topics:new Set(),fams:new Set(),sel:null,panel:null,ds:null,meth:null,mfam:null,grouped:false,lim:null};
+const st={corp:null,q:[],qraw:'',topics:new Set(),fams:new Set(),sel:null,panel:null,ds:null,meth:null,mfam:null,grouped:false,lim:null};
 // The claim the reader clicked to get here — the door's face, carried to the
 // destination so "why am I looking at this set?" never needs remembering.
 let STORY=null;
@@ -1638,10 +1638,40 @@ function semanticExtras(hits,cap=60){
 }
 
 let Q_EMPTY=null;
-function qPending(){ return st.q.length>0&&TV===null; }
+// Search is Meilisearch (typo tolerance, ranking) through the same-origin
+// proxy; the shipped term index survives only as the fallback when the
+// engine is unreachable.
+let MQ={q:null,set:null,rank:null,inflight:null,down:false};
+function meiliGo(){
+  const q=st.qraw;
+  if(MQ.inflight===q)return;
+  MQ.inflight=q;
+  fetch('meili/search',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({q,limit:50000,attributesToRetrieve:['id']})})
+   .then(r=>{ if(!r.ok)throw new Error(r.status); return r.json(); })
+   .then(d=>{
+     if(st.qraw!==q)return;
+     const set=new Set(), rank=new Map();
+     d.hits.forEach((h,i)=>{ const ix=BYID[h.id];
+       if(ix!==undefined){ set.add(ix); rank.set(ix,i); } });
+     MQ={q,set,rank,inflight:null,down:false};
+     render();
+   })
+   .catch(()=>{ MQ.down=true; MQ.inflight=null; ensureSearch().then(render); });
+}
+function qPending(){
+  if(!st.qraw)return false;
+  if(MQ.down)return TV===null;
+  return MQ.q!==st.qraw;
+}
 function queryHits(){
-  if(!st.q.length)return null;
-  // index not here yet: match NOTHING rather than flash all 6,637 as a result
+  if(!st.qraw&&!st.q.length)return null;
+  if(!MQ.down){
+    if(MQ.q===st.qraw)return MQ.set;
+    meiliGo();
+    return Q_EMPTY??=new Set();
+  }
+  // fallback: the shipped abstract-term index, word-AND, no typo tolerance
   if(TV===null){ ensureSearch().then(render); return Q_EMPTY??=new Set(); }
   let acc=null;
   for(const w of st.q){
@@ -1729,6 +1759,8 @@ function results(){
   const hits=queryHits();
   const out=[];
   for(let i=0;i<P.length;i++) if(match(i,hits)) out.push(i);
+  if(st.qraw&&!MQ.down&&MQ.q===st.qraw&&MQ.rank)
+    out.sort((a,b)=>(MQ.rank.get(a)??1e9)-(MQ.rank.get(b)??1e9));
   return out;
 }
 
@@ -2150,7 +2182,7 @@ function allFieldsHTML(){
 }
 let AF_OPEN=false;
 function enterWith(mut){
-  st.q=[]; const q=$('#q'); if(q)q.value='';
+  st.q=[]; st.qraw=''; const q=$('#q'); if(q)q.value='';
   st.sel=null; st.grouped=false;
   st.topics.clear(); st.fams.clear(); st.meth=null; st.mfam=null; st.ds=null;
   st.lim=null;
@@ -2478,7 +2510,7 @@ function render(){
   const res=results();
   if(qPending()){
     $('#inset').hidden=true;
-    $('#results').innerHTML='<div class="capped">loading the search index…</div>';
+    $('#results').innerHTML='<div class="capped">searching…</div>';
     const rt0=$('#rtr'); if(rt0)rt0.innerHTML='';
     return;
   }
@@ -2748,7 +2780,7 @@ function changedHTML(){
 }
 // One chart pick replaces the whole selection: the reader asked a new question.
 function applyChgRow(k,id){
-  st.q=[]; const q=$('#q'); if(q)q.value='';
+  st.q=[]; st.qraw=''; const q=$('#q'); if(q)q.value='';
   st.sel=null; st.grouped=false;
   st.topics.clear(); st.fams.clear(); st.meth=null; st.mfam=null; st.ds=null;
   st.lim=null;
@@ -2804,9 +2836,11 @@ function renderGrouped(res){
 }
 
 
+let QT=null;
 $('#q').addEventListener('input',e=>{
+  st.qraw=e.target.value.trim();
   st.q=e.target.value.toLowerCase().split(/\s+/).filter(Boolean);
-  render();});
+  clearTimeout(QT); QT=setTimeout(render,180);});
 $('#pclose').onclick=closePanel;
 
 const c=D.coverage;
