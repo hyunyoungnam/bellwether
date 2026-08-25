@@ -736,6 +736,12 @@ Still weak:
 - **The title is a title again (2026-08-24).** The slot grammar ("What's new
   in [topic] for [field]…") tested badly with its first reader and is gone;
   the current selection still reads as removable chips under the title.
+- **The failure glossary is OURS, and says so (2026-08-25).** Struggles rows
+  define their term on hover with a curated one-line gloss (FIGHT_GLOSS in
+  site.py) — interface copy in the same class as a caption stating a unit, not
+  paper data — visually separated and labelled "our gloss", with the papers'
+  own sentences beneath as evidence. Guardrail 2 still governs everything
+  attributed to a paper; the gloss never is.
 - **"Who fights my problem" is an entry path (2026-08-20).** A second input
   searches ONLY the extracted limitation sentences (89% of papers state one; a
   salient-term index of unigrams + df>=5 bigrams ships in the payload). The

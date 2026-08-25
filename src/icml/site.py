@@ -607,6 +607,36 @@ def build_payload(span_source: str) -> dict:
         implicitly explicitly jointly separately independently fundamental
         poorly adequately properly reliably practical practically""".split())
 
+    FIGHT_GLOSS = {
+        "static": "assumes data, environments or benchmarks stay fixed, so the method cannot follow change after training",
+        "brittle": "small perturbations or setting changes are enough to break performance",
+        "drift": "the data or environment distribution moves over time, invalidating what was learned",
+        "mismatch": "two pieces are trained or evaluated under conditions that do not line up — train vs test, objective vs metric",
+        "rlvr": "reinforcement learning from verifiable rewards: the training signal exists only where answers can be checked automatically",
+        "bottleneck": "one component or resource caps what the whole system can do",
+        "hallucination": "the model asserts content its input or the facts do not support",
+        "hallucinations": "the model asserts content its input or the facts do not support",
+        "reward hacking": "the policy exploits flaws in the reward function instead of solving the task",
+        "catastrophic forgetting": "learning new material erases previously learned ability",
+        "distribution shift": "deployment data differs from training data, degrading accuracy",
+        "sim-to-real": "policies trained in simulation fail to transfer to the physical world",
+        "error accumulation": "small step-wise errors compound over long horizons",
+        "exposure bias": "trained on ground-truth prefixes, the model falters on its own generations",
+        "sparse rewards": "the learning signal arrives too rarely to guide exploration",
+        "sparse reward": "the learning signal arrives too rarely to guide exploration",
+        "generalization": "performance drops outside the training distribution or task family",
+        "interpretability": "the basis of the model's decisions cannot be inspected or explained",
+        "scalability": "cost grows too quickly with size to stay practical",
+        "latency": "inference is too slow for the intended use",
+        "overfitting": "the model memorises training data rather than learning the pattern",
+        "spurious correlations": "the model leans on incidental features that do not cause the label",
+        "spurious correlation": "the model leans on incidental features that do not cause the label",
+        "quadratic": "computation or memory scales quadratically with input length",
+        "oversmoothing": "stacked GNN layers make node representations indistinguishable",
+        "exploration": "the agent fails to discover rewarding behaviour efficiently",
+        "credit assignment": "outcomes are hard to attribute to the actions that caused them",
+    }
+
     def fight_ok(term: str, a: int, b: int) -> bool:
         words = term.split()
         if all(w in FIGHT_STOP for w in words):
@@ -800,7 +830,8 @@ def build_payload(span_source: str) -> dict:
                               "s1": round(bp / ncorp[c1p] * 1000, 1)})
             frows.append({"t": term, "s0": t2["s0"], "s1": t2["s1"],
                           "up": 1 if t2["z"] > 0 else 0, "nw": 1 if t2["a"] <= 2 else 0,
-                          "ex": exs, "lanes": lanes})
+                          "ex": exs, "lanes": lanes,
+                          "g": FIGHT_GLOSS.get(term)})
         digest["fights"] = frows[:6]
 
 
@@ -1326,6 +1357,9 @@ background:#eef1f5;color:var(--ink2)}
 background:var(--card);border:1px solid var(--ring);border-radius:12px;
 box-shadow:0 12px 34px rgba(0,0,0,.16);padding:11px 14px;text-align:left;cursor:default}
 .fightrow:hover .tip{display:block}
+.tipd{display:block;font-size:12.5px;font-weight:600;color:var(--ink);line-height:1.45;
+padding-bottom:8px;border-bottom:1px solid var(--line);margin-bottom:4px}
+.tipd i{display:block;font-style:normal;font-size:9.5px;font-weight:500;color:var(--mut);margin-top:3px}
 .tipt{display:block;font-size:10.5px;font-weight:650;color:var(--ink);margin-top:7px}
 .tipt:first-child{margin-top:0}
 .tips{display:block;font-size:11.5px;color:var(--ink2);font-weight:400;line-height:1.45;margin-top:1px}
@@ -1355,6 +1389,8 @@ background:none;cursor:pointer;color:var(--ink2)}
   color:var(--ink2);margin:16px 0 5px;position:relative;padding-top:10px;
   border-top:1px solid var(--line)}
 .chgsec:first-child{border-top:0;padding-top:0;margin-top:4px}
+.sg2{font-style:normal;margin-right:7px;font-size:12px}
+.sgn{font-weight:500;font-size:11px;color:var(--mut);margin-left:7px}
 .chgsec[data-d="up"]{color:var(--acc)}
 .chgsec[data-d="dn"]{color:var(--warm)}
 .cr{display:grid;grid-template-columns:172px 1fr;gap:12px;align-items:center;
@@ -1440,7 +1476,15 @@ const ABBR=[
  [/natural language processing/ig,'NLP'],
 ];
 const abbr=l=>{let s2=l;for(const [re,to] of ABBR)s2=s2.replace(re,to);return s2;};
-const disp=l=>{const t=abbr(l);return t.charAt(0).toUpperCase()+t.slice(1);};
+const ACRO={'rlvr':'RLVR','rlhf':'RLHF','grpo':'GRPO','sft':'SFT','ppo':'PPO','ood':'OOD',
+ 'llm':'LLM','llms':'LLMs','vlm':'VLM','vlms':'VLMs','mllm':'MLLM','mllms':'MLLMs','cot':'CoT',
+ 'gan':'GAN','gans':'GANs','gnn':'GNN','gnns':'GNNs','cnn':'CNN','cnns':'CNNs','nlp':'NLP',
+ 'vla':'VLA','moe':'MoE','kv':'KV','ocr':'OCR','sota':'SOTA'};
+const disp=l=>{
+  const t=abbr(l);
+  const fixed=t.split(' ').map(w=>ACRO[w.toLowerCase()]||w).join(' ');
+  return fixed.charAt(0).toUpperCase()+fixed.slice(1);
+};
 
 // Names only — titles and extracted concepts. Kept because dataset and method
 // names do not always appear in the abstract prose.
@@ -2066,11 +2110,13 @@ function digestHTML(){
   if((DG.fights||[]).length){
     const M=Math.max(...DG.fights.flatMap(f=>[f.s0,f.s1]),5);
     const X=v=>v<=0.5?0:Math.log(v/0.5)/Math.log(M/0.5)*100;
-    h+=`<div class="digbox"><div class="dighd">What the field fights`+
-      `<em>failures named in the papers' own limitation sentences · share per 1,000 papers · hover for the sentences themselves</em></div>`+
+    h+=`<div class="digbox"><div class="dighd">Struggles`+
+      `<em>failures named in the papers' own limitation sentences · papers per 1,000 naming each (not a breakdown — one paper can name several) · hover: what it means</em></div>`+
       DG.fights.map((f,fi)=>{
         const rx=new RegExp('('+f.t.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+')','ig');
-        const tip=(f.ex||[]).length?`<span class="tip">`+f.ex.map(x=>
+        const tip=((f.ex||[]).length||f.g)?`<span class="tip">`+
+          (f.g?`<span class="tipd">${esc(f.g)}<i>— our gloss; the sentences below are the papers'</i></span>`:'')+
+          (f.ex||[]).map(x=>
           `<span class="tipt">${esc(x.t)}</span>`+
           `<span class="tips">${esc(x.s).replace(rx,'<i class="limhit">$1</i>')}…</span>`).join('')+
           `</span>`:'';
@@ -2259,7 +2305,10 @@ function drawInside(){
   const grid='<div class="chgg">'+ticks.map(t=>`<i style="left:${X(t).toFixed(2)}%"></i>`).join('')+'</div>';
   const axis='<div class="chgax">'+ticks.map(t=>`<b style="left:${X(t).toFixed(2)}%">${t/10}%</b>`).join('')+'</div>';
   const DIR2={'rising':'up','new':'up','falling':'dn'};
-  const body=secs.map(([nm2,rs])=>`<div class="chgsec" data-d="${DIR2[nm2]||''}">${nm2}</div>`+rs.map(r=>{
+  const GLYPH2={'rising':'▲','falling':'▼','new':'＋'};
+  const body=secs.map(([nm2,rs])=>
+    `<div class="chgsec" data-d="${DIR2[nm2]||''}"><i class="sg2">${GLYPH2[nm2]||''}</i>${nm2}`+
+    `<span class="sgn">${rs.length}</span></div>`+rs.map(r=>{
     const A=INS_AX[r.ax];
     const lane=laneHTML({hue:A.hue,s0:r.s0,s1:r.s1,w0:X(r.s0),w1:X(r.s1)});
     const tag=r.gn?'<em class="tag gone">gone</em>':'';
@@ -2667,7 +2716,10 @@ function changedHTML(){
     return c/sg.n*1000;
   };
   const DIR={'rising':'up','new':'up','falling':'dn'};
-  const body=secs.map(([name,rows])=>`<div class="chgsec" data-d="${DIR[name]||''}">${name}</div>`+rows.map(e=>{
+  const GLYPH={'rising':'▲','falling':'▼','new':'＋','shifting inside':'⇄'};
+  const body=secs.map(([name,rows])=>
+    `<div class="chgsec" data-d="${DIR[name]||''}"><i class="sg2">${GLYPH[name]||''}</i>${name}`+
+    `<span class="sgn">${rows.length}</span></div>`+rows.map(e=>{
     let lanes=e.lanes.map(x=>laneHTML({...x,w0:X(x.s0),w1:X(x.s1)})).join('');
     for(const sg of singles){
       const sh=singleShare(sg,e.id);
