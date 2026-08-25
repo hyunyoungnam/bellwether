@@ -604,7 +604,8 @@ def build_payload(span_source: str) -> dict:
         principled global merely inherently fundamentally solely primarily
         increasingly especially highly directly effectively naturally internal
         errors error pipelines pipeline outputs output settings setting
-        implicitly explicitly jointly separately independently""".split())
+        implicitly explicitly jointly separately independently fundamental
+        poorly adequately properly reliably practical practically""".split())
 
     def fight_ok(term: str, a: int, b: int) -> bool:
         words = term.split()
@@ -618,14 +619,21 @@ def build_payload(span_source: str) -> dict:
     by_venue: dict[str, list[int]] = defaultdict(list)
     for i2, c in enumerate(corpora):
         by_venue[c.venue].append(i2)
-    pair = next((v[-2:] for v in by_venue.values() if len(v) >= 2), None)
-    if pair:
-        pc0, pc1 = pair
-        n0 = sum(1 for r in rows if r["cy"] == pc0)
-        n1 = sum(1 for r in rows if r["cy"] == pc1)
+    # The digest runs on the UNION of every venue's (previous, latest) pair —
+    # each venue contributes exactly one edition to each side, so venue mix can
+    # never masquerade as trend. Venues with a single edition sit out here and
+    # join automatically once their second edition lands.
+    pairs_all = [v[-2:] for v in by_venue.values() if len(v) >= 2]
+    if pairs_all:
+        C0 = {c0 for c0, _ in pairs_all}
+        C1 = {c1 for _, c1 in pairs_all}
+        pc0, pc1 = pairs_all[0]
+        n0 = sum(1 for r in rows if r["cy"] in C0)
+        n1 = sum(1 for r in rows if r["cy"] in C1)
         digest["pair"] = {"v": corpora[pc0].venue, "y0": corpora[pc0].year,
                           "y1": corpora[pc1].year, "c0": pc0, "c1": pc1,
                           "n0": n0, "n1": n1}
+        digest["multi"] = len(pairs_all) > 1
         row_of = {r["i"]: ix for ix, r in enumerate(rows)}
         # per-paper limitation terms, abstract pass, aligned with rows
         l0_terms = lims0["p"]
@@ -656,8 +664,8 @@ def build_payload(span_source: str) -> dict:
                 continue
             members = [g for g, tl in topic_of.items() if ti in tl]
             side = {g: rows[row_of[g]]["cy"] for g in members if g in row_of}
-            s0g = [g for g, cyv in side.items() if cyv == pc0]
-            s1g = [g for g, cyv in side.items() if cyv == pc1]
+            s0g = [g for g, cyv in side.items() if cyv in C0]
+            s1g = [g for g, cyv in side.items() if cyv in C1]
             if len(s0g) < 20 or len(s1g) < 20:
                 continue
             # u/s/d only: at topic granularity the limitation axis is register
@@ -722,7 +730,7 @@ def build_payload(span_source: str) -> dict:
             top = r2["shifts"][0]
             members = [g for g, tl in topic_of.items()
                        if r2["ti"] in tl and g in row_of
-                       and rows[row_of[g]]["cy"] == pc1]
+                       and rows[row_of[g]]["cy"] in C1]
             hits = []
             for g in members:
                 ix = row_of[g]
@@ -741,8 +749,8 @@ def build_payload(span_source: str) -> dict:
             for t2 in ids:
                 post_by_term[t2].append(ix)
         for t2, ixs in post_by_term.items():
-            a = sum(1 for ix in ixs if rows[ix]["cy"] == pc0)
-            b = sum(1 for ix in ixs if rows[ix]["cy"] == pc1)
+            a = sum(1 for ix in ixs if rows[ix]["cy"] in C0)
+            b = sum(1 for ix in ixs if rows[ix]["cy"] in C1)
             if a + b < 12 or not fight_ok(lims0["v"][t2], a, b):
                 continue
             sh0, sh1 = a / n0 * 1000, b / n1 * 1000
@@ -773,7 +781,7 @@ def build_payload(span_source: str) -> dict:
             # term MEANS here without us writing a definition (Guardrail 2)
             exs = []
             for ix in post_by_term[t2["t"]]:
-                if rows[ix]["cy"] != pc1:
+                if rows[ix]["cy"] not in C1:
                     continue
                 sent = (lim0_texts[ix] or "").strip()
                 if len(sent) < 40:
@@ -790,10 +798,10 @@ def build_payload(span_source: str) -> dict:
         # ---- fresh: benchmarks that did not exist in the previous edition ----
         dcnt: dict[int, list[int]] = defaultdict(lambda: [0, 0])
         for r in rows:
-            if r["cy"] not in (pc0, pc1):
+            if r["cy"] not in C0 | C1:
                 continue
             for di in set(r["k0"]):
-                dcnt[di][0 if r["cy"] == pc0 else 1] += 1
+                dcnt[di][0 if r["cy"] in C0 else 1] += 1
         fresh = [{"di": di, "l": data.items[di], "b": b}
                  for di, (a, b) in dcnt.items()
                  if a == 0 and b >= 6 and not is_placeholder(data.items[di])]
@@ -1172,7 +1180,7 @@ margin-right:8px;white-space:nowrap}
 .vcard{border:1px solid transparent;font:inherit;cursor:pointer}
 .vcard:not(.dim):hover{border-color:var(--acc)}
 .vcard.dim{cursor:default}
-.vyr{font-size:12px;font-weight:600;color:var(--mut);margin-left:8px}
+.vyr2{font-size:13px;font-weight:650;color:var(--mut);margin:1px 0 2px}
 .vn{font-size:12.5px;color:var(--ink2)}
 .vsoon{font-size:12.5px;color:var(--mut)}
 #rail{display:flex;gap:8px;margin:0 0 12px}
@@ -1286,7 +1294,7 @@ margin:12px 0 2px;font-size:14px;font-weight:600;color:var(--ink)}
 .vlone{font-size:11.5px;font-weight:500;color:var(--mut)}
 .freshwrap{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
 /* merged What-moved rows: field dumbbell reads big, its inner shifts as pills */
-.cr.mv{grid-template-columns:215px 1fr 92px;font-size:14.5px;padding:5px 8px;border-radius:8px}
+.cr.mv{grid-template-columns:215px 1fr;font-size:14.5px;padding:5px 8px;border-radius:8px}
 .cr.mv:hover{background:#f2f5f9}
 .cr.mv .crl{font-weight:600}
 .mvn{font-weight:650;font-size:12px;color:var(--ink2);text-align:right;white-space:nowrap}
@@ -1332,9 +1340,14 @@ background:none;cursor:pointer;color:var(--ink2)}
 .chgg{position:absolute;top:0;bottom:0;left:184px;right:0;pointer-events:none}
 .chgg i{position:absolute;top:0;bottom:0;width:1px;background:var(--line)}
 .chgax{position:relative;height:13px;margin:10px 0 0 184px}
+.chgax.top{margin:2px 0 6px 184px}
 .chgax b{position:absolute;transform:translateX(-50%);font-size:9px;font-weight:500;color:var(--mut);white-space:nowrap}
-.chgsec{font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--mut);
-  margin:11px 0 3px;position:relative}
+.chgsec{font-size:13px;font-weight:750;letter-spacing:.06em;text-transform:uppercase;
+  color:var(--ink2);margin:16px 0 5px;position:relative;padding-top:10px;
+  border-top:1px solid var(--line)}
+.chgsec:first-child{border-top:0;padding-top:0;margin-top:4px}
+.chgsec[data-d="up"]{color:var(--acc)}
+.chgsec[data-d="dn"]{color:var(--warm)}
 .cr{display:grid;grid-template-columns:172px 1fr;gap:12px;align-items:center;
   padding:2px 0;position:relative;font-size:12.5px;color:var(--ink2);border:0;background:none;
   width:100%;text-align:left;font-family:inherit;cursor:pointer;border-radius:4px}
@@ -1418,6 +1431,7 @@ const ABBR=[
  [/natural language processing/ig,'NLP'],
 ];
 const abbr=l=>{let s2=l;for(const [re,to] of ABBR)s2=s2.replace(re,to);return s2;};
+const disp=l=>{const t=abbr(l);return t.charAt(0).toUpperCase()+t.slice(1);};
 
 // Names only — titles and extracted concepts. Kept because dataset and method
 // names do not always appear in the abstract prose.
@@ -1993,7 +2007,8 @@ function landingHTML(){
     const yrs=CY.map((c,j)=>({...c,j})).filter(c=>c.v===ven.v);
     const now=yrs[yrs.length-1];
     return `<button class="vcard ${now?'':'dim'}" ${now?`data-corp="${now.j}"`:'disabled'}>
-      <div class="vname">${esc(ven.v)}${now?`<span class="vyr">${now.y}</span>`:''}</div>
+      <div class="vname">${esc(ven.v)}</div>
+      ${now?`<div class="vyr2">${now.y}</div>`:''}
       <div class="vfull">${esc(ven.full)}</div>
       ${now?`<div class="vn">${now.n.toLocaleString()} papers</div>`:`<div class="vsoon">not collected yet</div>`}
     </button>`;
@@ -2050,14 +2065,14 @@ function digestHTML(){
           `<span class="tipt">${esc(x.t)}</span>`+
           `<span class="tips">${esc(x.s).replace(rx,'<i class="limhit">$1</i>')}…</span>`).join('')+
           `</span>`:'';
-        return `<button class="digrow fightrow" data-fight="${fi}"><b>${esc(f.t)}</b>`+
+        return `<button class="digrow fightrow" data-fight="${fi}" title="${esc(f.t)}"><b>${esc(disp(f.t))}</b>`+
         `<span class="trk">${laneHTML({hue,s0:f.s0,s1:f.s1,w0:X(f.s0),w1:X(f.s1)})}</span>`+
         `<b>${f.s0} → ${f.s1} /1k</b>${tip}</button>`;
       }).join('')+'</div>';
   }
   if((DG.fresh||[]).length){
     h+=`<div class="digbox"><div class="dighd">New this year`+
-      `<em>benchmarks no ${DG.pair.y0} paper used</em></div><div class="freshwrap">`+
+      `<em>benchmarks no ${DG.multi?'previous-edition':DG.pair.y0} paper used</em></div><div class="freshwrap">`+
       DG.fresh.map(f=>`<button class="scchip" data-fresh="${f.di}">${esc(f.l)}<b>${f.b}</b></button>`).join('')+
       '</div></div>';
   }
@@ -2069,7 +2084,7 @@ function allFieldsHTML(){
   return `<div class="allfields"><button id="aftog">${AF_OPEN?'hide':'browse'} all ${rows.length} fields`+
     ` <span style="opacity:.6">${AF_OPEN?'▴':'▾'}</span></button>`+
     (AF_OPEN?`<div class="afgrid">`+rows.map(x=>
-      `<button class="scchip" data-af="${x.ti}" title="${esc(x.l)}">${esc(abbr(x.l))}<b>${x.n}</b></button>`).join('')+'</div>':'')+
+      `<button class="scchip" data-af="${x.ti}" title="${esc(x.l)}">${esc(disp(x.l))}<b>${x.n}</b></button>`).join('')+'</div>':'')+
     `</div>`;
 }
 let AF_OPEN=false;
@@ -2083,22 +2098,22 @@ function enterWith(mut){
 }
 function mixStoryFor(r,x){
   const hue=Math.max(VENUES.findIndex(v=>v.v===DG.pair.v),0);
-  return {label:`inside <b>${esc(abbr(r.l))}</b>, ${esc(abbr(x.l))} ${x.up?'rose':'fell'}`,
+  return {label:`inside <b>${esc(disp(r.l))}</b>, ${esc(disp(x.l))} ${x.up?'rose':'fell'}`,
           sub:'share of the set',s0:x.s0,s1:x.s1,unit:'%',
           fmt:v=>((v/10).toFixed(v<100?1:0)),
-          hue,y0:DG.pair.y0,y1:DG.pair.y1,ti:r.ti};
+          hue,y0:DG.multi?'previous':DG.pair.y0,y1:DG.multi?'latest':DG.pair.y1,ti:r.ti};
 }
 function wireDigest(){
   document.querySelectorAll('[data-fight]').forEach(el=>el.onclick=()=>{
     const f=DG.fights[+el.dataset.fight];
     const hue=Math.max(VENUES.findIndex(v=>v.v===DG.pair.v),0);
     STORY={label:`prior work struggles with <b>${esc(f.t)}</b>`,sub:'papers per 1,000',
-           s0:f.s0,s1:f.s1,unit:'/1k',fmt:v=>v,hue,y0:DG.pair.y0,y1:DG.pair.y1,lim:f.t};
+           s0:f.s0,s1:f.s1,unit:'/1k',fmt:v=>v,hue,y0:DG.multi?'previous':DG.pair.y0,y1:DG.multi?'latest':DG.pair.y1,lim:f.t};
     enterWith(()=>{st.lim=f.t;});});
   document.querySelectorAll('[data-fresh]').forEach(el=>el.onclick=()=>{
     const di=+el.dataset.fresh;
     const f=DG.fresh.find(x=>x.di===di);
-    STORY={label:`<b>${esc(dname(di))}</b> — a benchmark no ${DG.pair.y0} paper used`,
+    STORY={label:`<b>${esc(dname(di))}</b> — a benchmark no ${DG.multi?'previous-edition':DG.pair.y0} paper used`,
            sub:f?`${f.b} papers in ${DG.pair.y1}`:'',di};
     enterWith(()=>st.ds=di);});
   document.querySelectorAll('[data-af]').forEach(el=>el.onclick=()=>{
@@ -2231,13 +2246,14 @@ function drawInside(){
   const ticks=[20,50,100,200,500,1000].filter(t=>t>=F&&t<=M*1.04);
   const grid='<div class="chgg">'+ticks.map(t=>`<i style="left:${X(t).toFixed(2)}%"></i>`).join('')+'</div>';
   const axis='<div class="chgax">'+ticks.map(t=>`<b style="left:${X(t).toFixed(2)}%">${t/10}%</b>`).join('')+'</div>';
-  const body=secs.map(([nm2,rs])=>`<div class="chgsec">${nm2}</div>`+rs.map(r=>{
+  const DIR2={'rising':'up','new':'up','falling':'dn'};
+  const body=secs.map(([nm2,rs])=>`<div class="chgsec" data-d="${DIR2[nm2]||''}">${nm2}</div>`+rs.map(r=>{
     const A=INS_AX[r.ax];
     const lane=laneHTML({hue:A.hue,s0:r.s0,s1:r.s1,w0:X(r.s0),w1:X(r.s1)});
     const tag=r.gn?'<em class="tag gone">gone</em>':'';
     const kind={u:'m',s:null,d:'t'}[r.ax];
     const attrs=kind?`data-k="${kind}" data-id="${r.id}"`:'disabled style="cursor:default"';
-    return `<button class="cr" ${attrs}><span class="crl" title="${esc(r.l)}">${esc(abbr(r.l))}${tag}`+
+    return `<button class="cr" ${attrs}><span class="crl" title="${esc(r.l)}">${esc(disp(r.l))}${tag}`+
       `<span class="axtag v${A.hue}">${A.tag}</span></span>`+
       `<span class="trk">${lane}</span></button>`;
   }).join('')).join('');
@@ -2279,7 +2295,7 @@ function railTrend(){
     top.map(r=>{
       const tag=r.a<=2&&r.b>2?'<em class="tag">new</em>'
                :r.b<=2&&r.a>2?'<em class="tag gone">gone</em>':'';
-      return `<button class="mrr" data-tid="${r.id}"><span class="mrl" title="${esc(r.l)}">${esc(abbr(r.l))}${tag}</span>`+
+      return `<button class="mrr" data-tid="${r.id}"><span class="mrl" title="${esc(r.l)}">${esc(disp(r.l))}${tag}</span>`+
         `<span class="mrt">${laneHTML({hue:pr.hue,s0:r.s0,s1:r.s1,w0:X(r.s0),w1:X(r.s1)})}</span></button>`;
     }).join('');
 }
@@ -2316,7 +2332,7 @@ function railSetCard(res){
   }
   const chips=(map,kind,name)=>[...map.entries()].filter(([,c])=>c>=2)
     .sort((a,b)=>b[1]-a[1]).slice(0,4)
-    .map(([id,c])=>`<button class="scchip" data-ck="${kind}" data-cid="${id}" title="${esc(name(id))}">${esc(abbr(name(id)))}<b>${c}</b></button>`).join('');
+    .map(([id,c])=>`<button class="scchip" data-ck="${kind}" data-cid="${id}" title="${esc(name(id))}">${esc(disp(name(id)))}<b>${c}</b></button>`).join('');
   const dch=chips(dk,'d',dname), mch=chips(mk,'m',i=>MV[i]);
   const nf=res.filter(i=>P[i].f).length;
   // Orals are not a filter — the tier shows as a badge, the list is already
@@ -2335,7 +2351,7 @@ function railSetCard(res){
   if(st.lim!==null)fch.push(['l','struggles: “'+st.lim+'”']);
   const fchips=fch.length
     ?`<div class="scchips" style="margin-bottom:8px">`+fch.map(([ax,l])=>
-       `<button class="scchip on2" data-fc="${ax}" title="${esc(l)}">${esc(abbr(l))} ×</button>`).join('')+`</div>`
+       `<button class="scchip on2" data-fc="${ax}" title="${esc(l)}">${esc(disp(l))} ×</button>`).join('')+`</div>`
     :'';
   return `<div class="setcard"><div class="rh">This set</div>`+fchips+
     `<div class="scn">${res.length.toLocaleString()}<small>papers</small></div>`+tiers+
@@ -2615,7 +2631,7 @@ function changedHTML(){
   const pill=(x,ti)=>{
     const kind=x.ax==='u'?'m':x.ax==='d'?'t':null;
     const attrs=kind?`data-pill="${ti}:${x.ax}:${x.id}"`:'disabled';
-    return `<button class="pill ${x.up?'up':'dn'}" ${attrs} title="${esc(x.l)}">${esc(abbr(x.l))} `+
+    return `<button class="pill ${x.up?'up':'dn'}" ${attrs} title="${esc(x.l)}">${esc(disp(x.l))} `+
       `<i>${x.up?'↑':'↓'}</i> <b>${(x.s0/10).toFixed(0)}→${(x.s1/10).toFixed(0)}%</b>`+
       `${x.nw?'<span class="nw2">NEW</span>':''}</button>`;
   };
@@ -2633,7 +2649,8 @@ function changedHTML(){
     }
     return c/sg.n*1000;
   };
-  const body=secs.map(([name,rows])=>`<div class="chgsec">${name}</div>`+rows.map(e=>{
+  const DIR={'rising':'up','new':'up','falling':'dn'};
+  const body=secs.map(([name,rows])=>`<div class="chgsec" data-d="${DIR[name]||''}">${name}</div>`+rows.map(e=>{
     let lanes=e.lanes.map(x=>laneHTML({...x,w0:X(x.s0),w1:X(x.s1)})).join('');
     for(const sg of singles){
       const sh=singleShare(sg,e.id);
@@ -2646,9 +2663,8 @@ function changedHTML(){
     const pills=mix?`<div class="pillrow"><span class="pillhd">inside</span>`+
       mix.shifts.slice(0,3).map(x=>pill(x,e.id)).join('')+`</div>`:'';
     return `<button class="cr mv" data-k="${chgTab}" data-id="${e.id}">`+
-      `<span class="crl" title="${esc(e.l)}">${esc(abbr(e.l))}${tag}</span>`+
-      `<span class="trk">${lanes}</span>`+
-      `<b class="mvn">${(u0/10).toFixed(1)}→${(u1/10).toFixed(1)}%</b></button>`+pills;
+      `<span class="crl" title="${esc(e.l)} · ${(u0/10).toFixed(1)}→${(u1/10).toFixed(1)}% across the paired venues">${esc(disp(e.l))}${tag}</span>`+
+      `<span class="trk">${lanes}</span></button>`+pills;
   }).join('')).join('');
   const leg=S.pairs.length>1?''
     :`<div class="chgleg"><span><i style="background:color-mix(in srgb, var(--v${S.pairs[0].hue}) 34%, var(--card))"></i>${S.pairs[0].y0}</span>`+
@@ -2656,7 +2672,7 @@ function changedHTML(){
   const tab=(k,l)=>`<button class="chgtab ${chgTab===k?'on':''}" data-tab="${k}">${l}</button>`;
   return `<div class="chgbox"><div class="chghd">What moved — since last year`+
     `<span class="chgtabs">${tab('t','fields')}${tab('m','methods')}${tab('d','benchmarks')}</span></div>`+
-    `<div class="chgplot mv">${grid}${body}</div>${axis}${leg}</div>`;
+    `${axis.replace('chgax','chgax top')}<div class="chgplot mv">${grid}${body}</div>${axis}${leg}</div>`;
 }
 // One chart pick replaces the whole selection: the reader asked a new question.
 function applyChgRow(k,id){
