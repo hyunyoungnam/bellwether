@@ -458,7 +458,7 @@ the whole corpus.
 | 5 | `.venv/bin/python -m icml.extract_facts --source {abstract,fulltext}` | structured facts + evidence |
 | 6 | `.venv/bin/python -m icml.landscape` | embeddings + layout (cached `.npy`) |
 | 7 | `.venv/bin/python -m icml.topics` | `topics.json` — level-3 multi-label tags |
-| 8 | `.venv/bin/python -m icml.embed` | union embeddings + `neighbors_union.json` + `embed_union.json` — "more like this" across every active corpus (42% of nearest neighbours cross corpora; per-corpus lists could not return those). `union.json` defines **gid**, the only global paper key — `event_id` collides across venues and tracks |
+| 8 | `.venv/bin/python -m icml.embed` | union embeddings + `neighbors_union.json` + `embed_union.json` — "more like this" across every active corpus (42% of nearest neighbours cross corpora; per-corpus lists could not return those). `union.json` defines **gid**, the only global paper key (now 25,068 vectors across five corpora; 76% of nearest neighbours cross corpora) — `event_id` collides across venues and tracks |
 | 9 | `.venv/bin/python -m icml.site --dist` | `reports/index.html` + uploadable `dist/` |
 
 **Earlier years, for trends only** (added 2026-08-13). One year cannot say what is

@@ -2200,6 +2200,99 @@ function drawInside(){
     render();});
 }
 
+// The rail's before-a-pick view: this venue's own significant movers, the same
+// two-test rule as the landing, one pair-lane each. A row IS a filter — clicking
+// it applies the topic, because a trend a reader cannot act on is trivia.
+function railTrend(){
+  const prs=venuePairs();
+  const pr=st.corp===-1?prs[0]:prs.find(p=>p.c1===st.corp||p.c0===st.corp);
+  if(!pr)return '';
+  const rows=[];
+  for(const r of changedRows(pr.c0,pr.c1).t){
+    const n0=CYN[pr.c0], n1=CYN[pr.c1];
+    const pp=(r.a+r.b)/(n0+n1), se=Math.sqrt(pp*(1-pp)*(1/n0+1/n1));
+    const z=se?(r.b/n1-r.a/n0)/se:0;
+    const lo=Math.min(r.s0,r.s1), hi=Math.max(r.s0,r.s1);
+    const mat=Math.abs(r.s1-r.s0)>=D_MIN||(lo>0?hi/lo:1e9)>=FOLD_MIN;
+    if(Math.max(r.s0,r.s1)>=3&&Math.abs(z)>=Z_SHOW&&mat)rows.push({...r,z});
+  }
+  rows.sort((x,y)=>Math.abs(y.z)-Math.abs(x.z));
+  const top=rows.slice(0,8);
+  if(!top.length)return '';
+  const M=Math.max(...top.flatMap(r=>[r.s0,r.s1]),CHG_F*2);
+  const X=logX(M);
+  return `<div class="rh">Since last year <em>${pr.y0} → ${pr.y1}</em></div>`+
+    top.map(r=>{
+      const tag=r.a<=2&&r.b>2?'<em class="tag">new</em>'
+               :r.b<=2&&r.a>2?'<em class="tag gone">gone</em>':'';
+      return `<button class="mrr" data-tid="${r.id}"><span class="mrl" title="${esc(r.l)}">${esc(r.l)}${tag}</span>`+
+        `<span class="mrt">${laneHTML({hue:pr.hue,s0:r.s0,s1:r.s1,w0:X(r.s0),w1:X(r.s1)})}</span></button>`;
+    }).join('');
+}
+// After a pick: what the chosen set is MADE OF, held sticky while the list
+// scrolls. Same selection counted in each edition of this venue (share of that
+// year — sizes differ 2x), then the vocabulary that recurs inside the set,
+// scoped tighter than the corpus-wide menus above the results.
+function railSetCard(res){
+  const hits=queryHits();
+  const all=st.corp===-1;
+  const sib=CY.map((c,j)=>({c,j})).filter(x=>all||x.c.v===CY[st.corp].v);
+  const ys=sib.map(({c,j})=>{
+    let n=0; for(let i=0;i<P.length;i++) if(match(i,hits,j))n++;
+    return {y:c.y,v:c.v,n,sh:n/CYN[j]*1000,
+            hue:Math.max(VENUES.findIndex(v2=>v2.v===c.v),0),
+            last:c.y===Math.max(...CY.filter(c2=>c2.v===c.v).map(c2=>c2.y))};
+  });
+  const mx=Math.max(...ys.map(r=>r.sh),1e-9);
+  const yrows=ys.map(r=>{
+    const col=r.last?`var(--v${r.hue})`
+              :`color-mix(in srgb, var(--v${r.hue}) 26%, var(--card))`;
+    return `<div class="scyrow"><span>${all?esc(r.v)+' ':''}${r.y}</span>`+
+      `<span class="yb"><i style="width:${Math.max(r.sh/mx*100,1.5).toFixed(1)}%;background:${col}"></i></span>`+
+      `<b>${r.n} · ${(r.sh/10).toFixed(1)}%</b></div>`;
+  }).join('');
+  const dk=new Map(), mk=new Map();
+  const par=new Map(); for(const [id,,,pa] of MS)par.set(id,pa==null?id:pa);
+  for(const i of res){
+    for(const d of new Set(P[i].k0)) if(DSSET.has(d)&&d!==st.ds)dk.set(d,(dk.get(d)||0)+1);
+    const seen=new Set();
+    for(const m of (P[i].mu0||[])){ const t2=par.get(m)??m;
+      if(seen.has(t2))continue; seen.add(t2);
+      if(t2!==st.meth)mk.set(t2,(mk.get(t2)||0)+1); }
+  }
+  const chips=(map,kind,name)=>[...map.entries()].filter(([,c])=>c>=2)
+    .sort((a,b)=>b[1]-a[1]).slice(0,4)
+    .map(([id,c])=>`<button class="scchip" data-ck="${kind}" data-cid="${id}">${esc(name(id))}<b>${c}</b></button>`).join('');
+  const dch=chips(dk,'d',dname), mch=chips(mk,'m',i=>MV[i]);
+  const nf=res.filter(i=>P[i].f).length;
+  // Orals are not a filter — the tier shows as a badge, the list is already
+  // ordered orals first, and this line says how many the selection holds.
+  let nOral=0,nSpot=0;
+  for(const i of res){ if(P[i].o===1)nOral++; else if(P[i].o===2)nSpot++; }
+  const tiers=(nOral||nSpot)
+    ?`<div class="scsub">${nOral?`${nOral} oral${nOral>1?'s':''}`:''}`+
+     `${nSpot?`${nOral?' · ':''}${nSpot} spotlight${nSpot>1?'s':''}`:''} — listed first</div>`:'';
+  const V2=slotState();
+  const fch=[];
+  if(V2.k)fch.push(['k',V2.k]);
+  if(V2.d)fch.push(['d','for '+V2.d]);
+  if(V2.u)fch.push(['u','built on '+V2.u]);
+  if(V2.b)fch.push(['b','on '+V2.b]);
+  if(st.lim!==null)fch.push(['l','struggles: “'+st.lim+'”']);
+  const fchips=fch.length
+    ?`<div class="scchips" style="margin-bottom:8px">`+fch.map(([ax,l])=>
+       `<button class="scchip on2" data-fc="${ax}">${esc(l)} ×</button>`).join('')+`</div>`
+    :'';
+  return `<div class="setcard"><div class="rh">This set</div>`+fchips+
+    `<div class="scn">${res.length.toLocaleString()}<small>papers</small></div>`+tiers+
+    `<div class="scyr">${yrows}</div>`+
+    (sib.length>1?`<div class="scsub">the same pick, in each edition — share of that year</div>`:'')+
+    (dch?`<div class="rh" style="margin-top:11px">Tested on <em>in this set</em></div><div class="scchips">${dch}</div>`:'')+
+    (mch?`<div class="rh" style="margin-top:11px">Builds on <em>in this set</em></div><div class="scchips">${mch}</div>`:'')+
+    (nf?`<div class="scsub" style="margin-top:9px">${nf} of ${res.length} cards use full text</div>`:'')+
+    `<button class="scsplit ${st.grouped?'on':''}" id="grptog2">${st.grouped?'Show papers':'Split into subgroups'}</button>`+
+    `</div>`;
+}
 function render(){
   const landing=st.corp===null;
   $('#landing').hidden=!landing;
@@ -2393,7 +2486,7 @@ function sections(tab){
   const pairs=venuePairs();
   if(!pairs.length)return null;
   const minS=tab==='d'?2:3;
-  let tot1=0; for(const pr of pairs)tot1+=CYN[pr.c1];
+  let tot1=0, tot0=0; for(const pr of pairs){tot1+=CYN[pr.c1]; tot0+=CYN[pr.c0];}
   const by=new Map();
   for(const pr of pairs){
     for(const r of changedRows(pr.c0,pr.c1)[tab]){
@@ -2402,8 +2495,8 @@ function sections(tab){
       const z=se?(r.b/n1-r.a/n0)/se:0;
       const lo=Math.min(r.s0,r.s1), hi=Math.max(r.s0,r.s1);
       const mat=Math.abs(r.s1-r.s0)>=D_MIN||(lo>0?hi/lo:1e9)>=FOLD_MIN;
-      let e=by.get(r.l); if(!e)by.set(r.l,e={l:r.l,id:r.id,lanes:[],b:0});
-      e.b+=r.b;
+      let e=by.get(r.l); if(!e)by.set(r.l,e={l:r.l,id:r.id,lanes:[],a:0,b:0});
+      e.a+=r.a; e.b+=r.b;
       e.lanes.push({hue:pr.hue,s0:r.s0,s1:r.s1,z,mat,nw:r.a<=2&&r.b>2,gn:r.b<=2&&r.a>2});
     }
   }
@@ -2413,7 +2506,7 @@ function sections(tab){
     e.dn=e.lanes.filter(x=>x.z<=-Z_SHOW&&x.mat).length;
     e.nw=e.lanes.some(x=>x.nw); e.gn=e.lanes.some(x=>x.gn);
     e.maxz=Math.max(...e.lanes.map(x=>Math.abs(x.z)));
-    e.s1u=e.b/tot1*1000;
+    e.s1u=e.b/tot1*1000; e.s0u=e.a/tot0*1000;
   }
   const rising=rows.filter(e=>e.up&&!e.dn&&!e.nw)
     .sort((x,y)=>y.up-x.up||y.maxz-x.maxz).slice(0,LABEL_CAP);
@@ -2472,17 +2565,22 @@ function changedHTML(){
   const body=secs.map(([name,rows])=>`<div class="chgsec">${name}</div>`+rows.map(e=>{
     const lanes=e.lanes.map(x=>laneHTML({...x,w0:X(x.s0),w1:X(x.s1)})).join('');
     const tag=e.gn?'<em class="tag gone">gone</em>':'';
-    const L=e.lanes[0];
+    const u0=e.s0u!==undefined?e.s0u:e.lanes[0].s0;
+    const u1=e.s1u!==undefined?e.s1u:e.lanes[0].s1;
     const mix=chgTab==='t'?MIXBY[e.id]:null;
     const pills=mix?`<div class="pillrow"><span class="pillhd">inside</span>`+
       mix.shifts.slice(0,3).map(x=>pill(x,e.id)).join('')+`</div>`:'';
     return `<button class="cr mv" data-k="${chgTab}" data-id="${e.id}">`+
       `<span class="crl" title="${esc(e.l)}">${esc(e.l)}${tag}</span>`+
       `<span class="trk">${lanes}</span>`+
-      `<b class="mvn">${(L.s0/10).toFixed(1)}→${(L.s1/10).toFixed(1)}%</b></button>`+pills;
+      `<b class="mvn">${(u0/10).toFixed(1)}→${(u1/10).toFixed(1)}%</b></button>`+pills;
   }).join('')).join('');
-  const leg=`<div class="chgleg"><span><i style="background:color-mix(in srgb, var(--v${S.pairs[0].hue}) 26%, var(--card))"></i>${S.pairs[0].y0}</span>`+
-   `<span><i style="background:var(--v${S.pairs[0].hue})"></i>${S.pairs[0].y1}</span></div>`;
+  const leg=S.pairs.length>1
+    ?`<div class="chgleg">`+S.pairs.map(p=>
+        `<span><i style="background:var(--v${p.hue})"></i>${esc(p.v)} ${p.y0}→${p.y1}</span>`).join('')+
+      `<span style="color:var(--mut)">pale = the earlier edition</span></div>`
+    :`<div class="chgleg"><span><i style="background:color-mix(in srgb, var(--v${S.pairs[0].hue}) 26%, var(--card))"></i>${S.pairs[0].y0}</span>`+
+     `<span><i style="background:var(--v${S.pairs[0].hue})"></i>${S.pairs[0].y1}</span></div>`;
   const tab=(k,l)=>`<button class="chgtab ${chgTab===k?'on':''}" data-tab="${k}">${l}</button>`;
   return `<div class="chgbox"><div class="chghd">What moved — since last year`+
     `<span class="chgtabs">${tab('t','fields')}${tab('m','methods')}${tab('d','benchmarks')}</span></div>`+
