@@ -1368,8 +1368,9 @@ border:1px solid var(--acc);background:var(--acc);color:#fff}
 .chgax.fg.top{margin:4px 0 6px 211px}
 .vleg{display:flex;flex-wrap:wrap;gap:8px 22px;justify-content:center;align-items:center;
 margin:12px 0 2px;font-size:14px;font-weight:600;color:var(--ink)}
-.vleg i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:7px;vertical-align:-1px}
+.vleg i{display:inline-block;width:12px;height:12px;border-radius:3px;margin:0 5px 0 8px;vertical-align:-1px}
 .vleg em{font-style:normal;font-weight:500;color:var(--ink2)}
+.vleg .varr{margin:0 2px;color:var(--mut)}
 .vlone{font-size:11.5px;font-weight:500;color:var(--mut)}
 .freshwrap{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
 /* merged What-moved rows: field dumbbell reads big, its inner shifts as pills */
@@ -1396,6 +1397,7 @@ background:#eef1f5;color:var(--ink2)}
 background:var(--card);border:1px solid var(--ring);border-radius:12px;
 box-shadow:0 12px 34px rgba(0,0,0,.16);padding:11px 14px;text-align:left;cursor:default}
 .fightrow:hover .tip{display:block}
+.tip.up{top:auto;bottom:100%}
 .tipd{display:block;font-size:12.5px;font-weight:600;color:var(--ink);line-height:1.45;
 padding-bottom:8px;border-bottom:1px solid var(--line);margin-bottom:4px}
 .tipd i{display:block;font-style:normal;font-size:9.5px;font-weight:500;color:var(--mut);margin-top:3px}
@@ -2166,15 +2168,17 @@ function landingHTML(){
 function venueLegendHTML(){
   const prs=venuePairs();
   if(prs.length<2)return '';
+  // Each year wears its own swatch — the pale one sits beside the earlier
+  // year, so no sentence has to explain what pale means.
+  const pale=h=>`color-mix(in srgb, var(--v${h}) 34%, var(--card))`;
   const single=VENUES.map((v,hue)=>({v,hue}))
     .filter(x=>CY.some(c=>c.v===x.v.v)&&!prs.some(p=>p.v===x.v.v))
     .map(x=>{const c=CY.find(c2=>c2.v===x.v.v);
-      return `<span><i style="background:color-mix(in srgb, var(--v${x.hue}) 34%, var(--card))"></i>`+
-        `${esc(x.v.v)} <em>${c.y} only</em></span>`;});
+      return `<span>${esc(x.v.v)} <i style="background:${pale(x.hue)}"></i><em>${c.y} only</em></span>`;});
   return `<div class="vleg">`+prs.map(p=>
-      `<span><i style="background:var(--v${p.hue})"></i>${esc(p.v)} <em>from ${p.y0} to ${p.y1}</em></span>`).join('')+
-    single.join('')+
-    `<span class="vlone">pale = the earlier edition</span></div>`;
+      `<span>${esc(p.v)} <i style="background:${pale(p.hue)}"></i><em>${p.y0}</em>`+
+      `<em class="varr">→</em><i style="background:var(--v${p.hue})"></i><em>${p.y1}</em></span>`).join('')+
+    single.join('')+`</div>`;
 }
 
 // ---- the digest: what MOVED, precomputed at build time (BH-free but bar-
@@ -2259,6 +2263,17 @@ function mixStoryFor(r,x){
           hue,y0:DG.multi?'previous':DG.pair.y0,y1:DG.multi?'latest':DG.pair.y1,ti:r.ti};
 }
 function wireDigest(){
+  // The tip drops below the row by default; on the last rows that grows the
+  // document and the page judders. Measure on hover and open upward when the
+  // space below cannot hold it.
+  document.querySelectorAll('.fightrow').forEach(el=>el.addEventListener('mouseenter',()=>{
+    const t=el.querySelector('.tip'); if(!t)return;
+    t.style.display='block'; t.style.visibility='hidden';
+    const th=t.offsetHeight;
+    t.style.display=''; t.style.visibility='';
+    const r=el.getBoundingClientRect();
+    t.classList.toggle('up', window.innerHeight-r.bottom<th+16 && r.top>th+16);
+  }));
   document.querySelectorAll('[data-fight]').forEach(el=>el.onclick=()=>{
     const f=DG.fights[+el.dataset.fight];
     const hue=Math.max(VENUES.findIndex(v=>v.v===DG.pair.v),0);
