@@ -605,7 +605,8 @@ def build_payload(span_source: str) -> dict:
         increasingly especially highly directly effectively naturally internal
         errors error pipelines pipeline outputs output settings setting
         implicitly explicitly jointly separately independently fundamental
-        poorly adequately properly reliably practical practically""".split())
+        poorly adequately properly reliably practical practically critical
+        critically across throughout inherent notable notably""".split())
 
     FIGHT_GLOSS = {
         "static": "assumes data, environments or benchmarks stay fixed, so the method cannot follow change after training",
@@ -918,6 +919,7 @@ HTML = r"""<!doctype html>
 --v0:#2a6fd0;--v1:#0c9a85;--v2:#8a5cd6;
 --up:#c93a2b;--dn:#2a6fd0;--nw:#d2551f;--sh:#3f8f22}
 *{box-sizing:border-box}
+html{scrollbar-gutter:stable}
 [hidden]{display:none!important}   /* display:flex on .facets/.pane outranks it otherwise */
 body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif;
 -webkit-font-smoothing:antialiased}
@@ -930,7 +932,9 @@ header{margin:14px 0 22px;text-align:center}
 h1{font-size:40px;margin:0;font-weight:700;letter-spacing:-.025em;line-height:1.3;
 white-space:nowrap}
 /* The title IS the query: "What's new in [reasoning] for [healthcare]?" */
-#home{cursor:pointer}
+#ttl.golink{cursor:pointer}
+#ttl.golink #ttlx{border-radius:4px}
+#ttl.golink:hover #ttlx{background:linear-gradient(transparent 60%, var(--hi) 60%, var(--hi) 96%, transparent 96%)}
 .tslot{display:inline-block;font:inherit;border:0;cursor:pointer;padding:0 8px;margin:0 1px;
 border-radius:10px;background:#e8effc;color:var(--acc);border-bottom:3px solid var(--acc);
 line-height:1.25}
@@ -1302,8 +1306,8 @@ grid-template-columns:1fr auto;gap:4px 14px;align-items:center}
 .story .sy2 em{font-style:normal;font-weight:500;color:var(--ink2)}
 .story .sy2 b.dn{color:var(--dn)} .story .sy2 b.up{color:var(--up)}
 .story .sytrk{grid-column:1;max-width:520px;margin-top:3px}
-.story .syx{grid-column:2;grid-row:1/span 3;font:inherit;font-size:16px;border:0;
-background:none;cursor:pointer;color:var(--mut);padding:4px 8px}
+.story .syx{grid-column:2;grid-row:1/span 3;font:inherit;font-size:24px;border:0;
+background:none;cursor:pointer;color:var(--mut);padding:8px 14px;line-height:1}
 .story .syx:hover{color:var(--warm)}
 /* the digest: analysis first, selection second — every row is a door */
 .digbox{background:var(--card);border-radius:12px;padding:16px 18px;margin-top:14px}
@@ -1412,7 +1416,7 @@ background:none;cursor:pointer;color:var(--ink2)}
 .famchip.sel .per{color:#fff}
 .pfoot{display:flex;align-items:center;gap:8px;margin-top:7px}
 </style></head><body><div class="wrap">
-<header><h1 id="ttl">What's new in AI research</h1></header>
+<header><h1 id="ttl"><span id="ttlx">What's new in AI research</span></h1></header>
 
 <div id="landing" hidden></div>
 <nav id="rail" hidden></nav>
@@ -2163,12 +2167,6 @@ function digestHTML(){
         `<b>${esc(disp(f.t))}</b><span class="trk">${lanes}</span>${tip}</button>`;
       }).join('')+'</div>';
   }
-  if((DG.fresh||[]).length){
-    h+=`<div class="digbox"><div class="dighd">New this year`+
-      `<em>benchmarks no ${DG.multi?'previous-edition':DG.pair.y0} paper used</em></div><div class="freshwrap">`+
-      DG.fresh.map(f=>`<button class="scchip" data-fresh="${f.di}">${esc(f.l)}<b>${f.b}</b></button>`).join('')+
-      '</div></div>';
-  }
   return h;
 }
 function allFieldsHTML(){
@@ -2203,12 +2201,6 @@ function wireDigest(){
     STORY={label:`prior work struggles with <b>${esc(f.t)}</b>`,sub:'papers per 1,000',
            s0:f.s0,s1:f.s1,unit:'/1k',fmt:v=>v,hue,y0:DG.multi?'previous':DG.pair.y0,y1:DG.multi?'latest':DG.pair.y1,lim:f.t};
     enterWith(()=>{st.lim=f.t;});});
-  document.querySelectorAll('[data-fresh]').forEach(el=>el.onclick=()=>{
-    const di=+el.dataset.fresh;
-    const f=DG.fresh.find(x=>x.di===di);
-    STORY={label:`<b>${esc(dname(di))}</b> — a benchmark no ${DG.multi?'previous-edition':DG.pair.y0} paper used`,
-           sub:f?`${f.b} papers in ${DG.pair.y1}`:'',di};
-    enterWith(()=>st.ds=di);});
   document.querySelectorAll('[data-af]').forEach(el=>el.onclick=()=>{
     enterWith(()=>st.topics.add(+el.dataset.af));});
   const af=$('#aftog'); if(af)af.onclick=()=>{AF_OPEN=!AF_OPEN;render();};
@@ -2278,7 +2270,14 @@ function drawStory(){
     `<div class="sy2">${STORY.label}${nums} <em>${esc(STORY.sub||'')}${y}</em></div>`+
     lane+`<button class="syx" title="dismiss">×</button>`;
   el.hidden=false;
-  el.querySelector('.syx').onclick=()=>{STORY=null;render();};
+  el.querySelector('.syx').onclick=()=>{
+    if(STORY){
+      if(STORY.ti!==undefined)st.topics.delete(STORY.ti);
+      if(STORY.lim!==undefined)st.lim=null;
+      if(STORY.di!==undefined)st.ds=null;
+    }
+    STORY=null; render();
+  };
 }
 
 const INS_MIN=12;          // below this on either side, a year claim is noise
@@ -2464,6 +2463,7 @@ function render(){
   $('#landing').hidden=!landing;
   $('#rail').hidden=landing;
   document.querySelector('.wrap').classList.toggle('withrail',!landing);
+  $('#ttl').classList.toggle('golink',!landing);
   document.querySelector('.searchrow').hidden=landing;
   if(landing){
     $('#legend').hidden=true; $('#results').innerHTML=''; $('#inset').hidden=true;
@@ -2851,6 +2851,7 @@ const c=D.coverage;
 // is read once and then ignored.
 
 $('#ttl').onclick=()=>{ if(st.corp!==null)go(null); };
+// the affordance follows the behaviour: a link-look only off the landing
 st.corp=corpFromHash();
 render();
 // prefetch the on-demand parts once the first paint is done — a reader on the
