@@ -1469,6 +1469,10 @@ background:none;cursor:pointer;color:var(--ink2)}
 .cmpgrid .p{margin:0}
 .nb.cmpon{color:var(--acc);font-weight:600}
 .nb.cmpon .nbm{font-weight:400}
+/* the panel is fixed at right:0; on mid-width screens it intrudes into the
+   wrap, so the compare area yields exactly the intruded width and no more */
+body.haspanel #cmp{margin-right:max(0px,calc(352px - (100vw - 1266px)/2))}
+@media(max-width:1500px){body.haspanel #cmp{margin-right:0}}
 </style></head><body><div class="wrap">
 <header><h1 id="ttl"><span id="ttlx">What's new in AI research</span></h1></header>
 
@@ -1948,7 +1952,7 @@ function card(i){
 
   return `<div class="p ${st.sel===i?'sel':''}" data-i="${i}"><div class="body">
     <div class="ti">${hl(p.t)}${p.o===1?'<span class="badge">Oral</span>':p.o===2?'<span class="badge sp">Spotlight</span>':''}</div>
-    <div class="meta"><span class="cyst">${esc(CY[p.cy].v)} ${CY[p.cy].y}</span>${who}${nearBadge(p)}</div>
+    <div class="meta"><span class="cyst" style="color:var(--v${vhue(p.cy)})">${esc(CY[p.cy].v)} ${CY[p.cy].y}</span>${who}${nearBadge(p)}</div>
     <div class="rule"></div>
     ${parts.length?`<div class="passage">${parts.join(' ')}</div>`
       :spReady?`<div class="passage miss">no sentence in this paper states what is new</div>`
@@ -1996,8 +2000,8 @@ function openPanel(i){
       const j=BYID[id]; if(j===undefined)return '';
       const q=P[j];
       return `<div class="nb" data-go="${j}">${esc(q.t)}`+
-             `<span class="nbm">${st.corp!==null&&q.cy!==st.corp?CY[q.cy].y+' · ':''}`+
-             `${esc(q.b||q.a||'')}${q.o===1?' · Oral':q.o===2?' · Spotlight':''}</span></div>`;
+             `<span class="nbm"><b style="color:var(--v${vhue(q.cy)})">${esc(CY[q.cy].v)} ${CY[q.cy].y}</b>`+
+             `${(q.b||q.a)?' · '+esc(q.b||q.a):''}${q.o===1?' · Oral':q.o===2?' · Spotlight':''}</span></div>`;
     }).join('');
     $('#pbody').innerHTML=`<div class="pseed">${esc(p.t)}</div>`+
       (rows||'<div style="color:var(--mut);font-size:12px">No neighbours for this paper.</div>');
@@ -2040,8 +2044,11 @@ function sharedChips(a,b){
 }
 function renderCmp(){
   if(!CMP)return;
-  document.querySelector('.wrap').classList.remove('withrail');
-  $('#rail').hidden=true;
+  document.querySelector('.wrap').classList.add('withrail');
+  drawRail();
+  { const rt=$('#rtr');
+    if(rt){ rt.innerHTML=(chosen()&&!qPending())?railSetCard(results()):railTrend();
+            wireRtr(rt); } }
   document.querySelector('.searchrow').hidden=true;
   $('#legend').hidden=true; $('#story').hidden=true; $('#inset').hidden=true;
   $('#xref').hidden=true;
@@ -2086,7 +2093,7 @@ function cmpPanel(){
       const j=BYID[id]; if(j===undefined)return '';
       const q=P[j], on=j===CMP.b;
       return `<div class="nb ${on?'cmpon':''}" data-cb="${j}">${esc(q.t)}`+
-             `<span class="nbm">${esc(CY[q.cy].v)} ${CY[q.cy].y}`+
+             `<span class="nbm"><b style="color:var(--v${vhue(q.cy)})">${esc(CY[q.cy].v)} ${CY[q.cy].y}</b>`+
              `${q.o===1?' · Oral':q.o===2?' · Spotlight':''}${on?' · on the right':''}</span></div>`;
     }).join('');
     $('#pbody').innerHTML=
@@ -2251,6 +2258,8 @@ const VENUES=[
   {v:'NeurIPS', full:'Conference on Neural Information Processing Systems'},
   {v:'ICLR', full:'International Conference on Learning Representations'},
 ];
+// which hue a corpus wears — the venue's, everywhere a venue name is printed
+const vhue=cy=>Math.max(VENUES.findIndex(v2=>v2.v===CY[cy].v),0);
 function landingHTML(){
   // One door per venue, always the newest year. Last year is not a place anyone
   // browses — it exists to say what changed, and it does that in the chart below
@@ -2646,6 +2655,42 @@ function railSetCard(res){
     `<button class="scsplit ${st.grouped?'on':''}" id="grptog2">${st.grouped?'Show papers':'Split into subgroups'}</button>`+
     `</div>`;
 }
+// The rail chrome, shared by the list view and the compare view. The rail
+// carries whatever the reader should press NEXT: before a pick, this venue's
+// own movers (each row applies itself as the selection); after one, the
+// composition of the set they picked (see railSetCard).
+function drawRail(){
+  $('#rail').hidden=false;
+  $('#rail').innerHTML=
+    `<button class="rv ${st.corp===-1?'on':''}" data-rv="-1">All<span>${P.length.toLocaleString()}</span></button>`+
+    VENUES.map(ven=>{
+    const yrs=CY.map((c,j)=>({...c,j})).filter(c=>c.v===ven.v);
+    const now=yrs[yrs.length-1];
+    if(!now)return `<span class="rv dim">${esc(ven.v)}</span>`;
+    return `<button class="rv ${st.corp===now.j?'on':''}" data-rv="${now.j}">`+
+      `${esc(ven.v)}<span>${now.y}</span></button>`;
+  }).join('');
+  $('#rail').insertAdjacentHTML('beforeend','<div class="rtr" id="rtr"></div>');
+  $('#rail').querySelectorAll('[data-rv]').forEach(el=>el.onclick=()=>{
+    if(+el.dataset.rv!==st.corp){ CMP=null; go(+el.dataset.rv); }});
+}
+// The rtr interactions mutate the selection, so they always leave compare —
+// CMP=null is a no-op in the plain list view.
+function wireRtr(rt){
+  const g2=rt.querySelector('#grptog2'); if(g2)g2.onclick=()=>{CMP=null;st.grouped=!st.grouped;render();};
+  rt.querySelectorAll('[data-fc]').forEach(el=>el.onclick=()=>{
+    CMP=null;
+    const ax=el.dataset.fc;
+    if(ax==='l')st.lim=null; else clearSlot(ax);
+    render();});
+  rt.querySelectorAll('[data-ck]').forEach(el=>el.onclick=()=>{
+    CMP=null;
+    const id=+el.dataset.cid;
+    if(el.dataset.ck==='d')st.ds=st.ds===id?null:id; else st.meth=st.meth===id?null:id;
+    render();});
+  rt.querySelectorAll('[data-tid]').forEach(el=>el.onclick=()=>{
+    CMP=null; applyChgRow('t',+el.dataset.tid); render();});
+}
 function render(){
   // While comparing, every repaint (spans arriving, etc.) repaints the compare
   // view; everything else stays put underneath until the reader leaves it.
@@ -2668,21 +2713,7 @@ function render(){
   // The landing is used once; after that the rail moves between venues freely.
   // Filters survive a switch — the vocabulary is shared, so "robotics" means the
   // same thing at the next conference.
-  $('#rail').innerHTML=
-    `<button class="rv ${st.corp===-1?'on':''}" data-rv="-1">All<span>${P.length.toLocaleString()}</span></button>`+
-    VENUES.map(ven=>{
-    const yrs=CY.map((c,j)=>({...c,j})).filter(c=>c.v===ven.v);
-    const now=yrs[yrs.length-1];
-    if(!now)return `<span class="rv dim">${esc(ven.v)}</span>`;
-    return `<button class="rv ${st.corp===now.j?'on':''}" data-rv="${now.j}">`+
-      `${esc(ven.v)}<span>${now.y}</span></button>`;
-  }).join('');
-  // The rail carries whatever the reader should press NEXT: before a pick, this
-  // venue's own movers (each row applies itself as the selection); after one,
-  // the composition of the set they picked (see railSetCard).
-  $('#rail').insertAdjacentHTML('beforeend','<div class="rtr" id="rtr"></div>');
-  $('#rail').querySelectorAll('[data-rv]').forEach(el=>el.onclick=()=>{
-    if(+el.dataset.rv!==st.corp)go(+el.dataset.rv); });
+  drawRail();
   const on=chosen();
   drawXref();
   $('#legend').hidden=!on;
@@ -2691,9 +2722,7 @@ function render(){
       `<span>Nothing is listed until you do — ${(st.corp===-1?P.length:CY[st.corp].n).toLocaleString()} papers is the problem, not the answer.</span></div>`;
     $('#inset').hidden=true; $('#story').hidden=true;
     $('#q').placeholder='';
-    const rt=$('#rtr'); if(rt){ rt.innerHTML=railTrend();
-      rt.querySelectorAll('[data-tid]').forEach(el=>el.onclick=()=>{
-        applyChgRow('t',+el.dataset.tid); render();}); }
+    const rt=$('#rtr'); if(rt){ rt.innerHTML=railTrend(); wireRtr(rt); }
     return;
   }
   { const V3=slotState();
@@ -2708,16 +2737,7 @@ function render(){
   }
   drawStory();
   drawInside();
-  { const rt=$('#rtr'); if(rt){ rt.innerHTML=railSetCard(res);
-      const g2=rt.querySelector('#grptog2'); if(g2)g2.onclick=()=>{st.grouped=!st.grouped;render();};
-      rt.querySelectorAll('[data-fc]').forEach(el=>el.onclick=()=>{
-        const ax=el.dataset.fc;
-        if(ax==='l')st.lim=null; else clearSlot(ax);
-        render();});
-      rt.querySelectorAll('[data-ck]').forEach(el=>el.onclick=()=>{
-        const id=+el.dataset.cid;
-        if(el.dataset.ck==='d')st.ds=st.ds===id?null:id; else st.meth=st.meth===id?null:id;
-        render();}); } }
+  { const rt=$('#rtr'); if(rt){ rt.innerHTML=railSetCard(res); wireRtr(rt); } }
 
   const extra=nearby();
   const show=res.slice(0,MAX_SHOWN);
