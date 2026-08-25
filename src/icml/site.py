@@ -278,6 +278,12 @@ def gid_map(corpora) -> tuple[dict[tuple[str, int], int], int]:
 def build_payload(span_source: str) -> dict:
     from .corpus import available
     corpora = available()          # every venue far enough through the pipeline
+    # mid-pipeline grace: a corpus whose extraction exists but whose labels do
+    # not yet (the chain runs label after extract) must wait, not kill the build
+    skipped = [c.key for c in corpora if not c.topics.exists()]
+    corpora = [c for c in corpora if c.topics.exists()]
+    if skipped:
+        print(f"  (skipping mid-pipeline corpora: {', '.join(skipped)})")
     if not corpora:
         raise SystemExit("no corpus has both papers and an extraction")
     ci = {c.key: i for i, c in enumerate(corpora)}
@@ -864,7 +870,7 @@ HTML = r"""<!doctype html>
 --v0:#2a6fd0;--v1:#0c9a85;--v2:#8a5cd6}
 *{box-sizing:border-box}
 [hidden]{display:none!important}   /* display:flex on .facets/.pane outranks it otherwise */
-body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif;
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif;
 -webkit-font-smoothing:antialiased}
 /* One column for the whole page. With the sheet at page width, a 1380px band of
    controls above it left the content looking pushed to the right. */
@@ -1159,16 +1165,16 @@ margin-right:8px;white-space:nowrap}
 /* landing */
 .venues{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:4px}
 @media(max-width:760px){.venues{grid-template-columns:1fr}}
-.vcard{background:var(--card);border-radius:12px;padding:16px 18px}
+.vcard{text-align:center;background:var(--card);border-radius:12px;padding:16px 18px}
 .vcard.dim{opacity:.55}
-.vname{font-size:18px;font-weight:700;letter-spacing:-.01em}
-.vfull{font-size:11px;color:var(--mut);margin:2px 0 12px;min-height:28px}
-.vcard{border:1px solid transparent;text-align:left;font:inherit;cursor:pointer}
+.vname{font-size:19px;font-weight:700;letter-spacing:-.01em}
+.vfull{font-size:12px;color:var(--mut);margin:2px 0 12px;min-height:28px}
+.vcard{border:1px solid transparent;font:inherit;cursor:pointer}
 .vcard:not(.dim):hover{border-color:var(--acc)}
 .vcard.dim{cursor:default}
 .vyr{font-size:12px;font-weight:600;color:var(--mut);margin-left:8px}
-.vn{font-size:11.5px;color:var(--ink2)}
-.vsoon{font-size:11.5px;color:var(--mut)}
+.vn{font-size:12.5px;color:var(--ink2)}
+.vsoon{font-size:12.5px;color:var(--mut)}
 #rail{display:flex;gap:8px;margin:0 0 12px}
 .rv{font:inherit;font-size:13px;font-weight:650;padding:7px 14px;border-radius:9px;cursor:pointer;
 border:1px solid var(--ring);background:var(--card);color:var(--ink2);display:flex;gap:6px;align-items:baseline}
@@ -1190,30 +1196,30 @@ border:1px solid var(--ring);background:var(--card);color:var(--ink2);display:fl
   .rv{justify-content:space-between}
   .rtr{display:block;margin-top:14px;border-top:1px solid var(--ring);padding-top:10px}
 }
-.rh{font-size:9.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--mut);margin-bottom:7px}
+.rh{font-size:10px;letter-spacing:.07em;text-transform:uppercase;color:var(--mut);margin-bottom:7px}
 .rh em{font-style:normal;font-weight:500;letter-spacing:0;text-transform:none;margin-left:4px}
 /* rail mini chart: one venue pair per row, log x like the landing chart */
 .mrr{display:block;width:100%;text-align:left;font:inherit;background:none;border:0;
   padding:2.5px 0;cursor:pointer;border-radius:4px}
 .mrr:hover .mrl{color:var(--acc)}
-.mrl{font-size:11.5px;color:var(--ink2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+.mrl{font-size:12.5px;color:var(--ink2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
   display:block;margin-bottom:1px}
 .mrl .tag{margin-left:5px}
 .mrt{position:relative;height:6px;display:block}
 .mrt .lane{position:absolute;inset:0;height:auto;margin:0}
 /* the set card: composition of the current selection, in reach while scrolling */
 .setcard{margin-top:14px;border-top:1px solid var(--ring);padding-top:10px}
-.scn{font-size:20px;font-weight:700;letter-spacing:-.02em}
+.scn{font-size:22px;font-weight:700;letter-spacing:-.02em}
 .scn small{font-size:11px;font-weight:500;color:var(--mut);margin-left:5px}
 .scyr{margin:8px 0 2px}
-.scyrow{display:grid;grid-template-columns:minmax(34px,auto) 1fr 70px;gap:8px;align-items:center;
-  font-size:11px;color:var(--ink2);padding:1.5px 0}
+.scyrow{display:grid;grid-template-columns:minmax(34px,auto) 1fr 76px;gap:8px;align-items:center;
+  font-size:12px;color:var(--ink2);padding:1.5px 0}
 .scyrow .yb{position:relative;height:7px}
 .scyrow .yb i{position:absolute;left:0;top:0;height:100%;border-radius:2px}
 .scyrow b{font-weight:600;font-size:10px;text-align:right;color:var(--ink2);white-space:nowrap}
 .scsub{font-size:10.5px;color:var(--mut);margin:2px 0 0}
 .scchips{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}
-.scchip{font:inherit;font-size:10.5px;padding:2px 8px;border-radius:20px;cursor:pointer;
+.scchip{font:inherit;font-size:11.5px;padding:2px 8px;border-radius:20px;cursor:pointer;
   border:1px solid var(--ring);background:var(--card);color:var(--ink2)}
 .scchip b{font-weight:600;color:var(--mut);margin-left:3px}
 .scchip:hover{border-color:var(--acc);color:var(--acc)}
@@ -1252,10 +1258,10 @@ background:none;cursor:pointer;color:var(--mut);padding:4px 8px}
 .story .syx:hover{color:var(--warm)}
 /* the digest: analysis first, selection second — every row is a door */
 .digbox{background:var(--card);border-radius:12px;padding:16px 18px;margin-top:14px}
-.dighd{font-size:15px;font-weight:660}
-.dighd em{font-style:normal;font-weight:500;font-size:10.5px;color:var(--mut);margin-left:10px}
+.dighd{font-size:17px;font-weight:660}
+.dighd em{font-style:normal;font-weight:500;font-size:11.5px;color:var(--mut);margin-left:10px}
 .digrow{display:block;width:100%;font:inherit;text-align:left;border:0;background:none;
-cursor:pointer;padding:6px 8px;border-radius:8px;font-size:13px;color:var(--ink)}
+cursor:pointer;padding:7px 9px;border-radius:8px;font-size:14px;color:var(--ink)}
 .digrow:hover{background:#f2f5f9}
 .digrow.open{background:#f2f5f9}
 .digrow b{font-weight:650}
@@ -1274,20 +1280,20 @@ padding:2.5px 0;font-size:12px;color:var(--ink2)}
 border:1px solid var(--acc);background:var(--acc);color:#fff}
 .fightrow{display:grid;grid-template-columns:190px 1fr 92px;gap:12px;align-items:center}
 .vleg{display:flex;flex-wrap:wrap;gap:8px 22px;justify-content:center;align-items:center;
-margin:12px 0 2px;font-size:13px;font-weight:600;color:var(--ink)}
+margin:12px 0 2px;font-size:14px;font-weight:600;color:var(--ink)}
 .vleg i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:7px;vertical-align:-1px}
 .vleg em{font-style:normal;font-weight:500;color:var(--ink2)}
 .vlone{font-size:11.5px;font-weight:500;color:var(--mut)}
 .freshwrap{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
 /* merged What-moved rows: field dumbbell reads big, its inner shifts as pills */
-.cr.mv{grid-template-columns:200px 1fr 84px;font-size:13.5px;padding:5px 8px;border-radius:8px}
+.cr.mv{grid-template-columns:215px 1fr 92px;font-size:14.5px;padding:5px 8px;border-radius:8px}
 .cr.mv:hover{background:#f2f5f9}
 .cr.mv .crl{font-weight:600}
-.mvn{font-weight:650;font-size:11px;color:var(--ink2);text-align:right;white-space:nowrap}
+.mvn{font-weight:650;font-size:12px;color:var(--ink2);text-align:right;white-space:nowrap}
 .chgplot.mv .lane{height:10px}
-.pillrow{display:flex;flex-wrap:wrap;gap:5px;align-items:center;margin:1px 0 7px 212px;position:relative}
-.pillhd{font-size:9px;letter-spacing:.07em;text-transform:uppercase;color:var(--mut);margin-right:2px}
-.pill{font:inherit;font-size:11px;padding:2.5px 9px;border-radius:20px;border:0;cursor:pointer;
+.pillrow{display:flex;flex-wrap:wrap;gap:5px;align-items:center;margin:1px 0 8px 227px;position:relative}
+.pillhd{font-size:9.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--mut);margin-right:2px}
+.pill{font:inherit;font-size:12px;padding:2.5px 9px;border-radius:20px;border:0;cursor:pointer;
 background:#eef1f5;color:var(--ink2)}
 .pill i{font-style:normal;font-weight:700}
 .pill b{font-weight:650}
@@ -1313,7 +1319,7 @@ cursor:pointer;padding:6px 10px}
 .afgrid{display:flex;flex-wrap:wrap;gap:5px;justify-content:center;margin-top:10px}
 /* what-moved entry view */
 .chgbox{background:var(--card);border-radius:12px;padding:16px 18px;margin-top:14px}
-.chghd{font-size:15px;font-weight:660;display:flex;align-items:center;gap:10px}
+.chghd{font-size:17px;font-weight:660;display:flex;align-items:center;gap:10px}
 .chgtabs{margin-left:auto;display:flex;gap:4px}
 .chgtab{font-size:11px;padding:2px 9px;border-radius:6px;border:1px solid var(--ring);
 background:none;cursor:pointer;color:var(--ink2)}
@@ -1327,7 +1333,7 @@ background:none;cursor:pointer;color:var(--ink2)}
 .chgg i{position:absolute;top:0;bottom:0;width:1px;background:var(--line)}
 .chgax{position:relative;height:13px;margin:10px 0 0 184px}
 .chgax b{position:absolute;transform:translateX(-50%);font-size:9px;font-weight:500;color:var(--mut);white-space:nowrap}
-.chgsec{font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--mut);
+.chgsec{font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--mut);
   margin:11px 0 3px;position:relative}
 .cr{display:grid;grid-template-columns:172px 1fr;gap:12px;align-items:center;
   padding:2px 0;position:relative;font-size:12.5px;color:var(--ink2);border:0;background:none;
