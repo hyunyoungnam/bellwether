@@ -915,7 +915,8 @@ HTML = r"""<!doctype html>
 --line:#e2e4e6;--ring:#d2d5d8;--acc:#2a6fd0;--warm:#d2551f;--dim:#c6c8ca;--hi:#fff3c4;
 /* one hue per venue, in VENUES order, never cycled; the pale step is the same
    hue knocked back — year is carried by depth, identity by hue */
---v0:#2a6fd0;--v1:#0c9a85;--v2:#8a5cd6}
+--v0:#2a6fd0;--v1:#0c9a85;--v2:#8a5cd6;
+--up:#c93a2b;--dn:#2a6fd0;--nw:#d2551f;--sh:#3f8f22}
 *{box-sizing:border-box}
 [hidden]{display:none!important}   /* display:flex on .facets/.pane outranks it otherwise */
 body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif;
@@ -1299,7 +1300,7 @@ grid-template-columns:1fr auto;gap:4px 14px;align-items:center}
 .story .sy1{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--acc);font-weight:700}
 .story .sy2{font-size:15.5px;font-weight:650;grid-column:1}
 .story .sy2 em{font-style:normal;font-weight:500;color:var(--ink2)}
-.story .sy2 b.dn{color:var(--warm)} .story .sy2 b.up{color:var(--acc)}
+.story .sy2 b.dn{color:var(--dn)} .story .sy2 b.up{color:var(--up)}
 .story .sytrk{grid-column:1;max-width:520px;margin-top:3px}
 .story .syx{grid-column:2;grid-row:1/span 3;font:inherit;font-size:16px;border:0;
 background:none;cursor:pointer;color:var(--mut);padding:4px 8px}
@@ -1345,11 +1346,11 @@ margin:12px 0 2px;font-size:14px;font-weight:600;color:var(--ink)}
 background:#eef1f5;color:var(--ink2)}
 .pill i{font-style:normal;font-weight:700}
 .pill b{font-weight:650}
-.pill.up{background:#e5edfa;color:#1d4f9c} .pill.up i{color:var(--acc)}
-.pill.dn{background:#faece3;color:#8f3d13} .pill.dn i{color:var(--warm)}
+.pill.up{background:#fbe9e6;color:#8f2318} .pill.up i{color:var(--up)}
+.pill.dn{background:#e5edfa;color:#1d4f9c} .pill.dn i{color:var(--dn)}
 .pill:hover{filter:brightness(.96)}
 .pill[disabled]{cursor:default}
-.pill .nw2{font-size:8px;font-weight:800;letter-spacing:.05em;margin-left:4px;vertical-align:1px}
+.pill .nw2{font-size:8px;font-weight:800;letter-spacing:.05em;margin-left:4px;vertical-align:1px;color:var(--nw)}
 @media(max-width:700px){.cr.mv{grid-template-columns:130px 1fr 70px}.pillrow{margin-left:0}}
 /* the fights hover card: the papers' own sentences define the term */
 .fightrow{position:relative}
@@ -1391,14 +1392,16 @@ background:none;cursor:pointer;color:var(--ink2)}
 .chgsec:first-child{border-top:0;padding-top:0;margin-top:4px}
 .sg2{font-style:normal;margin-right:7px;font-size:12px}
 .sgn{font-weight:500;font-size:11px;color:var(--mut);margin-left:7px}
-.chgsec[data-d="up"]{color:var(--acc)}
-.chgsec[data-d="dn"]{color:var(--warm)}
+.chgsec[data-d="up"]{color:var(--up)}
+.chgsec[data-d="dn"]{color:var(--dn)}
+.chgsec[data-d="nw"]{color:var(--nw)}
+.chgsec[data-d="sh"]{color:var(--sh)}
 .cr{display:grid;grid-template-columns:172px 1fr;gap:12px;align-items:center;
   padding:2px 0;position:relative;font-size:12.5px;color:var(--ink2);border:0;background:none;
   width:100%;text-align:left;font-family:inherit;cursor:pointer;border-radius:4px}
 .cr:hover .crl{color:var(--acc)}
 .crl{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.tag{font-style:normal;font-size:9px;font-weight:700;letter-spacing:.04em;color:var(--acc);
+.tag{font-style:normal;font-size:9px;font-weight:700;letter-spacing:.04em;color:var(--nw);
   margin-left:6px;vertical-align:1px}
 .tag.gone{color:var(--mut)}
 .trk{position:relative}
@@ -2303,8 +2306,8 @@ function drawInside(){
   const ticks=[20,50,100,200,500,1000].filter(t=>t>=F&&t<=M*1.04);
   const grid='<div class="chgg">'+ticks.map(t=>`<i style="left:${X(t).toFixed(2)}%"></i>`).join('')+'</div>';
   const axis='<div class="chgax">'+ticks.map(t=>`<b style="left:${X(t).toFixed(2)}%">${t/10}%</b>`).join('')+'</div>';
-  const DIR2={'rising':'up','new':'up','falling':'dn'};
-  const GLYPH2={'rising':'▲','falling':'▼','new':'＋'};
+  const DIR2={'rising':'up','new':'nw','falling':'dn'};
+  const GLYPH2={'rising':'▲','falling':'▼','new':'+'};
   const body=secs.map(([nm2,rs])=>
     `<div class="chgsec" data-d="${DIR2[nm2]||''}"><i class="sg2">${GLYPH2[nm2]||''}</i>${nm2}`+
     `<span class="sgn">${rs.length}</span></div>`+rs.map(r=>{
@@ -2714,8 +2717,8 @@ function changedHTML(){
     }
     return c/sg.n*1000;
   };
-  const DIR={'rising':'up','new':'up','falling':'dn'};
-  const GLYPH={'rising':'▲','falling':'▼','new':'＋','shifting inside':'⇄'};
+  const DIR={'rising':'up','new':'nw','falling':'dn','shifting inside':'sh'};
+  const GLYPH={'rising':'▲','falling':'▼','new':'+','shifting inside':'⇄'};
   const body=secs.map(([name,rows])=>
     `<div class="chgsec" data-d="${DIR[name]||''}"><i class="sg2">${GLYPH[name]||''}</i>${name}`+
     `<span class="sgn">${rows.length}</span></div>`+rows.map(e=>{
