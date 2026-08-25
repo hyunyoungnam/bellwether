@@ -1281,6 +1281,7 @@ border:1px solid var(--ring);background:var(--card);color:var(--ink2);display:fl
 }
 .rh{font-size:10px;letter-spacing:.07em;text-transform:uppercase;color:var(--mut);margin-bottom:7px}
 .rh em{font-style:normal;font-weight:500;letter-spacing:0;text-transform:none;margin-left:4px}
+.rh .rleg i{display:inline-block;width:9px;height:9px;border-radius:2px;margin:0 4px 0 7px;vertical-align:-1px}
 /* rail mini chart: one venue pair per row, log x like the landing chart */
 .mrr{display:block;width:100%;text-align:left;font:inherit;background:none;border:0;
   padding:2.5px 0;cursor:pointer;border-radius:4px}
@@ -2464,7 +2465,12 @@ function railTrend(){
   if(!top.length)return '';
   const M=Math.max(...top.flatMap(r=>[r.s0,r.s1]),CHG_F*2);
   const X=logX(M);
-  return `<div class="rh">Since last year <em>${pr.y0} → ${pr.y1}</em></div>`+
+  // years wear their swatches, exactly like the landing legend — the pale one
+  // is the earlier edition, and no arrow or sentence is needed
+  const pale=`color-mix(in srgb, var(--v${pr.hue}) 34%, var(--card))`;
+  return `<div class="rh">Since last year <em class="rleg">`+
+    `<i style="background:${pale}"></i>${pr.y0}`+
+    `<i style="background:var(--v${pr.hue})"></i>${pr.y1}</em></div>`+
     top.map(r=>{
       const tag=r.a<=2&&r.b>2?'<em class="tag">new</em>'
                :r.b<=2&&r.a>2?'<em class="tag gone">gone</em>':'';
