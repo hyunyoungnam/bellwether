@@ -1391,6 +1391,34 @@ const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&g
 const V=D.vocab, P=D.papers, T=D.topics;
 const mname=i=>V.m[i], dname=i=>V.d[i], tname=i=>V.t[i];
 
+// Display-only shortening: the universally-known acronyms, applied at render
+// time with the full phrase kept in the tooltip. Deterministic substitution of
+// a standard abbreviation — display, not rewriting; the payload stays full.
+const ABBR=[
+ [/reinforcement learning from human feedback/ig,'RLHF'],
+ [/reinforcement learning with verifiable rewards?/ig,'RLVR'],
+ [/reinforcement learning/ig,'RL'],
+ [/multimodal large language models/ig,'MLLMs'],
+ [/multimodal large language model/ig,'MLLM'],
+ [/large language models/ig,'LLMs'],
+ [/large language model/ig,'LLM'],
+ [/vision-language-action \(VLA\) models?/ig,'VLA models'],
+ [/vision-language models/ig,'VLMs'],
+ [/vision-language model/ig,'VLM'],
+ [/large reasoning models/ig,'LRMs'],
+ [/group relative policy optimization/ig,'GRPO'],
+ [/proximal policy optimization/ig,'PPO'],
+ [/supervised fine-tuning/ig,'SFT'],
+ [/chain-of-thought reasoning/ig,'CoT reasoning'],
+ [/chain-of-thought/ig,'CoT'],
+ [/graph neural networks/ig,'GNNs'],
+ [/graph neural network/ig,'GNN'],
+ [/convolutional neural networks/ig,'CNNs'],
+ [/generative adversarial networks/ig,'GANs'],
+ [/natural language processing/ig,'NLP'],
+];
+const abbr=l=>{let s2=l;for(const [re,to] of ABBR)s2=s2.replace(re,to);return s2;};
+
 // Names only — titles and extracted concepts. Kept because dataset and method
 // names do not always appear in the abstract prose.
 const HAY=P.map(p=>[p.t,p.a,p.b,p.d,
@@ -1725,7 +1753,7 @@ function card(i){
   const sx=SPX[p.i], spReady=!!sx;
   const pn=sx?sx[0]:[], pL=sx?sx[1]:null, pK=sx?sx[2]:null, pR=sx?sx[3]:null,
         pc1=sx?sx[4]:null;
-  const names=(arr,fn)=>arr.map(fn).join(', ');
+  const names=(arr,fn)=>arr.map(x=>abbr(fn(x))).join(', ');
   // One passage, not three labelled rows. The three sentences are the paper's,
   // in the order a reader needs them, and the colour says which question each
   // answers: why it was needed, what is new, what it achieved.
@@ -2041,7 +2069,7 @@ function allFieldsHTML(){
   return `<div class="allfields"><button id="aftog">${AF_OPEN?'hide':'browse'} all ${rows.length} fields`+
     ` <span style="opacity:.6">${AF_OPEN?'▴':'▾'}</span></button>`+
     (AF_OPEN?`<div class="afgrid">`+rows.map(x=>
-      `<button class="scchip" data-af="${x.ti}">${esc(x.l)}<b>${x.n}</b></button>`).join('')+'</div>':'')+
+      `<button class="scchip" data-af="${x.ti}" title="${esc(x.l)}">${esc(abbr(x.l))}<b>${x.n}</b></button>`).join('')+'</div>':'')+
     `</div>`;
 }
 let AF_OPEN=false;
@@ -2055,7 +2083,7 @@ function enterWith(mut){
 }
 function mixStoryFor(r,x){
   const hue=Math.max(VENUES.findIndex(v=>v.v===DG.pair.v),0);
-  return {label:`inside <b>${esc(r.l)}</b>, ${esc(x.l)} ${x.up?'rose':'fell'}`,
+  return {label:`inside <b>${esc(abbr(r.l))}</b>, ${esc(abbr(x.l))} ${x.up?'rose':'fell'}`,
           sub:'share of the set',s0:x.s0,s1:x.s1,unit:'%',
           fmt:v=>((v/10).toFixed(v<100?1:0)),
           hue,y0:DG.pair.y0,y1:DG.pair.y1,ti:r.ti};
@@ -2209,7 +2237,7 @@ function drawInside(){
     const tag=r.gn?'<em class="tag gone">gone</em>':'';
     const kind={u:'m',s:null,d:'t'}[r.ax];
     const attrs=kind?`data-k="${kind}" data-id="${r.id}"`:'disabled style="cursor:default"';
-    return `<button class="cr" ${attrs}><span class="crl" title="${esc(r.l)}">${esc(r.l)}${tag}`+
+    return `<button class="cr" ${attrs}><span class="crl" title="${esc(r.l)}">${esc(abbr(r.l))}${tag}`+
       `<span class="axtag v${A.hue}">${A.tag}</span></span>`+
       `<span class="trk">${lane}</span></button>`;
   }).join('')).join('');
@@ -2251,7 +2279,7 @@ function railTrend(){
     top.map(r=>{
       const tag=r.a<=2&&r.b>2?'<em class="tag">new</em>'
                :r.b<=2&&r.a>2?'<em class="tag gone">gone</em>':'';
-      return `<button class="mrr" data-tid="${r.id}"><span class="mrl" title="${esc(r.l)}">${esc(r.l)}${tag}</span>`+
+      return `<button class="mrr" data-tid="${r.id}"><span class="mrl" title="${esc(r.l)}">${esc(abbr(r.l))}${tag}</span>`+
         `<span class="mrt">${laneHTML({hue:pr.hue,s0:r.s0,s1:r.s1,w0:X(r.s0),w1:X(r.s1)})}</span></button>`;
     }).join('');
 }
@@ -2288,7 +2316,7 @@ function railSetCard(res){
   }
   const chips=(map,kind,name)=>[...map.entries()].filter(([,c])=>c>=2)
     .sort((a,b)=>b[1]-a[1]).slice(0,4)
-    .map(([id,c])=>`<button class="scchip" data-ck="${kind}" data-cid="${id}">${esc(name(id))}<b>${c}</b></button>`).join('');
+    .map(([id,c])=>`<button class="scchip" data-ck="${kind}" data-cid="${id}" title="${esc(name(id))}">${esc(abbr(name(id)))}<b>${c}</b></button>`).join('');
   const dch=chips(dk,'d',dname), mch=chips(mk,'m',i=>MV[i]);
   const nf=res.filter(i=>P[i].f).length;
   // Orals are not a filter — the tier shows as a badge, the list is already
@@ -2307,7 +2335,7 @@ function railSetCard(res){
   if(st.lim!==null)fch.push(['l','struggles: “'+st.lim+'”']);
   const fchips=fch.length
     ?`<div class="scchips" style="margin-bottom:8px">`+fch.map(([ax,l])=>
-       `<button class="scchip on2" data-fc="${ax}">${esc(l)} ×</button>`).join('')+`</div>`
+       `<button class="scchip on2" data-fc="${ax}" title="${esc(l)}">${esc(abbr(l))} ×</button>`).join('')+`</div>`
     :'';
   return `<div class="setcard"><div class="rh">This set</div>`+fchips+
     `<div class="scn">${res.length.toLocaleString()}<small>papers</small></div>`+tiers+
@@ -2587,7 +2615,7 @@ function changedHTML(){
   const pill=(x,ti)=>{
     const kind=x.ax==='u'?'m':x.ax==='d'?'t':null;
     const attrs=kind?`data-pill="${ti}:${x.ax}:${x.id}"`:'disabled';
-    return `<button class="pill ${x.up?'up':'dn'}" ${attrs}>${esc(x.l)} `+
+    return `<button class="pill ${x.up?'up':'dn'}" ${attrs} title="${esc(x.l)}">${esc(abbr(x.l))} `+
       `<i>${x.up?'↑':'↓'}</i> <b>${(x.s0/10).toFixed(0)}→${(x.s1/10).toFixed(0)}%</b>`+
       `${x.nw?'<span class="nw2">NEW</span>':''}</button>`;
   };
@@ -2618,7 +2646,7 @@ function changedHTML(){
     const pills=mix?`<div class="pillrow"><span class="pillhd">inside</span>`+
       mix.shifts.slice(0,3).map(x=>pill(x,e.id)).join('')+`</div>`:'';
     return `<button class="cr mv" data-k="${chgTab}" data-id="${e.id}">`+
-      `<span class="crl" title="${esc(e.l)}">${esc(e.l)}${tag}</span>`+
+      `<span class="crl" title="${esc(e.l)}">${esc(abbr(e.l))}${tag}</span>`+
       `<span class="trk">${lanes}</span>`+
       `<b class="mvn">${(u0/10).toFixed(1)}→${(u1/10).toFixed(1)}%</b></button>`+pills;
   }).join('')).join('');
