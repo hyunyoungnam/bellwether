@@ -2250,7 +2250,7 @@ function drawInside(){
   const dn=rows.filter(r=>r.z<=-Z_SHOW&&r.mat).sort((x,y)=>x.z-y.z).slice(0,4);
   const inSec=new Set([...up,...fresh,...dn]);
   const largest=rows.filter(r=>!inSec.has(r)).sort((x,y)=>y.s1-x.s1).slice(0,2);
-  const secs=[['largest',largest],['rising',up],['new',fresh],['falling',dn]]
+  const secs=[['largest of the rest',largest],['rising',up],['new',fresh],['falling',dn]]
     .filter(x=>x[1].length);
   if(!up.length&&!fresh.length&&!dn.length)
     secs.length=Math.min(secs.length,1);   // nothing moved: anchors only
@@ -2291,6 +2291,7 @@ function render(){
   if(landing){
     $('#legend').hidden=true; $('#results').innerHTML=''; $('#inset').hidden=true;
     $('#story').hidden=true;
+    $('#q').placeholder='';
     $('#landing').innerHTML=landingHTML();
     wireLanding();
     return;
@@ -2320,11 +2321,15 @@ function render(){
     $('#results').innerHTML=`<div class="start">Fill a blank in the title, or search.`+
       `<span>Nothing is listed until you do — ${(st.corp===-1?P.length:CY[st.corp].n).toLocaleString()} papers is the problem, not the answer.</span></div>`;
     $('#inset').hidden=true; $('#story').hidden=true;
+    $('#q').placeholder='';
     const rt=$('#rtr'); if(rt){ rt.innerHTML=railTrend();
       rt.querySelectorAll('[data-tid]').forEach(el=>el.onclick=()=>{
         applyChgRow('t',+el.dataset.tid); render();}); }
     return;
   }
+  { const V3=slotState();
+    const scope=V3.k||V3.d||(st.lim!==null?`“${st.lim}”`:null)||V3.u||V3.b;
+    $('#q').placeholder=scope?`search within ${scope}…`:''; }
   const res=results();
   if(qPending()){
     $('#inset').hidden=true;
@@ -2523,7 +2528,7 @@ function laneHTML(x){
 function changedHTML(){
   const S=sections(chgTab);
   if(!S)return '';
-  const secs=[['largest',S.largest],['rising',S.rising],['new',S.fresh],['falling',S.falling]]
+  const secs=[['largest of the rest',S.largest],['rising',S.rising],['new',S.fresh],['falling',S.falling]]
     .filter(x=>x[1].length);
   if(!secs.length)return '';
   const all=secs.flatMap(x=>x[1]);
