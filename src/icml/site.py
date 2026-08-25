@@ -606,7 +606,9 @@ def build_payload(span_source: str) -> dict:
         errors error pipelines pipeline outputs output settings setting
         implicitly explicitly jointly separately independently fundamental
         poorly adequately properly reliably practical practically critical
-        critically across throughout inherent notable notably""".split())
+        critically across throughout inherent notable notably leaving leaves
+        left remaining remains yielding yields fixed predefined
+        predetermined""".split())
 
     FIGHT_GLOSS = {
         "static": "assumes data, environments or benchmarks stay fixed, so the method cannot follow change after training",
@@ -833,7 +835,7 @@ def build_payload(span_source: str) -> dict:
                           "up": 1 if t2["z"] > 0 else 0, "nw": 1 if t2["a"] <= 2 else 0,
                           "ex": exs, "lanes": lanes,
                           "g": FIGHT_GLOSS.get(term)})
-        digest["fights"] = frows[:6]
+        digest["fights"] = frows[:5]
 
 
         # ---- fresh: benchmarks that did not exist in the previous edition ----
@@ -932,9 +934,11 @@ header{margin:14px 0 22px;text-align:center}
 h1{font-size:40px;margin:0;font-weight:700;letter-spacing:-.025em;line-height:1.3;
 white-space:nowrap}
 /* The title IS the query: "What's new in [reasoning] for [healthcare]?" */
+/* the highlighter IS the identity: the title wears it always, everywhere */
+#ttlx{background:linear-gradient(transparent 60%, var(--hi) 60%, var(--hi) 96%, transparent 96%);
+border-radius:4px}
 #ttl.golink{cursor:pointer}
-#ttl.golink #ttlx{border-radius:4px}
-#ttl.golink:hover #ttlx{background:linear-gradient(transparent 60%, var(--hi) 60%, var(--hi) 96%, transparent 96%)}
+#ttl.golink:hover #ttlx{filter:brightness(.97)}
 .tslot{display:inline-block;font:inherit;border:0;cursor:pointer;padding:0 8px;margin:0 1px;
 border-radius:10px;background:#e8effc;color:var(--acc);border-bottom:3px solid var(--acc);
 line-height:1.25}
