@@ -1273,6 +1273,11 @@ padding:2.5px 0;font-size:12px;color:var(--ink2)}
 .digopen button{font:inherit;font-size:12px;padding:5px 13px;border-radius:8px;cursor:pointer;
 border:1px solid var(--acc);background:var(--acc);color:#fff}
 .fightrow{display:grid;grid-template-columns:190px 1fr 92px;gap:12px;align-items:center}
+.vleg{display:flex;flex-wrap:wrap;gap:8px 22px;justify-content:center;align-items:center;
+margin:12px 0 2px;font-size:13px;font-weight:600;color:var(--ink)}
+.vleg i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:7px;vertical-align:-1px}
+.vleg em{font-style:normal;font-weight:500;color:var(--ink2)}
+.vlone{font-size:11.5px;font-weight:500;color:var(--mut)}
 .freshwrap{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
 /* merged What-moved rows: field dumbbell reads big, its inner shifts as pills */
 .cr.mv{grid-template-columns:200px 1fr 84px;font-size:13.5px;padding:5px 8px;border-radius:8px}
@@ -1959,7 +1964,20 @@ function landingHTML(){
       ${now?`<div class="vn">${now.n.toLocaleString()} papers</div>`:`<div class="vsoon">not collected yet</div>`}
     </button>`;
   }).join('');
-  return `<div class="venues">${cards}</div>`+changedHTML()+digestHTML()+allFieldsHTML();
+  return `<div class="venues">${cards}</div>`+venueLegendHTML()+changedHTML()+digestHTML()+allFieldsHTML();
+}
+// Which hue is which conference — pinned under the cards, where the eye goes
+// before the bars. Venues with a single edition are named but carry no bar.
+function venueLegendHTML(){
+  const prs=venuePairs();
+  if(prs.length<2)return '';
+  const single=VENUES.filter(v=>CY.some(c=>c.v===v.v)&&!prs.some(p=>p.v===v.v))
+    .map(v=>{const c=CY.find(c2=>c2.v===v.v);
+      return `<span class="vlone">${esc(v.v)} — ${c.y} only</span>`;});
+  return `<div class="vleg">`+prs.map(p=>
+      `<span><i style="background:var(--v${p.hue})"></i>${esc(p.v)} <em>from ${p.y0} to ${p.y1}</em></span>`).join('')+
+    single.join('')+
+    `<span class="vlone">pale = the earlier edition</span></div>`;
 }
 
 // ---- the digest: what MOVED, precomputed at build time (BH-free but bar-
@@ -2575,10 +2593,7 @@ function changedHTML(){
       `<span class="trk">${lanes}</span>`+
       `<b class="mvn">${(u0/10).toFixed(1)}→${(u1/10).toFixed(1)}%</b></button>`+pills;
   }).join('')).join('');
-  const leg=S.pairs.length>1
-    ?`<div class="chgleg">`+S.pairs.map(p=>
-        `<span><i style="background:var(--v${p.hue})"></i>${esc(p.v)} ${p.y0}→${p.y1}</span>`).join('')+
-      `<span style="color:var(--mut)">pale = the earlier edition</span></div>`
+  const leg=S.pairs.length>1?''
     :`<div class="chgleg"><span><i style="background:color-mix(in srgb, var(--v${S.pairs[0].hue}) 26%, var(--card))"></i>${S.pairs[0].y0}</span>`+
      `<span><i style="background:var(--v${S.pairs[0].hue})"></i>${S.pairs[0].y1}</span></div>`;
   const tab=(k,l)=>`<button class="chgtab ${chgTab===k?'on':''}" data-tab="${k}">${l}</button>`;
