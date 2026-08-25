@@ -2123,8 +2123,7 @@ function digestHTML(){
         const lanes=(f.lanes&&f.lanes.length?f.lanes:[{v:DG.pair.v,s0:f.s0,s1:f.s1}])
           .map(L=>laneHTML({hue:Math.max(VENUES.findIndex(v=>v.v===L.v),0),
                             s0:L.s0,s1:L.s1,w0:X(L.s0),w1:X(L.s1)})).join('');
-        return `<button class="digrow fightrow" data-fight="${fi}" `+
-        `title="${esc(f.t)} · ${f.s0} → ${f.s1} per 1,000 across the paired venues">`+
+        return `<button class="digrow fightrow" data-fight="${fi}">`+
         `<b>${esc(disp(f.t))}</b><span class="trk">${lanes}</span>${tip}</button>`;
       }).join('')+'</div>';
   }
