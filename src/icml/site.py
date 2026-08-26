@@ -1591,15 +1591,16 @@ body.haspanel #cmp{margin-right:max(0px,calc(352px - (100vw - 1266px)/2))}
 
 
 <div class="xref" id="xref" hidden></div>
+
+<div class="story" id="story" hidden></div>
+
+<div class="insbox" id="inset" hidden></div>
+
 <div class="legend" id="legend">
   <span class="sw"><span class="hl why">why it was needed</span></span>
   <span class="sw"><span class="hl new">what is new</span></span>
   <span class="sw"><span class="hl eff">what it achieved</span></span>
   <span>— the paper's own sentences, cut but never rewritten. The colours and the order are ours.</span></div>
-
-<div class="story" id="story" hidden></div>
-
-<div class="insbox" id="inset" hidden></div>
 
 <div class="res" id="results"></div>
 
@@ -2157,6 +2158,10 @@ function sharedChips(a,b){
 }
 function renderCmp(){
   if(!CMP)return;
+  // rescue the legend node FIRST — it may live inside #results (highlight
+  // screen) or inside #cmp (a previous compare render), and both get wiped
+  // by innerHTML below. before() moves it out wherever it is.
+  { const lg=$('#legend'); if(lg)$('#story').before(lg); }
   document.querySelector('.wrap').classList.add('withrail');
   drawRail();
   { const rt=$('#rtr');
@@ -2173,7 +2178,6 @@ function renderCmp(){
       } else rt.innerHTML=railTrend();
       wireRtr(rt); } }
   document.querySelector('.searchrow').hidden=true;
-  $('#legend').hidden=false;  // highlighted sentences on both cards -> keep the colour key
   $('#story').hidden=true; $('#inset').hidden=true;
   $('#xref').hidden=true;
   $('#results').innerHTML='';
@@ -2188,6 +2192,9 @@ function renderCmp(){
     `<div><div class="cmptag">the paper you were reading</div>${card(CMP.a)}</div>`+
     `<div><div class="cmptag">the similar paper you picked</div>${card(CMP.b)}</div>`+
     `</div>`;
+  // the colour key sits right above the two cards it explains
+  { const lg=$('#legend');
+    if(lg){ el.querySelector('.cmpgrid').before(lg); lg.hidden=false; } }
   cmpPanel();
   $('#cmpx').onclick=()=>{ const back=CMP.a; CMP=null; render(); openPanel(back); };
   // Similar on either card keeps the walk going: back to the list view with
@@ -2823,6 +2830,7 @@ function render(){
   // view; everything else stays put underneath until the reader leaves it.
   if(CMP){ renderCmp(); return; }
   $('#cmp').hidden=true;
+  { const lg=$('#legend'); if(lg)$('#results').before(lg); }  // reclaim the node before any innerHTML wipe
   const landing=st.corp===null;
   $('#landing').hidden=!landing;
   $('#rail').hidden=landing;
@@ -2861,6 +2869,8 @@ function render(){
         +show.map(card).join('')
         +(hlIdx.length>show.length
           ?`<div class="capped">Showing the first ${MAX_SHOWN} of ${hlIdx.length} ${word}. Search or pick a mover to narrow.</div>`:'');
+      { const lg=$('#legend'), hd=$('#results .hlhd');
+        if(lg&&hd){ hd.after(lg); lg.hidden=false; } }
       $('#results').querySelectorAll('[data-sim]').forEach(el=>el.onclick=ev=>{
         ev.stopPropagation(); openPanel(+el.dataset.sim);});
       $('#results').querySelectorAll('[data-mail]').forEach(el=>el.onclick=async ev=>{
