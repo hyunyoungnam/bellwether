@@ -355,6 +355,27 @@ def build_payload(span_source: str) -> dict:
                     src_of[g] = "fulltext"
                     n_full += 1
 
+    # Deep pass over the venue-declared highlight sets (spotlights/orals):
+    # mechanism / numbers / ablation / own_limits, every sentence verbatim and
+    # verified. Enriches single cards only — nothing counts, sorts or filters
+    # on these fields (Guardrail 5).
+    deep_of: dict[int, list] = {}
+    for c in corpora:
+        dpath = INTERIM / f"facts_deep_{c.key}.jsonl"
+        if not dpath.exists():
+            continue
+        for r in read_jsonl(dpath):
+            if not r.get("ok"):
+                continue
+            g = GID.get((c.key, r["event_id"]))
+            if g is None:
+                continue
+            fd = r["facts"]
+            D = [[edit_span(x)[:SPAN_CHARS] for x in (fd.get(k2) or [])]
+                 for k2 in ("mechanism", "numbers", "ablation", "own_limits")]
+            if any(D):
+                deep_of[g] = D
+
     # The shared vocabulary from icml.taxonomy, not a per-run derivation. Its two
     # membership kinds are kept apart all the way to the screen: the paper said
     # this, or it said something narrower that rolls up to this.
@@ -438,12 +459,25 @@ def build_payload(span_source: str) -> dict:
         return data.id(ds_disp.get(dataset_key(n), n))
 
     rows = []
-    # Spotlight-first, and ONLY spotlight: oral is stage programming, not a
-    # review decision (ICML 2026 writes Accept (regular/spotlight) and picks
-    # its 168 orals FROM the spotlights that committed to present in person).
-    # ICML 2026 orals are decision-spotlights, so is_spotlight catches them.
-    order = sorted(papers.values(), key=lambda p: (not p.get("is_spotlight"),
-                                                   p["title"]))
+    # The highlight flag is the venue's own decision distinction, in the
+    # venue's own vocabulary: spotlight where the corpus declares spotlights
+    # (ICML/NeurIPS — ICML 2026 orals are decision-spotlights, so is_spotlight
+    # catches them), oral where that IS the decision string (ICLR 2026 writes
+    # Accept (Poster/Oral) and has no spotlight tier). Oral is never a tier
+    # where spotlights exist — there it is stage programming.
+    hl_field: dict[str, str] = {}
+    for p in papers.values():
+        if p.get("is_spotlight"):
+            hl_field[p["_ck"]] = "is_spotlight"
+    for p in papers.values():
+        if p["_ck"] not in hl_field and p.get("is_oral"):
+            hl_field[p["_ck"]] = "is_oral"
+
+    def is_hl(p):
+        f2 = hl_field.get(p["_ck"])
+        return bool(f2 and p.get(f2))
+
+    order = sorted(papers.values(), key=lambda p: (not is_hl(p), p["title"]))
     for p in order:
         eid = GID[(p["_ck"], p["event_id"])]
         f = facts.get(eid) or {}
@@ -465,7 +499,7 @@ def build_payload(span_source: str) -> dict:
             # different quantities. Read as tiers — regular < spotlight < oral —
             # both years mean the same thing, so `o` is the tier and the raw
             # overlap is disclosed in the Selection hint rather than summed.
-            "o": 2 if p.get("is_spotlight") else 0,
+            "o": 2 if is_hl(p) else 0,
             "c": f.get("contribution_type") or "",
             "d": f.get("domain") or "",
             "p": [meth.id(detex(m["name"])) for m in methods if m.get("role") == "proposed"][:4],
@@ -481,6 +515,7 @@ def build_payload(span_source: str) -> dict:
             "L": edit_span(f.get("limitation") or "")[:SPAN_CHARS],
             "K": edit_span(f.get("key_change") or "")[:SPAN_CHARS],
             "R": edit_span(f.get("result_claim") or "")[:SPAN_CHARS],
+            "D": deep_of.get(eid),
             "g": [[ti, topic_kind.get((eid, ti), 0)] for ti in tl],
             "w": p.get("virtual_url") or p.get("paper_url") or "",
             # From the paper's own "Correspondence to:" line, or absent.
@@ -906,6 +941,8 @@ def build_payload(span_source: str) -> dict:
         # Ordered as the payload's `cy` indexes them. Sizes differ by 2x, so any
         # cross-corpus number must be a share of these, never a raw count.
         "corpora": [{"k": c.key, "v": c.venue, "y": c.year,
+                     "hw": {"is_spotlight": "Spotlight", "is_oral": "Oral"}.get(
+                         hl_field.get(c.key)),
                      "n": sum(1 for r in rows if r["cy"] == ci[c.key]),
                      "full": sum(1 for r in rows if r["cy"] == ci[c.key] and r["f"]),
                      "emb": sum(1 for r in rows if r["cy"] == ci[c.key] and r["i"] < N_EMB)}
@@ -1450,6 +1487,17 @@ background:none;cursor:pointer;color:var(--ink2)}
 .lane{display:block;position:relative;height:8px;margin:1.5px 0}
 .lane i{position:absolute;left:0;top:0;height:100%;border-radius:0 2px 2px 0}
 
+.hlhd{font-size:15px;font-weight:700;margin:2px 0 12px;color:var(--ink)}
+.hlhd em{display:block;font-style:normal;font-weight:500;font-size:11.5px;color:var(--mut);margin-top:3px}
+details.deep{margin-top:9px;border-top:1px dashed var(--line);padding-top:7px}
+details.deep summary{cursor:pointer;font-size:10.5px;letter-spacing:.04em;text-transform:uppercase;
+  color:var(--mut);list-style:none}
+details.deep summary::before{content:'▸ ';color:var(--mut)}
+details.deep[open] summary::before{content:'▾ '}
+details.deep summary::-webkit-details-marker{display:none}
+.dp{margin-top:8px;font-size:12.5px;line-height:1.55;color:var(--ink2)}
+.dp b{display:block;font-size:9.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--mut);
+  font-weight:700;margin-bottom:2px}
 .famchip.sel .per{color:#fff}
 .pfoot{display:flex;align-items:center;gap:8px;margin-top:7px}
 
@@ -1916,11 +1964,21 @@ function ensureSpans(cys){
     }).catch(()=>{SP_LOADED[k]=false;});
   }
 }
+// The deep section: four more of the paper's own sentences, full-paper source,
+// shown only on the venue's highlight papers. Collapsed by default — the card
+// stays scannable; the depth is one click away.
+function deepHTML(pD){
+  if(!pD||!pD.some(a2=>a2&&a2.length))return '';
+  const SEC=[['how it works',0],['the numbers',1],['what the ablation showed',2],['limits the authors state',3]];
+  const body=SEC.map(([lab,ix])=>(pD[ix]&&pD[ix].length)
+    ?`<div class="dp"><b>${lab}</b>${pD[ix].map(s2=>`<span>${esc(s2)}</span>`).join(' ')}</div>`:'').join('');
+  return `<details class="deep"><summary>from the full paper — the mechanism, the numbers, the admitted limits</summary>${body}</details>`;
+}
 function card(i){
   const p=P[i];
   const sx=SPX[p.i], spReady=!!sx;
   const pn=sx?sx[0]:[], pL=sx?sx[1]:null, pK=sx?sx[2]:null, pR=sx?sx[3]:null,
-        pc1=sx?sx[4]:null;
+        pc1=sx?sx[4]:null, pD=sx?sx[5]:null;
   const names=(arr,fn)=>arr.map(x=>abbr(fn(x))).join(', ');
   // One passage, not three labelled rows. The three sentences are the paper's,
   // in the order a reader needs them, and the colour says which question each
@@ -1952,13 +2010,14 @@ function card(i){
     : '';
 
   return `<div class="p ${st.sel===i?'sel':''}" data-i="${i}"><div class="body">
-    <div class="ti">${hl(p.t)}${p.o===2?'<span class="badge sp">Spotlight</span>':''}</div>
+    <div class="ti">${hl(p.t)}${p.o===2?`<span class="badge sp">${esc(CY[p.cy].hw||'Spotlight')}</span>`:''}</div>
     <div class="meta"><span class="cyst" style="color:var(--v${vhue(p.cy)})">${esc(CY[p.cy].v)} ${CY[p.cy].y}</span>${who}${nearBadge(p)}</div>
     <div class="rule"></div>
     ${parts.length?`<div class="passage">${parts.join(' ')}</div>`
       :spReady?`<div class="passage miss">no sentence in this paper states what is new</div>`
       :`<div class="passage miss">loading the paper's own sentences…</div>`}
     ${terms?`<div class="terms">${terms}</div>`:''}
+    ${deepHTML(pD)}
     <div class="foot">
       <div class="fx"></div>
       <div style="display:flex;gap:7px">
@@ -2002,7 +2061,7 @@ function openPanel(i){
       const q=P[j];
       return `<div class="nb" data-go="${j}">${esc(q.t)}`+
              `<span class="nbm"><b style="color:var(--v${vhue(q.cy)})">${esc(CY[q.cy].v)} ${CY[q.cy].y}</b>`+
-             `${(q.b||q.a)?' · '+esc(q.b||q.a):''}${q.o===2?' · Spotlight':''}</span></div>`;
+             `${(q.b||q.a)?' · '+esc(q.b||q.a):''}${q.o===2?' · '+(CY[q.cy].hw||'Spotlight'):''}</span></div>`;
     }).join('');
     $('#pbody').innerHTML=`<div class="pseed">${esc(p.t)}</div>`+
       (rows||'<div style="color:var(--mut);font-size:12px">No neighbours for this paper.</div>');
@@ -2105,7 +2164,7 @@ function cmpPanel(){
       const q=P[j], on=j===CMP.b;
       return `<div class="nb ${on?'cmpon':''}" data-cb="${j}">${esc(q.t)}`+
              `<span class="nbm"><b style="color:var(--v${vhue(q.cy)})">${esc(CY[q.cy].v)} ${CY[q.cy].y}</b>`+
-             `${q.o===2?' · Spotlight':''}${on?' · on the right':''}</span></div>`;
+             `${q.o===2?' · '+(CY[q.cy].hw||'Spotlight'):''}${on?' · on the right':''}</span></div>`;
     }).join('');
     $('#pbody').innerHTML=
       `<div class="pseed">${esc(P[a].t)}</div>`+
@@ -2641,12 +2700,13 @@ function railSetCard(res,vset){
     .map(([id,c])=>`<button class="scchip" data-ck="${kind}" data-cid="${id}" title="${esc(name(id))}">${esc(disp(name(id)))}<b>${c}</b></button>`).join('');
   const dch=chips(dk,'d',dname), mch=chips(mk,'m',i=>MV[i]);
   const nf=res.filter(i=>P[i].f).length;
-  // Spotlights are not a filter — the distinction shows as a badge, the list
-  // is already ordered spotlights first, and this line says how many.
+  // Highlights are not a filter — the distinction shows as a badge, the list
+  // is already ordered highlights first, and this line says how many.
   let nSpot=0;
   for(const i of res) if(P[i].o===2)nSpot++;
+  const hword=st.corp>=0?(CY[st.corp].hw||'Spotlight').toLowerCase():'venue-highlighted';
   const tiers=nSpot
-    ?`<div class="scsub">${nSpot} spotlight${nSpot>1?'s':''} — listed first</div>`:'';
+    ?`<div class="scsub">${nSpot} ${hword}${nSpot>1&&st.corp>=0?'s':''} — listed first</div>`:'';
   const V2=slotState();
   const fch=[];
   if(V2.k)fch.push(['k',V2.k]);
@@ -2731,8 +2791,35 @@ function render(){
   drawXref();
   $('#legend').hidden=!on;
   if(!on){
-    $('#results').innerHTML=`<div class="start">Search above, pick a mover on the left — or go back for the full digest.`+
-      `<span>Nothing is listed until you do — ${(st.corp===-1?P.length:CY[st.corp].n).toLocaleString()} papers is the problem, not the answer.</span></div>`;
+    // A single venue's cold screen leads with the papers the venue itself put
+    // forward — its declared spotlights/orals, in its own vocabulary. The
+    // union screen keeps the plain start box: its doors are the digest.
+    const hlIdx=st.corp>=0?P.map((p,i2)=>i2).filter(i2=>P[i2].cy===st.corp&&P[i2].o===2):[];
+    if(hlIdx.length){
+      const cw=CY[st.corp], word=(cw.hw||'Spotlight').toLowerCase()+'s';
+      const nf=hlIdx.filter(i2=>P[i2].f).length;
+      const show=hlIdx.slice(0,MAX_SHOWN);
+      ensureSpans(new Set(show.map(i2=>P[i2].cy)));
+      $('#results').innerHTML=
+        `<div class="hlhd">What ${esc(cw.v)} put forward `+
+        `<em>${hlIdx.length} ${word} — the venue's own selection, not ours · ${nf} carry full text</em></div>`
+        +show.map(card).join('')
+        +(hlIdx.length>show.length
+          ?`<div class="capped">Showing the first ${MAX_SHOWN} of ${hlIdx.length} ${word}. Search or pick a mover to narrow.</div>`:'');
+      $('#results').querySelectorAll('[data-sim]').forEach(el=>el.onclick=ev=>{
+        ev.stopPropagation(); openPanel(+el.dataset.sim);});
+      $('#results').querySelectorAll('[data-mail]').forEach(el=>el.onclick=async ev=>{
+        ev.stopPropagation();
+        const addr=el.dataset.mail, was=el.textContent;
+        try{ await navigator.clipboard.writeText(addr); }
+        catch(e){ const t2=document.createElement('textarea'); t2.value=addr;
+          document.body.appendChild(t2); t2.select(); document.execCommand('copy'); t2.remove(); }
+        el.textContent='copied'; el.classList.add('done');
+        setTimeout(()=>{ el.textContent=was; el.classList.remove('done'); },1200);});
+    } else {
+      $('#results').innerHTML=`<div class="start">Search above, pick a mover on the left — or go back for the full digest.`+
+        `<span>Nothing is listed until you do — ${(st.corp===-1?P.length:CY[st.corp].n).toLocaleString()} papers is the problem, not the answer.</span></div>`;
+    }
     $('#inset').hidden=true; $('#story').hidden=true;
     $('#q').placeholder='';
     const rt=$('#rtr'); if(rt){ rt.innerHTML=railTrend(); wireRtr(rt); }
@@ -3139,7 +3226,8 @@ def main() -> int:
     keys_by_ci = [c["k"] for c in payload["corpora"]]
     for r in payload["papers"]:
         spans_by[keys_by_ci[r["cy"]]][str(r["i"])] = [
-            r.pop("n"), r.pop("L"), r.pop("K"), r.pop("R"), r.pop("c1")]
+            r.pop("n"), r.pop("L"), r.pop("K"), r.pop("R"), r.pop("c1"),
+            r.pop("D")]
     for k, v in spans_by.items():
         parts[f"spans_{k}.json"] = dump(v)
     parts["search.json"] = dump({"terms": payload.pop("terms"),

@@ -649,13 +649,14 @@ then `setsid nohup python3 scripts/serve.py &`.
   orals FROM the spotlights — its feed marks every oral a spotlight, which looks
   like a bug and is the source data. Adding raw `is_spotlight` across years adds
   two different quantities.
-  **Decided 2026-08-26: oral is not a tier and the interface never marks it.**
-  At ICML 2026 the review decisions are regular/spotlight only; oral is stage
-  programming (chosen from spotlights that committed to present in person), so
-  an "Oral" badge would rank logistics. The page shows one distinction —
-  Spotlight, from `is_spotlight`, which is the decision string at every venue
-  that has the tier — and orders results by it. `is_oral` stays in the data
-  files untouched.
+  **Decided 2026-08-26: the interface marks one distinction per venue — the
+  venue's own decision, in the venue's own word.** At ICML 2026 the review
+  decisions are regular/spotlight only; oral is stage programming (chosen from
+  spotlights that committed to present in person), so an "Oral" badge there
+  would rank logistics. Where spotlights exist the badge is Spotlight
+  (`is_spotlight`); at ICLR 2026 the decision string itself is `Accept (Oral)`
+  and the badge is Oral. `hl_field` in site.py derives this per corpus and
+  `corpora[].hw` carries the word; results order highlight-first.
 - **Institutions are free text** — `config/institution_aliases.json` merges known
   variants; extend conservatively.
 - **A rate-limited batch must never be recorded as a result.** Writing
@@ -778,6 +779,16 @@ Still weak:
   paper data — visually separated and labelled "our gloss", with the papers'
   own sentences beneath as evidence. Guardrail 2 still governs everything
   attributed to a paper; the gloss never is.
+- **A venue's cold screen leads with what the venue put forward (2026-08-26).**
+  The corpus empty state lists the venue-declared highlight set (spotlights /
+  ICLR orals) captioned "the venue's own selection, not ours", with coverage.
+  Highlight papers carry a DEEP section — `extract_facts --source deep` pulls
+  mechanism / numbers / ablation / own_limits as verbatim verified sentences
+  from the full paper into `facts_deep_<key>.jsonl`; the card shows them
+  collapsed under "from the full paper". Guardrail 5 still binds: nothing
+  counts, sorts or filters on deep fields. Measured on ICML 2026 spotlights:
+  mechanism 97%, numbers 86%, ablation 44%, own_limits 39% of 418 papers,
+  span rejection 5.8%.
 - **Picking a similar paper opens a side-by-side compare (2026-08-25).** The
   Similar panel's neighbour click no longer scrolls-or-walks: it opens a
   two-card split view — the read paper left, the picked one right, a "both
