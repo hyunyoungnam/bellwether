@@ -237,6 +237,27 @@ def _drop_cjk_terms(f: dict) -> dict:
     return f
 
 
+# The model sometimes selects the outcome sentence into novelty_spans yet
+# leaves result_claim null (measured: 550 of 3,737 missing R's have a verified
+# result-shaped span on the record). A rule may promote it: the sentence is
+# already verbatim-verified, the rule only chooses the slot — selection, not
+# composition. spans[0] is spared when it must stand in for the yellow row.
+_RESULTISH = _re.compile(
+    r"\b(achiev\w*|outperform\w*|improv\w*|reduc\w*|surpass\w*|exceed\w*|"
+    r"state-of-the-art|sublinear|regret|speedup)\b|\d+(?:\.\d+)?\s*[%×]", _re.I)
+
+
+def result_or_span(f: dict) -> str:
+    if f.get("result_claim"):
+        return f["result_claim"]
+    spans = f.get("novelty_spans") or []
+    start = 0 if f.get("key_change") else 1
+    for sp in spans[start:]:
+        if _RESULTISH.search(sp):
+            return sp
+    return ""
+
+
 def clean_title(t: str) -> str:
     """Kept for callers that ask for a title specifically."""
     return detex(t)
@@ -546,7 +567,7 @@ def build_payload(span_source: str) -> dict:
             "n": spans,
             "L": edit_span(f.get("limitation") or "")[:SPAN_CHARS],
             "K": edit_span(f.get("key_change") or "")[:SPAN_CHARS],
-            "R": edit_span(f.get("result_claim") or "")[:SPAN_CHARS],
+            "R": edit_span(result_or_span(f))[:SPAN_CHARS],
             "D": deep_of.get(eid),
             "g": [[ti, topic_kind.get((eid, ti), 0)] for ti in tl],
             "w": p.get("virtual_url") or p.get("paper_url") or "",
@@ -2828,6 +2849,7 @@ function render(){
     // union screen keeps the plain start box: its doors are the digest.
     const hlIdx=st.corp>=0?P.map((p,i2)=>i2).filter(i2=>P[i2].cy===st.corp&&P[i2].o===2):[];
     if(hlIdx.length){
+      $('#legend').hidden=false;   // highlighted sentences on screen -> say what the colours mean
       const cw=CY[st.corp], word=(cw.hw||'Spotlight').toLowerCase()+'s';
       const nf=hlIdx.filter(i2=>P[i2].f).length;
       const show=hlIdx.slice(0,MAX_SHOWN);
