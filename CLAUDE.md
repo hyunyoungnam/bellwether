@@ -564,6 +564,14 @@ then `setsid nohup python3 scripts/serve.py &`.
   crude test parser refound only 84% of PDF-verified spans (math and inline
   tags), so the switch is GATED: the production HTML parser must refind >=95%
   before it becomes primary.
+  **Second requirement (added 2026-08-26): the HTML parser must PRESERVE the
+  references section** — as a `references` bucket with one entry per cited
+  work, not prose. The PDF pipeline's 60% filter dropped references entirely,
+  which is why no citation data exists. Citations unlock intra-corpus edges
+  (A cites B across our six editions): reading-order structure in a selected
+  set, a "both cite" strip in the compare view, and cite-graph entry paths —
+  all structure, never a citation-count ranking (guardrail 1; incoming counts
+  are also near-empty for a fresh corpus).
 
 **Dead ends — do not retry:**
 - **OpenReview API** (`api2.openreview.net`) → 403 ChallengeRequiredError. A bot
