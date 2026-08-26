@@ -2173,7 +2173,8 @@ function renderCmp(){
       } else rt.innerHTML=railTrend();
       wireRtr(rt); } }
   document.querySelector('.searchrow').hidden=true;
-  $('#legend').hidden=true; $('#story').hidden=true; $('#inset').hidden=true;
+  $('#legend').hidden=false;  // highlighted sentences on both cards -> keep the colour key
+  $('#story').hidden=true; $('#inset').hidden=true;
   $('#xref').hidden=true;
   $('#results').innerHTML='';
   ensureSpans(new Set([P[CMP.a].cy,P[CMP.b].cy]));
