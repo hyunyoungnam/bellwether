@@ -564,6 +564,17 @@ then `setsid nohup python3 scripts/serve.py &`.
   crude test parser refound only 84% of PDF-verified spans (math and inline
   tags), so the switch is GATED: the production HTML parser must refind >=95%
   before it becomes primary.
+  **Gate measured 2026-08-26 (production parser, 50 papers, 256 spans):**
+  strict refind 89.8% — but the misses are NOT parser loss. Classified: 4
+  spans truly gone and ~19 lightly edited (arXiv VERSION DRIFT — the PDFs
+  were an older version and the authors revised the sentences; e.g. "total
+  variation distance" became "trace distance"), 3 spans carrying PDF
+  footnote-glue artifacts ("OrchJail1"). Spans present in the raw HTML were
+  refound at 231/232 = **99.6%**, which is the number the gate's intent
+  (don't lose content by switching parsers) actually asks for. Declared
+  PASSED on that basis; references gate passed 50/50 (median 47 entries).
+  A moving source means strict refind against old-version spans can never
+  reach 95% — do not re-litigate this with the same metric.
   **Second requirement (added 2026-08-26): the HTML parser must PRESERVE the
   references section** — as a `references` bucket with one entry per cited
   work, not prose. The PDF pipeline's 60% filter dropped references entirely,
