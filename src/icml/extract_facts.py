@@ -208,6 +208,57 @@ Rules, in order of importance:
     return empty arrays. Never guess."""
 
 
+# ---- The DEEP pass: highlight papers only (the venue's own spotlights/orals).
+# Four more questions a reader asks after "what is new", every answer a verbatim
+# sentence verified like everything else. This enriches single cards (Guardrail
+# 5); nothing may count, rank or filter on these fields.
+DEEP_ORDER = ["abstract", "method", "experiments", "conclusion", "intro", "background"]
+
+DEEP_SCHEMA = {
+    "type": "object",
+    "additionalProperties": False,
+    "required": ["mechanism", "numbers", "ablation", "own_limits"],
+    "properties": {
+        # HOW it works — the device, not the claim
+        "mechanism": {"type": "array", "maxItems": 3,
+                      "items": {"type": "string", "maxLength": 400}},
+        # the size of the result, in the paper's own numbers
+        "numbers": {"type": "array", "maxItems": 3,
+                    "items": {"type": "string", "maxLength": 400}},
+        # what actually carried the result
+        "ablation": {"type": "array", "maxItems": 2,
+                     "items": {"type": "string", "maxLength": 400}},
+        # what the AUTHORS say does not work yet — about THIS paper
+        "own_limits": {"type": "array", "maxItems": 2,
+                       "items": {"type": "string", "maxLength": 400}},
+    },
+}
+
+DEEP_SYSTEM = """You select sentences from a machine-learning paper. You never write sentences.
+
+Every value you return must be a sentence copied VERBATIM, character for
+character, from the provided text. Each one is checked against the source and
+silently discarded if it is not an exact match — a paraphrase is worthless.
+Return fewer items (or empty arrays) rather than paraphrasing.
+
+- `mechanism`: 1-3 sentences from the method description that state HOW the
+  approach works — the actual device or procedure, not the claim that it is
+  novel or effective. Prefer sentences with concrete nouns ("we replace A with
+  B", "each token attends to...", "the loss combines...") over announcements.
+- `numbers`: 1-3 result sentences carrying the paper's own numbers — accuracy,
+  speedup, error reduction, with the baseline or benchmark named. Skip
+  sentences that claim improvement without a number.
+- `ablation`: 1-2 sentences reporting what an ablation showed — which component
+  mattered, what happens when it is removed or varied.
+- `own_limits`: 1-2 sentences where the AUTHORS state limitations of THIS work —
+  what it does not handle, where it fails, what is left open. This is about the
+  paper itself, never about prior work. Usually in a Limitations or Discussion
+  section. If the authors state none, return an empty array.
+
+If the text lacks a section (no ablation, no limitations), return an empty
+array for that field. Never guess, never summarise."""
+
+
 # PDF text carries the layout, not just the words: a two-column page breaks words
 # across lines and leaves the hyphen behind. Measured on 80 spans pulled from
 # camera-ready PDFs, 25% failed a whitespace-only comparison — and NONE of them
@@ -253,6 +304,18 @@ def verify_spans(spans: list[str], source: str) -> tuple[list[str], int]:
 
 
 SPAN_FIELDS = ("limitation", "key_change", "result_claim")
+DEEP_FIELDS = ("mechanism", "numbers", "ablation", "own_limits")
+
+
+def finalize_deep(facts: dict, source: str) -> tuple[int, int, bool]:
+    """Verify every deep field in place — same guarantee, different schema."""
+    n_kept = n_drop = 0
+    for f in DEEP_FIELDS:
+        kept, dropped = verify_spans(facts.get(f) or [], source)
+        facts[f] = kept
+        n_kept += len(kept)
+        n_drop += dropped
+    return n_kept, n_drop, False
 
 
 def finalize(facts: dict, source: str) -> tuple[int, int, bool]:
@@ -299,7 +362,7 @@ def run_via_endpoint(args, jobs: list[dict], out_path) -> int:
     def one(job: dict) -> dict:
         body = {
             "model": args.model,
-            "messages": [{"role": "system", "content": SYSTEM},
+            "messages": [{"role": "system", "content": DEEP_SYSTEM if args.source == "deep" else SYSTEM},
                          {"role": "user", "content": f"# {job['title']}\n\n{job['text']}"}],
             "temperature": 0.0,          # deterministic: reruns must reproduce
             "max_tokens": args.max_tokens,
@@ -308,7 +371,8 @@ def run_via_endpoint(args, jobs: list[dict], out_path) -> int:
             # returns a reasoning trace instead of an object.
             "chat_template_kwargs": {"enable_thinking": False},
             "response_format": {"type": "json_schema",
-                                "json_schema": {"name": "facts", "schema": SCHEMA}},
+                                "json_schema": {"name": "facts",
+                                                "schema": DEEP_SCHEMA if args.source == "deep" else SCHEMA}},
         }
         row = {"event_id": job["event_id"], "arxiv_base": job["arxiv_base"],
                "source": args.source, "model": args.model}
@@ -329,7 +393,8 @@ def run_via_endpoint(args, jobs: list[dict], out_path) -> int:
                 time.sleep(2 * (attempt + 1))
         try:
             facts = json.loads(raw, strict=False)
-            kept, dropped, inconsistent = finalize(facts, job["text"])
+            fin = finalize_deep if args.source == "deep" else finalize
+            kept, dropped, inconsistent = fin(facts, job["text"])
             row |= {"facts": facts, "ok": True}
             if inconsistent:
                 row["flag"] = "unknown-type-with-proposed-method"
@@ -370,7 +435,8 @@ def run_via_endpoint(args, jobs: list[dict], out_path) -> int:
     return 0
 
 
-def build_text(sections: list[dict], max_chars: int) -> str:
+def build_text(sections: list[dict], max_chars: int,
+               section_order: list[str] = SECTION_ORDER) -> str:
     """Assemble kept sections in priority order, within a character budget."""
     by_bucket: dict[str, list[str]] = {}
     for s in sections:
@@ -378,7 +444,7 @@ def build_text(sections: list[dict], max_chars: int) -> str:
 
     parts: list[str] = []
     used = 0
-    order = SECTION_ORDER + [b for b in by_bucket if b not in SECTION_ORDER]
+    order = section_order + [b for b in by_bucket if b not in section_order]
     for bucket in order:
         for text in by_bucket.get(bucket, []):
             if used >= max_chars:
@@ -393,7 +459,7 @@ def build_text(sections: list[dict], max_chars: int) -> str:
 def main() -> int:
     ap = argparse.ArgumentParser(description="Extract structured facts with a local LLM.")
     ap.add_argument("--model", default=DEFAULT_MODEL)
-    ap.add_argument("--source", choices=["abstract", "fulltext"], default="fulltext",
+    ap.add_argument("--source", choices=["abstract", "fulltext", "deep"], default="fulltext",
                     help="abstract = 99.3%% census (use for sparsity); "
                          "fulltext = ~70%% arXiv subset (use for the Ideas layer)")
     ap.add_argument("--limit", type=int, default=0)
@@ -416,6 +482,8 @@ def main() -> int:
     ap.add_argument("--out", default=None,
                     help="write to this file instead of the default; use when "
                          "re-running a year whose old-schema output must stay readable")
+    ap.add_argument("--ids", default=None,
+                    help="file of event_ids, one per line — extract only these papers")
     ap.add_argument("--year", type=int, default=None,
                     help="edition year; default is the focus year")
     ap.add_argument("--venue", default="icml", choices=["icml", "neurips", "iclr"])
@@ -431,7 +499,13 @@ def main() -> int:
     corpus = Corpus(venue, args.year or None or corpus_default_year())
     fulltext_path = FULLTEXT
     resolved_path = RESOLVED
-    if corpus.is_focus and not args.year:
+    if args.source == "deep":
+        # highlight enrichment: per-corpus output for every venue, focus included
+        if venue != "ICML":
+            fulltext_path = INTERIM / f"fulltext_{corpus.key.replace('-', '_')}.jsonl"
+            resolved_path = RESOLVED.with_name(f"resolved_{corpus.key}.jsonl")
+        out_path = INTERIM / f"facts_deep_{corpus.key}.jsonl"
+    elif corpus.is_focus and not args.year:
         out_path = OUT_BY_SOURCE[args.source]
     elif args.source == "fulltext":
         if venue != "ICML":
@@ -482,12 +556,16 @@ def main() -> int:
             eid = row.get("event_id") or to_event.get(row["arxiv_base"])
             if eid is None or eid in done:
                 continue
-            text = build_text(row.get("sections") or [], args.max_chars)
+            text = build_text(row.get("sections") or [], args.max_chars,
+                              DEEP_ORDER if args.source == "deep" else SECTION_ORDER)
             if len(text) < 500:
                 continue
             jobs.append({"event_id": eid, "arxiv_base": row["arxiv_base"],
                          "title": titles.get(eid, ""), "text": text})
 
+    if args.ids:
+        only = {int(x) for x in Path(args.ids).read_text().split() if x.strip()}
+        jobs = [j for j in jobs if j["event_id"] in only]
     if args.limit:
         jobs = jobs[: args.limit]
     if not jobs:
@@ -506,10 +584,10 @@ def main() -> int:
     # version bump in either direction doesn't silently drop schema enforcement.
     try:
         from vllm.sampling_params import StructuredOutputsParams
-        constraint = {"structured_outputs": StructuredOutputsParams(json=SCHEMA)}
+        constraint = {"structured_outputs": StructuredOutputsParams(json=DEEP_SCHEMA if args.source == "deep" else SCHEMA)}
     except ImportError:  # pragma: no cover — older vLLM
         from vllm.sampling_params import GuidedDecodingParams
-        constraint = {"guided_decoding": GuidedDecodingParams(json=SCHEMA)}
+        constraint = {"guided_decoding": GuidedDecodingParams(json=DEEP_SCHEMA if args.source == "deep" else SCHEMA)}
 
     print(f"loading {args.model}…")
     llm = LLM(model=args.model, max_model_len=args.max_model_len,
