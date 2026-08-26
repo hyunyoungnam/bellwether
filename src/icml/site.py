@@ -129,6 +129,10 @@ def detex(t: str) -> str:
     # word-boundary so "\alpha + x" keeps its spacing and "\alphabet" is untouched
     s = _re.sub(r"\\(" + "|".join(sorted(_GREEK, key=len, reverse=True)) + r")(?![a-zA-Z])",
                 lambda m: _GREEK[m.group(1)], s)
+    # Markdown-style emphasis in feed abstracts ("_neurosymbolic models_") is
+    # not TeX subscripting — unwrap it before _x becomes ₓ. Real subscripts
+    # attach to a preceding token (x_i), which the lookbehind protects.
+    s = _re.sub(r"(?<!\w)_([A-Za-z][^_]*?)_(?!\w)", r"\1", s)
     s = _re.sub(r"\^\{([^{}]*)\}", lambda m: _script(m.group(1), _SUP, "^"), s)
     s = _re.sub(r"_\{([^{}]*)\}", lambda m: _script(m.group(1), _SUB, "_"), s)
     s = _re.sub(r"\^(\w)", lambda m: _script(m.group(1), _SUP, "^"), s)
@@ -203,7 +207,34 @@ def edit_span(t: str) -> str:
     """detex + elide, with the guarantee checked rather than assumed."""
     rendered = detex(t)
     short = elide(rendered)
-    return short if is_subsequence(short, rendered) else rendered
+    out = short if is_subsequence(short, rendered) else rendered
+    # The cut (and mid-sentence spans) can leave a lowercase opening —
+    # "despite decades of research…". Recase the first letter ONLY when the
+    # first word is plain lowercase prose; cased tokens (gpt-4.1, mRNA,
+    # α-helix) keep their spelling. A case change is not a deletion, but it
+    # is typography, not content — same class as the hyphen repair.
+    if out and out[0].islower():
+        w0 = out.split(None, 1)[0]
+        if w0.isalpha() and w0.islower():
+            out = out[0].upper() + out[1:]
+    return out
+
+
+# The corpora are English: an extracted term NAME containing CJK ("…in博弈论")
+# is a model artifact, not the paper's vocabulary. Dropped at load, counted
+# nowhere — the extraction rule says names come from the paper, and these
+# provably did not.
+_CJK = _re.compile(r"[\u3040-\u30ff\u3400-\u9fff\uac00-\ud7af\uf900-\ufaff]")
+
+
+def _drop_cjk_terms(f: dict) -> dict:
+    for key in ("methods", "datasets", "tasks"):
+        v = f.get(key)
+        if v:
+            f[key] = [x for x in v if not _CJK.search(x.get("name") or "")]
+    if f.get("domain") and _CJK.search(f["domain"]):
+        f["domain"] = None
+    return f
 
 
 def clean_title(t: str) -> str:
@@ -307,7 +338,7 @@ def build_payload(span_source: str) -> dict:
                 g = GID.get((c.key, r["event_id"]))
                 if g is None:
                     continue
-                facts[g] = r["facts"]
+                facts[g] = _drop_cjk_terms(r["facts"])
                 src_of[g] = "abstract"
     # Field-by-field, not record-by-record. Measured on the 2026 re-run: the
     # abstract pass fills `limitation` for 90% of papers and the full-text pass
@@ -340,6 +371,7 @@ def build_payload(span_source: str) -> dict:
                 g = GID.get((c.key, r["event_id"]))
                 if g is None:
                     continue
+                _drop_cjk_terms(r["facts"])
                 base = facts.get(g)
                 if base is None:
                     facts[g] = r["facts"]
