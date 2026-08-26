@@ -438,8 +438,11 @@ def build_payload(span_source: str) -> dict:
         return data.id(ds_disp.get(dataset_key(n), n))
 
     rows = []
-    order = sorted(papers.values(), key=lambda p: (not p.get("is_oral"),
-                                                   not p.get("is_spotlight"),
+    # Spotlight-first, and ONLY spotlight: oral is stage programming, not a
+    # review decision (ICML 2026 writes Accept (regular/spotlight) and picks
+    # its 168 orals FROM the spotlights that committed to present in person).
+    # ICML 2026 orals are decision-spotlights, so is_spotlight catches them.
+    order = sorted(papers.values(), key=lambda p: (not p.get("is_spotlight"),
                                                    p["title"]))
     for p in order:
         eid = GID[(p["_ck"], p["event_id"])]
@@ -462,7 +465,7 @@ def build_payload(span_source: str) -> dict:
             # different quantities. Read as tiers — regular < spotlight < oral —
             # both years mean the same thing, so `o` is the tier and the raw
             # overlap is disclosed in the Selection hint rather than summed.
-            "o": 1 if p.get("is_oral") else (2 if p.get("is_spotlight") else 0),
+            "o": 2 if p.get("is_spotlight") else 0,
             "c": f.get("contribution_type") or "",
             "d": f.get("domain") or "",
             "p": [meth.id(detex(m["name"])) for m in methods if m.get("role") == "proposed"][:4],
@@ -773,7 +776,7 @@ def build_payload(span_source: str) -> dict:
                 ix = row_of[g]
                 if top["id"] in items_of(rows[ix], ix, top["ax"]):
                     hits.append(rows[ix])
-            hits.sort(key=lambda p2: (p2["o"] != 1, p2["o"] != 2, p2["t"]))
+            hits.sort(key=lambda p2: (p2["o"] != 2, p2["t"]))
             r2["ev"] = [p2["i"] for p2 in hits[:4]]
 
 
@@ -903,8 +906,6 @@ def build_payload(span_source: str) -> dict:
         # Ordered as the payload's `cy` indexes them. Sizes differ by 2x, so any
         # cross-corpus number must be a share of these, never a raw count.
         "corpora": [{"k": c.key, "v": c.venue, "y": c.year,
-                     "os": sum(1 for p in c.read_papers()
-                               if p.get("is_oral") and p.get("is_spotlight")),
                      "n": sum(1 for r in rows if r["cy"] == ci[c.key]),
                      "full": sum(1 for r in rows if r["cy"] == ci[c.key] and r["f"]),
                      "emb": sum(1 for r in rows if r["cy"] == ci[c.key] and r["i"] < N_EMB)}
@@ -1951,7 +1952,7 @@ function card(i){
     : '';
 
   return `<div class="p ${st.sel===i?'sel':''}" data-i="${i}"><div class="body">
-    <div class="ti">${hl(p.t)}${p.o===1?'<span class="badge">Oral</span>':p.o===2?'<span class="badge sp">Spotlight</span>':''}</div>
+    <div class="ti">${hl(p.t)}${p.o===2?'<span class="badge sp">Spotlight</span>':''}</div>
     <div class="meta"><span class="cyst" style="color:var(--v${vhue(p.cy)})">${esc(CY[p.cy].v)} ${CY[p.cy].y}</span>${who}${nearBadge(p)}</div>
     <div class="rule"></div>
     ${parts.length?`<div class="passage">${parts.join(' ')}</div>`
@@ -2001,7 +2002,7 @@ function openPanel(i){
       const q=P[j];
       return `<div class="nb" data-go="${j}">${esc(q.t)}`+
              `<span class="nbm"><b style="color:var(--v${vhue(q.cy)})">${esc(CY[q.cy].v)} ${CY[q.cy].y}</b>`+
-             `${(q.b||q.a)?' · '+esc(q.b||q.a):''}${q.o===1?' · Oral':q.o===2?' · Spotlight':''}</span></div>`;
+             `${(q.b||q.a)?' · '+esc(q.b||q.a):''}${q.o===2?' · Spotlight':''}</span></div>`;
     }).join('');
     $('#pbody').innerHTML=`<div class="pseed">${esc(p.t)}</div>`+
       (rows||'<div style="color:var(--mut);font-size:12px">No neighbours for this paper.</div>');
@@ -2104,7 +2105,7 @@ function cmpPanel(){
       const q=P[j], on=j===CMP.b;
       return `<div class="nb ${on?'cmpon':''}" data-cb="${j}">${esc(q.t)}`+
              `<span class="nbm"><b style="color:var(--v${vhue(q.cy)})">${esc(CY[q.cy].v)} ${CY[q.cy].y}</b>`+
-             `${q.o===1?' · Oral':q.o===2?' · Spotlight':''}${on?' · on the right':''}</span></div>`;
+             `${q.o===2?' · Spotlight':''}${on?' · on the right':''}</span></div>`;
     }).join('');
     $('#pbody').innerHTML=
       `<div class="pseed">${esc(P[a].t)}</div>`+
@@ -2640,13 +2641,12 @@ function railSetCard(res,vset){
     .map(([id,c])=>`<button class="scchip" data-ck="${kind}" data-cid="${id}" title="${esc(name(id))}">${esc(disp(name(id)))}<b>${c}</b></button>`).join('');
   const dch=chips(dk,'d',dname), mch=chips(mk,'m',i=>MV[i]);
   const nf=res.filter(i=>P[i].f).length;
-  // Orals are not a filter — the tier shows as a badge, the list is already
-  // ordered orals first, and this line says how many the selection holds.
-  let nOral=0,nSpot=0;
-  for(const i of res){ if(P[i].o===1)nOral++; else if(P[i].o===2)nSpot++; }
-  const tiers=(nOral||nSpot)
-    ?`<div class="scsub">${nOral?`${nOral} oral${nOral>1?'s':''}`:''}`+
-     `${nSpot?`${nOral?' · ':''}${nSpot} spotlight${nSpot>1?'s':''}`:''} — listed first</div>`:'';
+  // Spotlights are not a filter — the distinction shows as a badge, the list
+  // is already ordered spotlights first, and this line says how many.
+  let nSpot=0;
+  for(const i of res) if(P[i].o===2)nSpot++;
+  const tiers=nSpot
+    ?`<div class="scsub">${nSpot} spotlight${nSpot>1?'s':''} — listed first</div>`:'';
   const V2=slotState();
   const fch=[];
   if(V2.k)fch.push(['k',V2.k]);

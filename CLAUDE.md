@@ -648,8 +648,14 @@ then `setsid nohup python3 scripts/serve.py &`.
   parallel labels; 2026 writes `Accept (regular / spotlight)` and picks its 168
   orals FROM the spotlights — its feed marks every oral a spotlight, which looks
   like a bug and is the source data. Adding raw `is_spotlight` across years adds
-  two different quantities. Normalise to tiers — regular < spotlight < oral,
-  mutually exclusive — which mean the same thing in both years.
+  two different quantities.
+  **Decided 2026-08-26: oral is not a tier and the interface never marks it.**
+  At ICML 2026 the review decisions are regular/spotlight only; oral is stage
+  programming (chosen from spotlights that committed to present in person), so
+  an "Oral" badge would rank logistics. The page shows one distinction —
+  Spotlight, from `is_spotlight`, which is the decision string at every venue
+  that has the tier — and orders results by it. `is_oral` stays in the data
+  files untouched.
 - **Institutions are free text** — `config/institution_aliases.json` merges known
   variants; extend conservatively.
 - **A rate-limited batch must never be recorded as a result.** Writing
