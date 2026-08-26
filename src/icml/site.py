@@ -2615,13 +2615,16 @@ function drawInside(){
   el.hidden=true;
   if(qPending())return;
   const prs=venuePairs();
-  const pr=st.corp===-1?prs[0]:prs.find(p=>p.c1===st.corp||p.c0===st.corp);
-  if(!pr)return;
+  const pool=st.corp===-1?prs:prs.filter(p=>p.c1===st.corp||p.c0===st.corp);
+  if(!pool.length)return;
+  const side=new Map();                       // corpus index -> 0 (earlier) | 1 (latest)
+  for(const p2 of pool){ side.set(p2.c0,0); side.set(p2.c1,1); }
   const hits=queryHits(), keep=st.corp; st.corp=null;
   const S=[new Set(),new Set()];
   for(let i=0;i<P.length;i++){
-    if(P[i].cy!==pr.c0&&P[i].cy!==pr.c1)continue;
-    if(match(i,hits,P[i].cy))S[P[i].cy===pr.c0?0:1].add(i);
+    const sd=side.get(P[i].cy);
+    if(sd===undefined)continue;
+    if(match(i,hits,P[i].cy))S[sd].add(i);
   }
   st.corp=keep;
   const n0=S[0].size, n1=S[1].size;
@@ -2677,8 +2680,10 @@ function drawInside(){
   }).join('')).join('');
   const leg=`<span class="chgtabs insleg">`+Object.values(INS_AX).map(A=>
     `<span class="axtag v${A.hue}">${A.tag}</span>`).join('')+`</span>`;
+  const y0=pool.length===1?pool[0].y0:'previous editions';
+  const y1=pool.length===1?pool[0].y1:'latest editions';
   el.innerHTML=`<div class="inshd">Inside this set — since last year`+
-    `<em>share of the ${n0} (${pr.y0}) and ${n1} (${pr.y1}) papers picked</em>${leg}</div>`+
+    `<em>share of the ${n0} (${y0}) and ${n1} (${y1}) papers picked</em>${leg}</div>`+
     `<div class="chgplot">${grid}${body}</div>${axis}`;
   el.hidden=false;
   el.querySelectorAll('.cr[data-id]').forEach(b=>b.onclick=()=>{
@@ -3166,7 +3171,11 @@ function clearPicks(){
   st.lim=null; STORY=null; CMP=null; closePanel();
 }
 function applyChgRow(k,id){
+  // the row handlers set STORY right beside the pick — clearing the picks
+  // must not eat the banner that describes the new one
+  const keepStory=STORY;
   clearPicks();
+  STORY=keepStory;
   if(k==='t')st.topics.add(id); else if(k==='m')st.meth=id; else st.ds=id;
 }
 function wireChanged(){
