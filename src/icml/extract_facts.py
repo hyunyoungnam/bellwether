@@ -430,17 +430,22 @@ def main() -> int:
     venue = {"icml": "ICML", "neurips": "NeurIPS", "iclr": "ICLR"}[args.venue]
     corpus = Corpus(venue, args.year or None or corpus_default_year())
     fulltext_path = FULLTEXT
+    resolved_path = RESOLVED
     if corpus.is_focus and not args.year:
         out_path = OUT_BY_SOURCE[args.source]
     elif args.source == "fulltext":
         if venue != "ICML":
-            raise SystemExit("fulltext is ICML-only for now — no PDFs are "
-                             "collected for other venues")
-        # Earlier ICML years have no arXiv bridge but do have the PMLR
-        # camera-ready (icml.pmlr), whose rows carry event_id directly.
-        fulltext_path = INTERIM / f"fulltext_pmlr_{args.year}.jsonl"
-        if not fulltext_path.exists():
-            raise SystemExit(f"no {fulltext_path.name} — run `icml.pmlr text` first")
+            # Other venues ride the arXiv bridge with per-corpus files
+            # (resolved_<key>.jsonl from arxiv_match --venue, fulltext_<key>
+            # from pdf_extract --out).
+            fulltext_path = INTERIM / f"fulltext_{corpus.key.replace('-', '_')}.jsonl"
+            resolved_path = RESOLVED.with_name(f"resolved_{corpus.key}.jsonl")
+        else:
+            # Earlier ICML years have no arXiv bridge but do have the PMLR
+            # camera-ready (icml.pmlr), whose rows carry event_id directly.
+            fulltext_path = INTERIM / f"fulltext_pmlr_{args.year}.jsonl"
+            if not fulltext_path.exists():
+                raise SystemExit(f"no {fulltext_path.name} — run `icml.pmlr text` first")
         out_path = corpus.facts_fulltext
     else:
         out_path = corpus.facts
@@ -467,9 +472,10 @@ def main() -> int:
         # arxiv_base -> ICML event_id, so facts attach to the canonical paper
         # record. PMLR rows skip the bridge: they already carry event_id.
         to_event: dict[str, int] = {}
-        for r in read_jsonl(RESOLVED):
-            if r.get("arxiv_base"):
-                to_event.setdefault(r["arxiv_base"], r["event_id"])
+        if resolved_path.exists():
+            for r in read_jsonl(resolved_path):
+                if r.get("arxiv_base"):
+                    to_event.setdefault(r["arxiv_base"], r["event_id"])
         for row in read_jsonl(fulltext_path):
             if not row.get("ok"):
                 continue

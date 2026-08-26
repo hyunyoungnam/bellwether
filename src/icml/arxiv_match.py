@@ -39,19 +39,26 @@ def toks(s: str) -> frozenset[str]:
 
 
 def main() -> int:
-    ap = argparse.ArgumentParser(description="Match ICML papers to the local arXiv index.")
+    ap = argparse.ArgumentParser(description="Match conference papers to the local arXiv index.")
     ap.add_argument("--threshold", type=float, default=0.85,
                     help="minimum Jaccard token overlap for a non-exact match")
     ap.add_argument("--margin", type=float, default=0.05,
                     help="reject if the runner-up is within this of the best (ambiguous)")
     ap.add_argument("--report", action="store_true", help="show sample matches and rejects")
+    ap.add_argument("--venue", default="icml", choices=["icml", "neurips", "iclr"])
+    ap.add_argument("--year", type=int, default=None)
     args = ap.parse_args()
 
     ensure_dirs()
     if not INDEX.exists():
         raise SystemExit("no oai_index.jsonl — run `python3 -m icml.arxiv_harvest` first")
 
-    papers = list(read_jsonl(PROCESSED / "papers.jsonl"))
+    from .corpus import Corpus
+    from .common import FOCUS_YEAR
+    corpus = Corpus({"icml": "ICML", "neurips": "NeurIPS", "iclr": "ICLR"}[args.venue],
+                    args.year or FOCUS_YEAR)
+    out_path = OUT if corpus.is_focus else OUT.with_name(f"resolved_{corpus.key}.jsonl")
+    papers = list(read_jsonl(corpus.papers))
 
     # Exact-title map plus an inverted index on rare-ish tokens, so each paper
     # only scores against plausible candidates rather than the whole corpus.
@@ -129,13 +136,13 @@ def main() -> int:
             n_none += 1
         results.append(row)
 
-    with OUT.open("w", encoding="utf-8") as fh:
+    with out_path.open("w", encoding="utf-8") as fh:
         for r in results:
             fh.write(json.dumps(r, ensure_ascii=False) + "\n")
 
     total = len(results)
     matched = n_exact + n_fuzzy
-    print(f"\nmatched {matched:,}/{total:,} ({matched/total:.1%})")
+    print(f"\nmatched {matched:,}/{total:,} ({matched/total:.1%}) -> {out_path.name}")
     print(f"  exact     {n_exact:,}")
     print(f"  fuzzy     {n_fuzzy:,}  (>= {args.threshold})")
     print(f"  ambiguous {n_ambig:,}  (rejected: runner-up within {args.margin})")

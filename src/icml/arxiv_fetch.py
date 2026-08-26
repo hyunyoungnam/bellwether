@@ -45,19 +45,27 @@ def main() -> int:
     ap = argparse.ArgumentParser(description="Download arXiv PDFs (resumable).")
     ap.add_argument("--limit", type=int, default=0)
     ap.add_argument("--workers", type=int, default=4, help="keep low — arXiv is a shared resource")
+    ap.add_argument("--resolved", default=None,
+                    help="alternate resolved.jsonl (per-corpus match output)")
+    ap.add_argument("--ids", default=None,
+                    help="file of event_ids, one per line — fetch only these papers")
     ap.add_argument("--delay", type=float, default=1.2, help="per-worker sleep between downloads")
     args = ap.parse_args()
 
     ensure_dirs()
     PDF_DIR.mkdir(parents=True, exist_ok=True)
 
-    if not RESOLVED.exists():
-        raise SystemExit("no resolved.jsonl — run `python3 -m icml.arxiv_resolve` first")
+    resolved = Path(args.resolved) if args.resolved else RESOLVED
+    if not resolved.exists():
+        raise SystemExit(f"no {resolved.name} — run `python3 -m icml.arxiv_match` first")
+    only = None
+    if args.ids:
+        only = {int(x) for x in Path(args.ids).read_text().split() if x.strip()}
 
-    # Deduplicate by arxiv_base: two ICML entries can resolve to one preprint.
+    # Deduplicate by arxiv_base: two conference entries can resolve to one preprint.
     targets: dict[str, dict] = {}
-    for r in read_jsonl(RESOLVED):
-        if r.get("arxiv_base"):
+    for r in read_jsonl(resolved):
+        if r.get("arxiv_base") and (only is None or r["event_id"] in only):
             targets.setdefault(r["arxiv_base"], r)
 
     todo = [b for b in targets if not pdf_path(b).exists()]

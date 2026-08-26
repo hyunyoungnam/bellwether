@@ -162,12 +162,15 @@ def main() -> int:
     ap.add_argument("--limit", type=int, default=0)
     ap.add_argument("--workers", type=int, default=16)
     ap.add_argument("--rebuild", action="store_true", help="re-extract everything")
+    ap.add_argument("--out", default=None,
+                    help="alternate output (per-corpus fulltext jsonl)")
     args = ap.parse_args()
 
-    OUT.parent.mkdir(parents=True, exist_ok=True)
+    out = Path(args.out) if args.out else OUT
+    out.parent.mkdir(parents=True, exist_ok=True)
     done: set[str] = set()
-    if OUT.exists() and not args.rebuild:
-        done = {r["arxiv_base"] for r in (json.loads(l) for l in OUT.open() if l.strip())}
+    if out.exists() and not args.rebuild:
+        done = {r["arxiv_base"] for r in (json.loads(l) for l in out.open() if l.strip())}
 
     pdfs = [p for p in sorted(PDF_DIR.glob("*.pdf")) if p.stem not in done]
     if args.limit:
@@ -182,7 +185,7 @@ def main() -> int:
     tot_before = tot_after = 0
 
     mode = "w" if args.rebuild else "a"
-    with OUT.open(mode, encoding="utf-8") as fh, \
+    with out.open(mode, encoding="utf-8") as fh, \
          ProcessPoolExecutor(max_workers=args.workers) as pool:
         for i, row in enumerate(pool.map(extract, pdfs, chunksize=8), 1):
             fh.write(json.dumps(row, ensure_ascii=False) + "\n")
