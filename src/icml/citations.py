@@ -118,6 +118,31 @@ def main() -> int:
             if cg != g2:
                 edges.add((cg, g2))
 
+    # ---- external citations, by arXiv id: the material for "both cite" rows
+    # that live OUTSIDE these six editions. An id cited by a single paper can
+    # never be shared, so only ids with >=2 citing papers ship — that bound
+    # also keeps the title map (from the local OAI index) small.
+    _ARX = re.compile(r"\b(\d{4}\.\d{4,5})(?:v\d+)?\b")
+    ext_of: dict[int, set] = {}
+    for g, refs in refs_of.items():
+        ids = {m for r in refs for m in _ARX.findall(r)}
+        if ids:
+            ext_of[g] = ids
+    from collections import Counter as _C
+    cnt = _C(i for ids in ext_of.values() for i in ids)
+    keep = {i for i, c in cnt.items() if c >= 2}
+    titles_ext = {}
+    oai = Path("data/raw/arxiv/oai_index.jsonl")
+    if oai.exists():
+        for line in oai.open():
+            r4 = json.loads(line)
+            b4 = r4.get("arxiv_base")
+            if b4 in keep:
+                titles_ext[b4] = r4["title"][:160]
+    ext_out = {str(g): sorted(i for i in ids if i in titles_ext)
+               for g, ids in ext_of.items()}
+    ext_out = {g: v for g, v in ext_out.items() if v}
+
     out = sorted(edges)
     citing = len({a for a, _ in out})
     cited = len({b for _, b in out})
@@ -128,9 +153,13 @@ def main() -> int:
         "sources": [f.name for f in src_files],
         "papers_with_refs": len(refs_of),
         "edges": [list(e) for e in out],
+        "ext": ext_out,
+        "ext_titles": titles_ext,
     }, indent=None)
     print(f"\n{len(out):,} edges — {citing:,} papers cite into the corpus, "
           f"{cited:,} papers are cited; {generic} generic titles excluded")
+    print(f"external: {sum(len(v) for v in ext_out.values()):,} arXiv-id cites "
+          f"across {len(ext_out):,} papers; {len(titles_ext):,} shared-candidate titles")
 
     if args.report:
         import random

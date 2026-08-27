@@ -818,6 +818,15 @@ Still weak:
   Cards fold top/middle/bottom (2026-08-27): title-venue-year / passage /
   terms; the list default hides only the middle, a click unfolds it — the
   terms alone answer "which problem, what name, on what, which data".
+- **The compare view says what the two papers BOTH CITE (2026-08-27).** Below
+  the two cards: shared citations, in-corpus rows first (venue-hued, a click
+  swaps the right card to the shared ancestor), then shared arXiv references
+  (title from the local OAI index, linking out). Five rows, total disclosed.
+  Data: `citations.json` (`edges` in-corpus + `ext`/`ext_titles` by arXiv id,
+  ids kept only when >=2 papers cite them), shipped as the on-demand
+  `cites.json` part. A retained governor-cite name in a passage links the
+  same way: in-corpus -> compare ("the paper it cites"), arXiv id -> out,
+  no guess otherwise.
 - **Picking a similar paper opens a side-by-side compare (2026-08-25).** The
   Similar panel's neighbour click no longer scrolls-or-walks: it opens a
   two-card split view — the read paper left, the picked one right, a "both

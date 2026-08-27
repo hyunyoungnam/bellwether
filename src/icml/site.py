@@ -222,10 +222,11 @@ _CITESQ = _re.compile(r"\s*\[[^\]]*?et al\.[^\]]*?(?:19|20)\d{2}[a-z]?\]")
 _CITEIN = _re.compile(r";\s*[^();]*?(?:et al\.?,?|,)\s*(?:19|20)\d{2}[a-z]?(?=\s*\))")
 # When the cite is the OBJECT of a governor phrase ("following (Sengupta et
 # al. 2018), we..."), deleting it breaks the sentence — keep the name, shed
-# only the parens and the year (still pure deletion).
+# parens and year (still pure deletion). The kept name then LINKS (see
+# cite_need below): to the cited paper's card in-corpus, to arXiv outside.
 _CITEGOV = _re.compile(
     r"(?<=\b)(following|based on|building on|inspired by|extends|extending|"
-    r"adapted from|adopted from|akin to|similar to|due to)\s+\(\s*"
+    r"adapted from|adopted from|akin to|similar to|due to|motivated by)\s+\(\s*"
     r"([^();]*?\bet al\.?|[A-Z][\w&\- ]{2,40}?),?\s*(?:19|20)\d{2}[a-z]?\s*\)", _re.I)
 # the extraction schema caps fields at 320 chars, which can cut a citation
 # cluster mid-list — an unclosed cite-cluster at the end of the span is dropped
@@ -260,6 +261,9 @@ def edit_span(t: str) -> str:
     rendered = _CITESQ.sub("", rendered)
     rendered = _CITEYR.sub("", _CITEIN.sub("", _CITEAY.sub("", rendered)))
     rendered = _CITEEOL.sub("", rendered)
+    # deletions can orphan punctuation: ", we design…" / "directly, , we"
+    rendered = _re.sub(r"^\s*[,;:]\s*", "", rendered)
+    rendered = _re.sub(r",\s*([,;.])", r"\1", rendered)
     short = elide(rendered)
     out = short if is_subsequence(short, rendered) else rendered
     # The cut (and mid-sentence spans) can leave a lowercase opening —
@@ -483,10 +487,8 @@ def build_payload(span_source: str) -> dict:
     # mechanism / numbers / ablation / own_limits, every sentence verbatim and
     # verified. Enriches single cards only — nothing counts, sorts or filters
     # on these fields (Guardrail 5).
-    # Governor-cites ("following (Sengupta et al. 2018)") keep their name on
-    # the card; here we remember (gid, name, year) so the name can LINK — to
-    # the cited paper's card when it lives in this corpus, to arXiv when the
-    # reference carries an id, to nothing otherwise.
+    # Governor-cites keep their name on the card; remember (gid, name, year)
+    # so the name can link — in-corpus to the cited card, else to arXiv.
     cite_need: dict[int, list] = defaultdict(list)
 
     def scan_cites(g2, texts):
@@ -669,7 +671,8 @@ def build_payload(span_source: str) -> dict:
             "f": 1 if src_of.get(eid) == "fulltext" else 0,
         })
 
-    # ---- resolve governor-cites against each citing paper's references ----
+
+    # ---- resolve governor-cites against the citing paper's references ----
     cite_links: dict[int, list] = {}
     if cite_need:
         from .citations import norm as _cnorm
@@ -679,20 +682,19 @@ def build_payload(span_source: str) -> dict:
             t2 = _cnorm(p2["title"])
             if g2 is not None and len(t2) >= 25:
                 tindex.append((" " + t2 + " ", g2))
-        # references only for the papers that need them
         need_gids = set(cite_need)
-        refs_of: dict[int, list] = {}
+        refs_need: dict[int, list] = {}
         for ftf in sorted(INTERIM.glob("fulltext*.jsonl")):
-            key = (ftf.stem.replace("fulltext_html_", "").replace("fulltext_", "")
-                   .replace("_", "-"))
-            res = ROOT / "data/raw/arxiv" / (f"resolved_{key}.jsonl" if key else "x")
-            if not res.exists():
-                res = ROOT / "data/raw/arxiv/resolved.jsonl"
-                key = "icml-2026"
+            key2 = (ftf.stem.replace("fulltext_html_", "").replace("fulltext_", "")
+                    .replace("_", "-"))
+            res2 = ROOT / "data/raw/arxiv" / (f"resolved_{key2}.jsonl" if key2 else "x")
+            if not res2.exists():
+                res2 = ROOT / "data/raw/arxiv/resolved.jsonl"
+                key2 = "icml-2026"
             to_gid = {}
-            for r2 in read_jsonl(res):
+            for r2 in read_jsonl(res2):
                 if r2.get("arxiv_base"):
-                    g3 = GID.get((key, r2["event_id"]))
+                    g3 = GID.get((key2, r2["event_id"]))
                     if g3 in need_gids:
                         to_gid[r2["arxiv_base"]] = g3
             if not to_gid:
@@ -700,11 +702,11 @@ def build_payload(span_source: str) -> dict:
             for row2 in read_jsonl(ftf):
                 g3 = to_gid.get(row2.get("arxiv_base"))
                 if g3 is not None and row2.get("ok") and row2.get("references"):
-                    refs_of.setdefault(g3, row2["references"])
-        _ARX = _re.compile(r"\b(\d{4}\.\d{4,5})(?:v\d+)?\b")
+                    refs_need.setdefault(g3, row2["references"])
+        _ARX2 = _re.compile(r"\b(\d{4}\.\d{4,5})(?:v\d+)?\b")
         for g2, wants in cite_need.items():
             out2 = []
-            refs = refs_of.get(g2) or []
+            refs = refs_need.get(g2) or []
             for nm, yr in wants:
                 surname = _cnorm(nm.split("&")[0].replace("et al", "")).split()
                 surname = surname[0] if surname else ""
@@ -717,13 +719,22 @@ def build_payload(span_source: str) -> dict:
                 if tg is not None and tg != g2:
                     out2.append([nm, tg, None])
                 else:
-                    m2 = _ARX.search(hit)
+                    m2 = _ARX2.search(hit)
                     if m2:
                         out2.append([nm, None, m2.group(1)])
             if out2:
                 cite_links[g2] = out2
 
+    # Intra-corpus citations (icml.citations): cited-gid list per citing paper,
+    # shipped with the sentences — the compare view intersects two of these
+    # for its "both cite" strip. Coverage is the six editions, said on screen.
+    _CIT = PROCESSED / "citations.json"
+    cited_of: dict[int, list] = defaultdict(list)
+    if _CIT.exists():
+        for a3, b3 in load_json(_CIT)["edges"]:
+            cited_of[a3].append(b3)
     for r in rows:
+        r["cg"] = cited_of.get(r["i"], None) and cited_of[r["i"]][:80]
         r["cl"] = cite_links.get(r["i"])
 
     nb = load_json(NEIGHBORS) if NEIGHBORS.exists() else None
@@ -1695,8 +1706,17 @@ background:none;cursor:pointer;color:var(--ink2)}
 .p.cpt .terms{margin-top:8px}
 .p.cpt:hover{border-color:var(--acc)}
 .p.exp{cursor:pointer}
-.citelink{color:inherit;text-decoration:underline dotted var(--mut);text-underline-offset:2px;cursor:pointer}
-.citelink:hover{color:var(--acc);text-decoration-color:var(--acc)}
+.bcbox{margin-top:16px;background:var(--card);border:1px solid var(--ring);border-radius:12px;padding:13px 16px}
+.bchd{font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--mut);margin-bottom:6px}
+.bchd em{font-style:normal;font-weight:500;letter-spacing:0;text-transform:none;margin-left:8px}
+.bcite{display:flex;align-items:baseline;gap:8px;width:100%;text-align:left;border:0;background:none;
+  font:inherit;font-size:12.5px;color:var(--ink);padding:6px 0;border-bottom:1px solid var(--line);cursor:pointer}
+.bcite:last-child{border-bottom:0}
+.bcite:hover span{color:var(--acc)}
+.bcite i{flex:0 0 9px;height:9px;border-radius:2px;align-self:center}
+.bcite em{font-style:normal;color:var(--mut);font-size:11px;white-space:nowrap}
+.bcite.ext{text-decoration:none}
+.bcite.ext i{background:var(--line)}
 .famchip.sel .per{color:#fff}
 .pfoot{display:flex;align-items:center;gap:8px;margin-top:7px}
 
@@ -2194,7 +2214,7 @@ function card(i,full){
   const p=P[i];
   const sx=SPX[p.i], spReady=!!sx;
   const pn=sx?sx[0]:[], pL=sx?sx[1]:null, pK=sx?sx[2]:null, pR=sx?sx[3]:null,
-        pc1=sx?sx[4]:null, pD=sx?sx[5]:null, pCl=sx?sx[6]:null;
+        pc1=sx?sx[4]:null, pD=sx?sx[5]:null, pCl=sx?sx[7]:null;
   const names=(arr,fn)=>arr.map(x=>abbr(fn(x))).join(', ');
   // One passage, not three labelled rows. The three sentences are the paper's,
   // in the order a reader needs them, and the colour says which question each
@@ -2337,6 +2357,41 @@ function sharedChips(a,b){
           d?`<span class="tm eff"><b>data</b>${d}</span>`:'',
           t?`<span class="tm"><b>tasks</b>${t}</span>`:''].filter(Boolean).join('');
 }
+// What the two compared papers BOTH cite — in-corpus rows first (a click
+// swaps the right card to the shared ancestor), then shared arXiv references
+// from outside these editions. Five rows in all.
+let CX=null, CX_P=null;
+function ensureCites(){
+  return CX_P??=part('cites.json').then(d=>{ CX=d; }).catch(()=>{ CX_P=null; });
+}
+function bothCiteHTML(){
+  const A=SPX[P[CMP.a].i], B=SPX[P[CMP.b].i];
+  if(!A||!B)return '';
+  const cb=new Set(B[6]||[]);
+  const inSh=(A[6]||[]).filter(g=>cb.has(g));
+  let extSh=[];
+  if(CX){
+    const xb=new Set(CX.x[String(P[CMP.b].i)]||[]);
+    extSh=(CX.x[String(P[CMP.a].i)]||[]).filter(id=>xb.has(id));
+  } else ensureCites().then(()=>{ if(CMP)renderCmp(); });
+  const total=inSh.length+extSh.length;
+  if(!total)return '';
+  const rows=[];
+  for(const g of inSh.slice(0,5)){
+    const j=BYID[g]; if(j===undefined)continue;
+    const q=P[j];
+    rows.push(`<button class="bcite" data-bc="${j}"><i style="background:var(--v${vhue(q.cy)})"></i>`+
+      `<span>${esc(q.t)}</span><em>${esc(CY[q.cy].v)} ${CY[q.cy].y}</em></button>`);
+  }
+  for(const id of extSh.slice(0,Math.max(0,5-rows.length))){
+    const t2=(CX&&CX.t[id])||('arXiv:'+id);
+    rows.push(`<a class="bcite ext" href="https://arxiv.org/abs/${id}" target="_blank" rel="noopener">`+
+      `<i></i><span>${esc(t2)}</span><em>arXiv ↗</em></a>`);
+  }
+  return `<div class="bcbox"><div class="bchd">Both cite`+
+    `<em>${inSh.length?'these editions first, then shared arXiv references':'shared arXiv references'}`+
+    `${total>5?` · showing 5 of ${total}`:''}</em></div>`+rows.join('')+`</div>`;
+}
 function renderCmp(){
   if(!CMP)return;
   // rescue the legend node FIRST — it may live inside #results (highlight
@@ -2372,7 +2427,7 @@ function renderCmp(){
     `<div class="cmpgrid">`+
     `<div><div class="cmptag">the paper you were reading</div>${card(CMP.a,true)}</div>`+
     `<div><div class="cmptag">${CMP.why==='cite'?'the paper it cites':'the similar paper you picked'}</div>${card(CMP.b,true)}</div>`+
-    `</div>`;
+    `</div>`+bothCiteHTML();
   // the colour key sits right above the two cards it explains
   { const lg=$('#legend');
     if(lg){ el.querySelector('.cmpgrid').before(lg); lg.hidden=false; } }
@@ -2383,6 +2438,8 @@ function renderCmp(){
   el.querySelectorAll('[data-sim]').forEach(b=>b.onclick=ev=>{ ev.stopPropagation();
     const j=+b.dataset.sim; CMP=null; render(); openPanel(j); });
   wireCites(el);
+  el.querySelectorAll('[data-bc]').forEach(b=>b.onclick=()=>{
+    CMP={a:CMP.a,b:+b.dataset.bc,why:'cite'}; renderCmp(); });
   el.querySelectorAll('[data-mail]').forEach(b=>b.onclick=async ev=>{
     ev.stopPropagation();
     const addr=b.dataset.mail, was=b.textContent;
@@ -3512,9 +3569,14 @@ def main() -> int:
     for r in payload["papers"]:
         spans_by[keys_by_ci[r["cy"]]][str(r["i"])] = [
             r.pop("n"), r.pop("L"), r.pop("K"), r.pop("R"), r.pop("c1"),
-            r.pop("D"), r.pop("cl")]
+            r.pop("D"), r.pop("cg"), r.pop("cl")]
     for k, v in spans_by.items():
         parts[f"spans_{k}.json"] = dump(v)
+    _CIT2 = PROCESSED / "citations.json"
+    if _CIT2.exists():
+        _cd = load_json(_CIT2)
+        parts["cites.json"] = dump({"x": _cd.get("ext") or {},
+                                    "t": _cd.get("ext_titles") or {}})
     parts["search.json"] = dump({"terms": payload.pop("terms"),
                                  "lims": payload.pop("lims")})
     parts["emb.json"] = dump({"emb": payload.pop("emb"),
