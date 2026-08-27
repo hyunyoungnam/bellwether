@@ -801,13 +801,20 @@ Still weak:
 - **A venue's cold screen leads with what the venue put forward (2026-08-26).**
   The corpus empty state lists the venue-declared highlight set (spotlights /
   ICLR orals) captioned "the venue's own selection, not ours", with coverage.
-  Highlight papers carry a DEEP section — `extract_facts --source deep` pulls
+  Highlight papers carry a DEEP pass — `extract_facts --source deep` pulls
   mechanism / numbers / ablation / own_limits as verbatim verified sentences
-  from the full paper into `facts_deep_<key>.jsonl`; the card shows them
-  collapsed under "from the full paper". Guardrail 5 still binds: nothing
-  counts, sorts or filters on deep fields. Measured on ICML 2026 spotlights:
-  mechanism 97%, numbers 86%, ablation 44%, own_limits 39% of 418 papers,
-  span rejection 5.8%.
+  into `facts_deep_<key>.jsonl`. Display (revised 2026-08-27): full text
+  serves the PASSAGE, never a side ledger — the mechanism sentences join the
+  yellow wash inside the passage (deduped by token overlap); numbers /
+  ablation / own_limits stay on disk unused for now. Every body sentence
+  passes the STANDALONE gate (site.py `standalone()`): no document deixis
+  ("Lines 11-14", "Figure 2", "as described below"), notation below a small
+  density bar — an equation on a card is the reading the reader came to
+  skip. A failing sentence leaves the field to the abstract pass. Guardrail
+  5 still binds: nothing counts, sorts or filters on deep fields.
+  Cards fold top/middle/bottom (2026-08-27): title-venue-year / passage /
+  terms; the list default hides only the middle, a click unfolds it — the
+  terms alone answer "which problem, what name, on what, which data".
 - **Picking a similar paper opens a side-by-side compare (2026-08-25).** The
   Similar panel's neighbour click no longer scrolls-or-walks: it opens a
   two-card split view — the read paper left, the picked one right, a "both
