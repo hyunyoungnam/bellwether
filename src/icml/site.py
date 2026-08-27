@@ -203,9 +203,12 @@ def is_subsequence(short: str, source: str) -> bool:
     return True
 
 
+_CITENUM = _re.compile(r"\s*\[\d+(?:\s*,\s*\d+)*\]")
+
+
 def edit_span(t: str) -> str:
     """detex + elide, with the guarantee checked rather than assumed."""
-    rendered = detex(t)
+    rendered = _CITENUM.sub("", detex(t))   # a card cannot follow [30, 16]
     short = elide(rendered)
     out = short if is_subsequence(short, rendered) else rendered
     # The cut (and mid-sentence spans) can leave a lowercase opening —
@@ -2039,9 +2042,13 @@ function card(i,full){
   // extend the yellow: HOW it works, still the paper's own words in the same
   // wash — full text enriches the passage itself, never a side ledger.
   if(open&&pD&&pD[0]){
-    const nrm=s2=>s2.toLowerCase().replace(/\s+/g,' ').trim();
+    const tk=s2=>new Set(s2.toLowerCase().match(/[a-z]{4,}/g)||[]);
+    const ov=(A,B)=>{let c=0;for(const w of A)if(B.has(w))c++;return c/Math.max(Math.min(A.size,B.size),1);};
+    const seen=change?[tk(change)]:[];
     for(const m of pD[0].slice(0,2)){
-      if(change&&(nrm(m)===nrm(change)||nrm(change).includes(nrm(m))||nrm(m).includes(nrm(change))))continue;
+      const T2=tk(m);
+      if(seen.some(S2=>ov(T2,S2)>=0.6))continue;   // says the same thing again
+      seen.push(T2);
       parts.push(`<span class="hl new">${annotate(m,p,true)}</span>`);
     }
   }
