@@ -2380,6 +2380,9 @@ function groupsFor(idx){
 }
 
 const CY=D.corpora, CYN=CY.map(c=>c.n);
+// which corpora are their venue's LATEST edition — "this year's" means the
+// venue's current edition, not the raw year (NeurIPS 2025 is current)
+const CY_LATEST=CY.map(c=>c.y===Math.max(...CY.filter(c2=>c2.v===c.v).map(c2=>c2.y)));
 // ---- The landing: which conference, and what moved since last year ---------
 // The reader arrives around a conference. The venue blurbs are interface copy —
 // one factual line each, no adjectives; every number beside them is counted from
@@ -2910,7 +2913,13 @@ function render(){
   { const rt=$('#rtr'); if(rt){ rt.innerHTML=railSetCard(res); wireRtr(rt); } }
 
   const extra=nearby();
-  const show=res.slice(0,MAX_SHOWN);
+  // Relevance picks the set; recency orders it. The venue's current edition
+  // leads, highlights first within each, titles within that. A live search
+  // keeps the engine's relevance order — the one case a true ranking exists.
+  const live=st.qraw&&!MQ.down&&MQ.q===st.qraw&&MQ.rank;
+  const ordered=live?res:[...res].sort((a2,b2)=>
+    (CY_LATEST[P[b2].cy]-CY_LATEST[P[a2].cy])||(P[b2].o-P[a2].o)||(a2-b2));
+  const show=ordered.slice(0,MAX_SHOWN);
   // No "show more": nobody reads to the end of 6,637. Past the cap the answer is
   // to narrow, and the count above says how much is not on screen.
   const extraShown=extra.slice(0, res.length>=MAX_SHOWN?0:Math.min(extra.length,MAX_SHOWN-res.length));
