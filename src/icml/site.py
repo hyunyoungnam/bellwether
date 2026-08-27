@@ -215,6 +215,15 @@ _CITEAY = _re.compile(
     r"(?:\s*;\s*(?:" + _SEG + r"|(?:19|20)\d{2}[a-z]?))*"
     r"(?:,[^();]{0,40})?\s*\)")
 _CITEYR = _re.compile(r"(?<=[a-z.])\s+\((?:19|20)\d{2}[a-z]?\)")
+# square-bracket author cites, possibly nested in parens: "(SPPO [Wu et al., 2024])"
+_CITESQ = _re.compile(r"\s*\[[^\]]*?et al\.[^\]]*?(?:19|20)\d{2}[a-z]?\]")
+# an acronym introduced beside its cite keeps the acronym: "(PPI; Angelopoulos
+# et al., 2023)" -> "(PPI)"
+_CITEIN = _re.compile(r";\s*[^();]*?(?:et al\.?,?|,)\s*(?:19|20)\d{2}[a-z]?(?=\s*\))")
+# the extraction schema caps fields at 320 chars, which can cut a citation
+# cluster mid-list — an unclosed cite-cluster at the end of the span is dropped
+_CITEEOL = _re.compile(
+    r"\s*\((?:e\.g\.,?\s*)?[^()]*?(?:et al\.?,?|,)\s*(?:19|20)\d{2}[a-z]?[^()]*$")
 
 # Body sentences are written for in-paper context; abstract sentences are
 # self-contained by genre. A full-text sentence may enter a card only if it
@@ -240,7 +249,9 @@ def standalone(t: str) -> bool:
 def edit_span(t: str) -> str:
     """detex + elide, with the guarantee checked rather than assumed."""
     rendered = _CITENUM.sub("", detex(t))   # a card cannot follow [30, 16]
-    rendered = _CITEYR.sub("", _CITEAY.sub("", rendered))
+    rendered = _CITESQ.sub("", rendered)
+    rendered = _CITEYR.sub("", _CITEIN.sub("", _CITEAY.sub("", rendered)))
+    rendered = _CITEEOL.sub("", rendered)
     short = elide(rendered)
     out = short if is_subsequence(short, rendered) else rendered
     # The cut (and mid-sentence spans) can leave a lowercase opening —
