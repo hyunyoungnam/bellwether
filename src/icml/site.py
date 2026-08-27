@@ -204,6 +204,15 @@ def is_subsequence(short: str, source: str) -> bool:
 
 
 _CITENUM = _re.compile(r"\s*\[\d+(?:\s*,\s*\d+)*\]")
+# Author-year clusters — "(Fatemi et al., 2024; Huang et al., 2024a)" — are
+# noise a card reader cannot follow. Each segment needs a comma or "et al."
+# before its year, so "(introduced in 2017)" survives. Bare "(2024)" after a
+# name is the same citation in inline form.
+_CITEAY = _re.compile(
+    r"\s*\((?:e\.g\.,?\s*|cf\.\s*|see\s+)?"
+    r"[^()]*?(?:et al\.?,?|,)\s*(?:19|20)\d{2}[a-z]?"
+    r"(?:\s*;[^()]*?(?:et al\.?,?|,)\s*(?:19|20)\d{2}[a-z]?)*\s*\)")
+_CITEYR = _re.compile(r"(?<=[a-z.])\s+\((?:19|20)\d{2}[a-z]?\)")
 
 # Body sentences are written for in-paper context; abstract sentences are
 # self-contained by genre. A full-text sentence may enter a card only if it
@@ -229,6 +238,7 @@ def standalone(t: str) -> bool:
 def edit_span(t: str) -> str:
     """detex + elide, with the guarantee checked rather than assumed."""
     rendered = _CITENUM.sub("", detex(t))   # a card cannot follow [30, 16]
+    rendered = _CITEYR.sub("", _CITEAY.sub("", rendered))
     short = elide(rendered)
     out = short if is_subsequence(short, rendered) else rendered
     # The cut (and mid-sentence spans) can leave a lowercase opening —
