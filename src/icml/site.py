@@ -418,7 +418,15 @@ def build_payload(span_source: str) -> dict:
                 _drop_cjk_terms(r["facts"])
                 base = facts.get(g)
                 if base is None:
-                    facts[g] = r["facts"]
+                    # no abstract-pass record to lead: adopt wholesale, but the
+                    # standalone gate still guards every span field
+                    f2 = r["facts"]
+                    for k in ("limitation", "key_change", "result_claim"):
+                        if f2.get(k) and not standalone(f2[k]):
+                            f2[k] = None
+                    f2["novelty_spans"] = [x for x in (f2.get("novelty_spans") or [])
+                                           if standalone(x)]
+                    facts[g] = f2
                     src_of[g] = "fulltext"
                     n_full += 1
                     continue
