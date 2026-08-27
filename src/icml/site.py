@@ -208,10 +208,12 @@ _CITENUM = _re.compile(r"\s*\[\d+(?:\s*,\s*\d+)*\]")
 # noise a card reader cannot follow. Each segment needs a comma or "et al."
 # before its year, so "(introduced in 2017)" survives. Bare "(2024)" after a
 # name is the same citation in inline form.
+_SEG = (r"[^();]*?(?:et al\.?,?|,)\s*(?:[A-Z][\w]{1,12}\s+)?"
+        r"(?:19|20)\d{2}[a-z]?(?:;[a-z])?")
 _CITEAY = _re.compile(
-    r"\s*\((?:e\.g\.,?\s*|cf\.\s*|see\s+)?"
-    r"[^()]*?(?:et al\.?,?|,)\s*(?:19|20)\d{2}[a-z]?"
-    r"(?:\s*;[^()]*?(?:et al\.?,?|,)\s*(?:19|20)\d{2}[a-z]?)*\s*\)")
+    r"\s*\((?:e\.g\.,?\s*|cf\.\s*|see\s+)?" + _SEG +
+    r"(?:\s*;\s*(?:" + _SEG + r"|(?:19|20)\d{2}[a-z]?))*"
+    r"(?:,[^();]{0,40})?\s*\)")
 _CITEYR = _re.compile(r"(?<=[a-z.])\s+\((?:19|20)\d{2}[a-z]?\)")
 
 # Body sentences are written for in-paper context; abstract sentences are
