@@ -192,6 +192,11 @@ Rules, in order of importance:
      beginning "However,", "Existing", "Prior work", or "Despite". If the text
      only asserts that a problem is hard, and never says what current methods get
      wrong, return null.
+     The sentence must NAME what fails. A sentence whose subject is an
+     unresolved reference — "this view", "these methods", "such approaches",
+     "it" — reads as nothing when shown alone. If the naming sentence exists,
+     pick it; if every candidate only points ("We show that this view is not
+     accurate"), return null rather than an orphaned pointer.
    - `key_change`  : the sentence that says what this paper does DIFFERENTLY —
      the mechanism, not the claim. Prefer "we replace A with B" / "instead of A,
      we B" over "we propose X, a novel framework".
