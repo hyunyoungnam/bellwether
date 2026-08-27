@@ -1542,23 +1542,10 @@ background:none;cursor:pointer;color:var(--ink2)}
 
 .hlhd{font-size:15px;font-weight:700;margin:2px 0 12px;color:var(--ink)}
 .hlhd em{display:block;font-style:normal;font-weight:500;font-size:11.5px;color:var(--mut);margin-top:3px}
-details.deep{margin-top:9px;border-top:1px dashed var(--line);padding-top:7px}
-details.deep summary{cursor:pointer;font-size:10.5px;letter-spacing:.04em;text-transform:uppercase;
-  color:var(--mut);list-style:none}
-details.deep summary::before{content:'▸ ';color:var(--mut)}
-details.deep[open] summary::before{content:'▾ '}
-details.deep summary::-webkit-details-marker{display:none}
-.dp{margin-top:8px;font-size:12.5px;line-height:1.55;color:var(--ink2)}
-.dp b{display:block;font-size:9.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--mut);
-  font-weight:700;margin-bottom:2px}
-.p.cpt{cursor:pointer}
-.p.cpt .body{padding:11px 18px}
-.p.cpt .ti{font-size:13.5px;margin-bottom:0}
+.p.cpt{cursor:pointer;padding:14px 30px 11px}
+.p.cpt .ti{font-size:14px}
+.p.cpt .terms{margin-top:8px}
 .p.cpt:hover{border-color:var(--acc)}
-.cline{display:flex;gap:4px 16px;margin-top:5px;font-size:11.5px;color:var(--ink2);
-  overflow:hidden;white-space:nowrap}
-.cline .tm{overflow:hidden;text-overflow:ellipsis;flex:0 1 auto;min-width:0}
-.cptfall{overflow:hidden;text-overflow:ellipsis;display:block}
 .chv{font-style:normal;color:var(--mut);margin-right:7px;font-size:11px;cursor:pointer}
 .p.exp .chv:hover{color:var(--acc)}
 .famchip.sel .per{color:#fff}
@@ -2028,42 +2015,14 @@ function ensureSpans(cys){
     }).catch(()=>{SP_LOADED[k]=false;});
   }
 }
-// The deep section: four more of the paper's own sentences, full-paper source,
-// shown only on the venue's highlight papers. Collapsed by default — the card
-// stays scannable; the depth is one click away.
-function deepHTML(pD){
-  if(!pD||!pD.some(a2=>a2&&a2.length))return '';
-  const SEC=[['how it works',0],['the numbers',1],['what the ablation showed',2],['limits the authors state',3]];
-  const body=SEC.map(([lab,ix])=>(pD[ix]&&pD[ix].length)
-    ?`<div class="dp"><b>${lab}</b>${pD[ix].map(s2=>`<span>${esc(s2)}</span>`).join(' ')}</div>`:'').join('');
-  return `<details class="deep"><summary>from the full paper — the mechanism, the numbers, the admitted limits</summary>${body}</details>`;
-}
-// Collapsed by default: the list scans as "which problem - what name - on
-// what - which data", one row per paper; a click unfolds the highlighter card
-// in place. No toggle to remember — the fold IS the reading flow.
+// The card is top / middle / bottom: title-venue-year, the edited passage,
+// the extracted terms. Folded (the list default) hides only the MIDDLE — the
+// terms alone say which problem, what name, on what, which data. A click
+// unfolds the passage in place; the chevron refolds it.
 const EXP=new Set();
 
-function cardCompact(i){
-  const p=P[i];
-  const term=(lab,v,cls)=>v?`<span class="tm ${cls}"><b>${lab}</b>${hl(v)}</span>`:'';
-  const names=(arr,fn)=>arr.map(x=>abbr(fn(x))).join(', ');
-  let line=[term('tasks',names(p.s,tname),''),
-            term('proposes',names(p.p,mname),'new'),
-            term('builds on',names(p.u,mname),''),
-            term('data',names(p.k,dname),'eff')].filter(Boolean).join('');
-  if(!line){
-    const sx=SPX[p.i];
-    const y=(sx&&(sx[2]||(sx[0]||[])[0]))||'';
-    line=y?`<span class="hl new cptfall">${esc(y)}</span>`:'';
-  }
-  return `<div class="p cpt" data-i="${i}"><div class="body">
-    <div class="ti"><i class="chv">▸</i>${hl(p.t)}${p.o===2?`<span class="badge sp">${esc(CY[p.cy].hw||'Spotlight')}</span>`:''}
-      <span class="cyst" style="color:var(--v${vhue(p.cy)})">${esc(CY[p.cy].v)} ${CY[p.cy].y}</span></div>
-    ${line?`<div class="cline">${line}</div>`:''}
-  </div></div>`;
-}
 function card(i,full){
-  if(!full&&!EXP.has(i))return cardCompact(i);
+  const open=full||EXP.has(i);
   const p=P[i];
   const sx=SPX[p.i], spReady=!!sx;
   const pn=sx?sx[0]:[], pL=sx?sx[1]:null, pK=sx?sx[2]:null, pR=sx?sx[3]:null,
@@ -2076,6 +2035,16 @@ function card(i,full){
   if(pL)parts.push(`<span class="hl why">${markLim(annotate(pL,p,true))}</span>`);
   const change=pK||pn[0]||'';
   if(change)parts.push(`<span class="hl new">${annotate(change,p,true)}</span>`);
+  // The deep pass's mechanism sentences (highlight papers, full-paper source)
+  // extend the yellow: HOW it works, still the paper's own words in the same
+  // wash — full text enriches the passage itself, never a side ledger.
+  if(open&&pD&&pD[0]){
+    const nrm=s2=>s2.toLowerCase().replace(/\s+/g,' ').trim();
+    for(const m of pD[0].slice(0,2)){
+      if(change&&(nrm(m)===nrm(change)||nrm(change).includes(nrm(m))||nrm(m).includes(nrm(change))))continue;
+      parts.push(`<span class="hl new">${annotate(m,p,true)}</span>`);
+    }
+  }
   if(pR)parts.push(`<span class="hl eff">${annotate(pR,p,true)}</span>`);
 
   // The extracted terms are part of the summary, not a footnote under it.
@@ -2098,22 +2067,27 @@ function card(i,full){
         : `${esc(lead)}${etal}`)
     : '';
 
-  return `<div class="p ${st.sel===i?'sel':''} ${full?'':'exp'}" data-i="${i}"><div class="body">
-    <div class="ti">${full?'':'<i class="chv">▾</i>'}${hl(p.t)}${p.o===2?`<span class="badge sp">${esc(CY[p.cy].hw||'Spotlight')}</span>`:''}</div>
-    <div class="meta"><span class="cyst" style="color:var(--v${vhue(p.cy)})">${esc(CY[p.cy].v)} ${CY[p.cy].y}</span>${who}${nearBadge(p)}</div>
-    <div class="rule"></div>
-    ${parts.length?`<div class="passage">${parts.join(' ')}</div>`
+  const passage=open
+    ?`<div class="rule"></div>`+
+     (parts.length?`<div class="passage">${parts.join(' ')}</div>`
       :spReady?`<div class="passage miss">no sentence in this paper states what is new</div>`
-      :`<div class="passage miss">loading the paper's own sentences…</div>`}
-    ${terms?`<div class="terms">${terms}</div>`:''}
-    ${deepHTML(pD)}
-    <div class="foot">
+      :`<div class="passage miss">loading the paper's own sentences…</div>`)
+    :'';
+  const foot=open
+    ?`<div class="foot">
       <div class="fx"></div>
       <div style="display:flex;gap:7px">
         ${p.w?`<a class="simbtn" href="${esc(p.w)}" target="_blank" rel="noopener">See paper ↗</a>`:''}
         <button class="simbtn" data-sim="${i}">Similar</button>
       </div>
-    </div>
+    </div>`
+    :'';
+  return `<div class="p ${st.sel===i?'sel':''} ${full?'':(open?'exp':'cpt')}" data-i="${i}"><div class="body">
+    <div class="ti">${full?'':`<i class="chv">${open?'▾':'▸'}</i>`}${hl(p.t)}${p.o===2?`<span class="badge sp">${esc(CY[p.cy].hw||'Spotlight')}</span>`:''}</div>
+    <div class="meta"><span class="cyst" style="color:var(--v${vhue(p.cy)})">${esc(CY[p.cy].v)} ${CY[p.cy].y}</span>${who}${nearBadge(p)}</div>
+    ${passage}
+    ${terms?`<div class="terms">${terms}</div>`:''}
+    ${foot}
   </div></div>`;
 }
 
@@ -2909,7 +2883,7 @@ function render(){
       $('#results').innerHTML=
         `<div class="hlhd">What ${esc(cw.v)} put forward `+
         `<em>${hlIdx.length} ${word} — the venue's own selection, not ours · ${nf} carry full text</em></div>`
-        +show.map(card).join('')
+        +show.map(i9=>card(i9)).join('')
         +(hlIdx.length>show.length
           ?`<div class="capped">Showing the first ${MAX_SHOWN} of ${hlIdx.length} ${word}. Search or pick a mover to narrow.</div>`:'');
       { const lg=$('#legend'), hd=$('#results .hlhd');
@@ -2960,7 +2934,7 @@ function render(){
   // to narrow, and the count above says how much is not on screen.
   const extraShown=extra.slice(0, res.length>=MAX_SHOWN?0:Math.min(extra.length,MAX_SHOWN-res.length));
   ensureSpans(new Set([...show,...extraShown].map(i=>P[i].cy)));
-  $('#results').innerHTML=(show.map(card).join('')
+  $('#results').innerHTML=(show.map(i9=>card(i9)).join('')
     +(res.length>show.length
       ? `<div class="capped">Showing the first ${MAX_SHOWN} of ${res.length.toLocaleString()}. `+
         `Add a topic, a benchmark, or a search word to narrow this.</div>` : '')
@@ -2968,7 +2942,7 @@ function render(){
       ? `<div class="nearhd">${extraShown.length}${extra.length>extraShown.length?' of '+extra.length:''} more `+
         `that are close in meaning but never use these words`+
         `<span>found through the paper embeddings, not the text — read them as suggestions</span></div>`
-        +extraShown.map(card).join('') : ''))
+        +extraShown.map(i9=>card(i9)).join('') : ''))
     ||'<div class="empty">No papers match all of these. Remove one.</div>';
   if(st.grouped){ renderGrouped(res); return; }
   $('#results').querySelectorAll('[data-mail]').forEach(el=>el.onclick=async ev=>{
