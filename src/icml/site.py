@@ -220,6 +220,13 @@ _CITESQ = _re.compile(r"\s*\[[^\]]*?et al\.[^\]]*?(?:19|20)\d{2}[a-z]?\]")
 # an acronym introduced beside its cite keeps the acronym: "(PPI; Angelopoulos
 # et al., 2023)" -> "(PPI)"
 _CITEIN = _re.compile(r";\s*[^();]*?(?:et al\.?,?|,)\s*(?:19|20)\d{2}[a-z]?(?=\s*\))")
+# When the cite is the OBJECT of a governor phrase ("following (Sengupta et
+# al. 2018), we..."), deleting it breaks the sentence — keep the name, shed
+# only the parens and the year (still pure deletion).
+_CITEGOV = _re.compile(
+    r"(?<=\b)(following|based on|building on|inspired by|extends|extending|"
+    r"adapted from|adopted from|akin to|similar to|due to)\s+\(\s*"
+    r"([^();]*?\bet al\.?|[A-Z][\w&\- ]{2,40}?),?\s*(?:19|20)\d{2}[a-z]?\s*\)", _re.I)
 # the extraction schema caps fields at 320 chars, which can cut a citation
 # cluster mid-list — an unclosed cite-cluster at the end of the span is dropped
 _CITEEOL = _re.compile(
@@ -249,6 +256,7 @@ def standalone(t: str) -> bool:
 def edit_span(t: str) -> str:
     """detex + elide, with the guarantee checked rather than assumed."""
     rendered = _CITENUM.sub("", detex(t))   # a card cannot follow [30, 16]
+    rendered = _CITEGOV.sub(lambda m: f"{m.group(1)} {m.group(2).strip()}", rendered)
     rendered = _CITESQ.sub("", rendered)
     rendered = _CITEYR.sub("", _CITEIN.sub("", _CITEAY.sub("", rendered)))
     rendered = _CITEEOL.sub("", rendered)
@@ -1610,8 +1618,7 @@ background:none;cursor:pointer;color:var(--ink2)}
 .p.cpt .ti{font-size:14px}
 .p.cpt .terms{margin-top:8px}
 .p.cpt:hover{border-color:var(--acc)}
-.chv{font-style:normal;color:var(--mut);margin-right:7px;font-size:11px;cursor:pointer}
-.p.exp .chv:hover{color:var(--acc)}
+.p.exp{cursor:pointer}
 .famchip.sel .per{color:#fff}
 .pfoot{display:flex;align-items:center;gap:8px;margin-top:7px}
 
@@ -2151,7 +2158,7 @@ function card(i,full){
     </div>`
     :'';
   return `<div class="p ${st.sel===i?'sel':''} ${full?'':(open?'exp':'cpt')}" data-i="${i}"><div class="body">
-    <div class="ti">${full?'':`<i class="chv">${open?'▾':'▸'}</i>`}${hl(p.t)}${p.o===2?`<span class="badge sp">${esc(CY[p.cy].hw||'Spotlight')}</span>`:''}</div>
+    <div class="ti">${hl(p.t)}${p.o===2?`<span class="badge sp">${esc(CY[p.cy].hw||'Spotlight')}</span>`:''}</div>
     <div class="meta"><span class="cyst" style="color:var(--v${vhue(p.cy)})">${esc(CY[p.cy].v)} ${CY[p.cy].y}</span>${who}${nearBadge(p)}</div>
     ${passage}
     ${terms?`<div class="terms">${terms}</div>`:''}
@@ -3031,9 +3038,11 @@ function wireFold(root){
   if(!root)return;
   root.querySelectorAll('.p.cpt').forEach(el=>el.onclick=()=>{
     EXP.add(+el.dataset.i); render();});
-  root.querySelectorAll('.p.exp .chv').forEach(el=>el.onclick=ev=>{
-    ev.stopPropagation();
-    EXP.delete(+el.closest('.p').dataset.i); render();});
+  root.querySelectorAll('.p.exp').forEach(el=>el.onclick=ev=>{
+    if(ev.target.closest('a,button'))return;          // actions act, not fold
+    const sel=window.getSelection();
+    if(sel&&String(sel).length)return;                // copying a sentence is not a fold
+    EXP.delete(+el.dataset.i); render();});
 }
 
 // The count shown is the count returned, within whatever else is chosen.
