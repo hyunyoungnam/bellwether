@@ -222,7 +222,8 @@ def standalone(t: str) -> bool:
         return False
     if _DEIXIS.search(t):
         return False
-    return len(_MATHCH.findall(t)) / max(len(t), 1) < 0.012
+    m = len(_MATHCH.findall(t))
+    return m < 4 and m / max(len(t), 1) < 0.012
 
 
 def edit_span(t: str) -> str:
