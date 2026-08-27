@@ -260,6 +260,12 @@ Return fewer items (or empty arrays) rather than paraphrasing.
   paper itself, never about prior work. Usually in a Limitations or Discussion
   section. If the authors state none, return an empty array.
 
+Every sentence must STAND ALONE for a reader who has not opened the paper:
+never pick a sentence that points into the document ("Lines 11-14",
+"Section 3", "Figure 2", "as described below") or that leans on an equation
+to say what it does. Prefer the prose sentence that states the mechanism in
+words.
+
 If the text lacks a section (no ablation, no limitations), return an empty
 array for that field. Never guess, never summarise."""
 

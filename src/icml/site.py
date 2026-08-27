@@ -205,6 +205,25 @@ def is_subsequence(short: str, source: str) -> bool:
 
 _CITENUM = _re.compile(r"\s*\[\d+(?:\s*,\s*\d+)*\]")
 
+# Body sentences are written for in-paper context; abstract sentences are
+# self-contained by genre. A full-text sentence may enter a card only if it
+# STANDS ALONE: no pointers into the document, and prose rather than notation —
+# an equation on a card is the reading the reader came here to skip.
+_DEIXIS = _re.compile(
+    r"\b(?:lines?|section|sec\.|figure|fig\.|table|tab\.|equation|eq\.|"
+    r"eqn\.|algorithm|alg\.|appendix|theorem|lemma|phase)\s*(?:\(?\d|[IVX]+\b)"
+    r"|\bas (?:described|shown|discussed|defined) (?:below|above|earlier|later)\b"
+    r"|\b(?:see|cf\.) (?:below|above)\b|\baforementioned\b", _re.I)
+_MATHCH = _re.compile(r"[=<>←→↦≤≥≈∈∀∃∑∏∫√˜^_{}\\|]")
+
+
+def standalone(t: str) -> bool:
+    if not t:
+        return False
+    if _DEIXIS.search(t):
+        return False
+    return len(_MATHCH.findall(t)) / max(len(t), 1) < 0.012
+
 
 def edit_span(t: str) -> str:
     """detex + elide, with the guarantee checked rather than assumed."""
@@ -404,9 +423,18 @@ def build_payload(span_source: str) -> dict:
                     continue
                 used = False
                 for k in FILLABLE:
-                    if not base.get(k) and r["facts"].get(k):
-                        base[k] = r["facts"][k]
-                        used = True
+                    if base.get(k) or not r["facts"].get(k):
+                        continue
+                    v = r["facts"][k]
+                    if k in ("limitation", "key_change", "result_claim"):
+                        if not standalone(v):
+                            continue
+                    elif k == "novelty_spans":
+                        v = [x for x in v if standalone(x)]
+                        if not v:
+                            continue
+                    base[k] = v
+                    used = True
                 if used:
                     src_of[g] = "fulltext"
                     n_full += 1
@@ -427,7 +455,8 @@ def build_payload(span_source: str) -> dict:
             if g is None:
                 continue
             fd = r["facts"]
-            D = [[edit_span(x)[:SPAN_CHARS] for x in (fd.get(k2) or [])]
+            D = [[edit_span(x)[:SPAN_CHARS] for x in (fd.get(k2) or [])
+                  if standalone(x)]
                  for k2 in ("mechanism", "numbers", "ablation", "own_limits")]
             if any(D):
                 deep_of[g] = D
