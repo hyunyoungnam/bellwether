@@ -1561,11 +1561,6 @@ details.deep summary::-webkit-details-marker{display:none}
 .cptfall{overflow:hidden;text-overflow:ellipsis;display:block}
 .chv{font-style:normal;color:var(--mut);margin-right:7px;font-size:11px;cursor:pointer}
 .p.exp .chv:hover{color:var(--acc)}
-.vtog{margin-left:auto;display:inline-flex;border:1px solid var(--ring);border-radius:8px;overflow:hidden}
-.vtog button{border:0;background:var(--card);font:inherit;font-size:11px;padding:4px 11px;
-  cursor:pointer;color:var(--ink2)}
-.vtog button.on{background:var(--ink);color:#fff}
-#cmp .vtog{display:none}
 .famchip.sel .per{color:#fff}
 .pfoot{display:flex;align-items:center;gap:8px;margin-top:7px}
 
@@ -1615,8 +1610,7 @@ body.haspanel #cmp{margin-right:max(0px,calc(352px - (100vw - 1266px)/2))}
   <span class="sw"><span class="hl why">why it was needed</span></span>
   <span class="sw"><span class="hl new">what is new</span></span>
   <span class="sw"><span class="hl eff">what it achieved</span></span>
-  <span>— the paper's own sentences, cut but never rewritten. The colours and the order are ours.</span>
-  <span class="vtog" id="vtog"><button data-v="cpt">compact</button><button data-v="full">full</button></span></div>
+  <span>— the paper's own sentences, cut but never rewritten. The colours and the order are ours.</span></div>
 
 <div class="res" id="results"></div>
 
@@ -2048,7 +2042,7 @@ function deepHTML(pD){
 // what - which data", one row per paper; a click unfolds the highlighter card
 // in place. No toggle to remember — the fold IS the reading flow.
 const EXP=new Set();
-let VIEW='cpt'; try{ VIEW=localStorage.getItem('view')||'cpt'; }catch(e){}
+
 function cardCompact(i){
   const p=P[i];
   const term=(lab,v,cls)=>v?`<span class="tm ${cls}"><b>${lab}</b>${hl(v)}</span>`:'';
@@ -2069,7 +2063,7 @@ function cardCompact(i){
   </div></div>`;
 }
 function card(i,full){
-  if(!full&&VIEW!=='full'&&!EXP.has(i))return cardCompact(i);
+  if(!full&&!EXP.has(i))return cardCompact(i);
   const p=P[i];
   const sx=SPX[p.i], spReady=!!sx;
   const pn=sx?sx[0]:[], pL=sx?sx[1]:null, pK=sx?sx[2]:null, pR=sx?sx[3]:null,
@@ -3296,12 +3290,6 @@ $('#q').addEventListener('input',e=>{
   st.q=e.target.value.toLowerCase().split(/\s+/).filter(Boolean);
   clearTimeout(QT); QT=setTimeout(render,180);});
 $('#pclose').onclick=()=>{ if(CMP){ CMP=null; closePanel(); render(); } else closePanel(); };
-function syncVtog(){ document.querySelectorAll('#vtog button').forEach(b=>
-  b.classList.toggle('on',b.dataset.v===VIEW)); }
-document.querySelectorAll('#vtog button').forEach(b=>b.onclick=()=>{
-  VIEW=b.dataset.v; try{ localStorage.setItem('view',VIEW); }catch(e){}
-  EXP.clear(); syncVtog(); render(); });
-syncVtog();
 
 const c=D.coverage;
 // The coverage caveats are no longer a paragraph at the foot of the page. Each
