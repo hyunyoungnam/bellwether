@@ -483,6 +483,22 @@ def build_payload(span_source: str) -> dict:
     # mechanism / numbers / ablation / own_limits, every sentence verbatim and
     # verified. Enriches single cards only — nothing counts, sorts or filters
     # on these fields (Guardrail 5).
+    # Governor-cites ("following (Sengupta et al. 2018)") keep their name on
+    # the card; here we remember (gid, name, year) so the name can LINK — to
+    # the cited paper's card when it lives in this corpus, to arXiv when the
+    # reference carries an id, to nothing otherwise.
+    cite_need: dict[int, list] = defaultdict(list)
+
+    def scan_cites(g2, texts):
+        for x in texts:
+            if not x:
+                continue
+            for m in _CITEGOV.finditer(detex(x)):
+                nm = m.group(2).strip().rstrip(",")
+                yr = _re.search(r"(?:19|20)\d{2}", m.group(0))
+                if yr:
+                    cite_need[g2].append((nm, yr.group(0)))
+
     deep_of: dict[int, list] = {}
     for c in corpora:
         dpath = INTERIM / f"facts_deep_{c.key}.jsonl"
@@ -500,6 +516,7 @@ def build_payload(span_source: str) -> dict:
                  for k2 in ("mechanism", "numbers", "ablation", "own_limits")]
             if any(D):
                 deep_of[g] = D
+            scan_cites(g, fd.get("mechanism") or [])
 
     # The shared vocabulary from icml.taxonomy, not a per-run derivation. Its two
     # membership kinds are kept apart all the way to the screen: the paper said
@@ -607,6 +624,8 @@ def build_payload(span_source: str) -> dict:
         eid = GID[(p["_ck"], p["event_id"])]
         f = facts.get(eid) or {}
         spans = [edit_span(s)[:SPAN_CHARS] for s in (f.get("novelty_spans") or [])[:MAX_SPANS]]
+        scan_cites(eid, [f.get("limitation"), f.get("key_change"),
+                         f.get("result_claim")] + (f.get("novelty_spans") or []))
         methods = f.get("methods") or []
         tl = sorted(set(topic_of.get(eid, ())))
         rows.append({
@@ -649,6 +668,63 @@ def build_payload(span_source: str) -> dict:
             "na": p.get("n_authors") or len(p.get("authors") or []),
             "f": 1 if src_of.get(eid) == "fulltext" else 0,
         })
+
+    # ---- resolve governor-cites against each citing paper's references ----
+    cite_links: dict[int, list] = {}
+    if cite_need:
+        from .citations import norm as _cnorm
+        tindex = []
+        for p2 in papers.values():
+            g2 = GID.get((p2["_ck"], p2["event_id"]))
+            t2 = _cnorm(p2["title"])
+            if g2 is not None and len(t2) >= 25:
+                tindex.append((" " + t2 + " ", g2))
+        # references only for the papers that need them
+        need_gids = set(cite_need)
+        refs_of: dict[int, list] = {}
+        for ftf in sorted(INTERIM.glob("fulltext*.jsonl")):
+            key = (ftf.stem.replace("fulltext_html_", "").replace("fulltext_", "")
+                   .replace("_", "-"))
+            res = ROOT / "data/raw/arxiv" / (f"resolved_{key}.jsonl" if key else "x")
+            if not res.exists():
+                res = ROOT / "data/raw/arxiv/resolved.jsonl"
+                key = "icml-2026"
+            to_gid = {}
+            for r2 in read_jsonl(res):
+                if r2.get("arxiv_base"):
+                    g3 = GID.get((key, r2["event_id"]))
+                    if g3 in need_gids:
+                        to_gid[r2["arxiv_base"]] = g3
+            if not to_gid:
+                continue
+            for row2 in read_jsonl(ftf):
+                g3 = to_gid.get(row2.get("arxiv_base"))
+                if g3 is not None and row2.get("ok") and row2.get("references"):
+                    refs_of.setdefault(g3, row2["references"])
+        _ARX = _re.compile(r"\b(\d{4}\.\d{4,5})(?:v\d+)?\b")
+        for g2, wants in cite_need.items():
+            out2 = []
+            refs = refs_of.get(g2) or []
+            for nm, yr in wants:
+                surname = _cnorm(nm.split("&")[0].replace("et al", "")).split()
+                surname = surname[0] if surname else ""
+                hit = next((r3 for r3 in refs
+                            if surname and surname in _cnorm(r3) and yr in r3), None)
+                if not hit:
+                    continue
+                hn = " " + _cnorm(hit) + " "
+                tg = next((tg2 for t3, tg2 in tindex if t3 in hn), None)
+                if tg is not None and tg != g2:
+                    out2.append([nm, tg, None])
+                else:
+                    m2 = _ARX.search(hit)
+                    if m2:
+                        out2.append([nm, None, m2.group(1)])
+            if out2:
+                cite_links[g2] = out2
+
+    for r in rows:
+        r["cl"] = cite_links.get(r["i"])
 
     nb = load_json(NEIGHBORS) if NEIGHBORS.exists() else None
     with_span = sum(1 for r in rows if r["n"])
@@ -1619,6 +1695,8 @@ background:none;cursor:pointer;color:var(--ink2)}
 .p.cpt .terms{margin-top:8px}
 .p.cpt:hover{border-color:var(--acc)}
 .p.exp{cursor:pointer}
+.citelink{color:inherit;text-decoration:underline dotted var(--mut);text-underline-offset:2px;cursor:pointer}
+.citelink:hover{color:var(--acc);text-decoration-color:var(--acc)}
 .famchip.sel .per{color:#fff}
 .pfoot{display:flex;align-items:center;gap:8px;margin-top:7px}
 
@@ -2086,6 +2164,25 @@ function ensureSpans(cys){
     }).catch(()=>{SP_LOADED[k]=false;});
   }
 }
+// A governor-cite's retained name becomes a door: to the cited paper's card
+// (side-by-side, like Similar) when it lives in this corpus, to arXiv when the
+// reference carries an id. Tag-safe: only text between tags is touched.
+function linkCites(html,pCl){
+  if(!pCl||!pCl.length)return html;
+  for(const [nm,tg,ax] of pCl){
+    const rx=new RegExp('('+nm.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+')');
+    const rep=tg!=null
+      ?`<a class="citelink" data-cg="${tg}">$1</a>`
+      :`<a class="citelink ext" href="https://arxiv.org/abs/${ax}" target="_blank" rel="noopener">$1↗</a>`;
+    let done=false;
+    html=html.split(/(<[^>]+>)/).map(seg=>{
+      if(done||seg.startsWith('<'))return seg;
+      if(rx.test(seg)){done=true;return seg.replace(rx,rep);}
+      return seg;
+    }).join('');
+  }
+  return html;
+}
 // The card is top / middle / bottom: title-venue-year, the edited passage,
 // the extracted terms. Folded (the list default) hides only the MIDDLE — the
 // terms alone say which problem, what name, on what, which data. A click
@@ -2097,7 +2194,7 @@ function card(i,full){
   const p=P[i];
   const sx=SPX[p.i], spReady=!!sx;
   const pn=sx?sx[0]:[], pL=sx?sx[1]:null, pK=sx?sx[2]:null, pR=sx?sx[3]:null,
-        pc1=sx?sx[4]:null, pD=sx?sx[5]:null;
+        pc1=sx?sx[4]:null, pD=sx?sx[5]:null, pCl=sx?sx[6]:null;
   const names=(arr,fn)=>arr.map(x=>abbr(fn(x))).join(', ');
   // One passage, not three labelled rows. The three sentences are the paper's,
   // in the order a reader needs them, and the colour says which question each
@@ -2144,7 +2241,7 @@ function card(i,full){
 
   const passage=open
     ?`<div class="rule"></div>`+
-     (parts.length?`<div class="passage">${parts.join(' ')}</div>`
+     (parts.length?`<div class="passage">${linkCites(parts.join(' '),pCl)}</div>`
       :spReady?`<div class="passage miss">no sentence in this paper states what is new</div>`
       :`<div class="passage miss">loading the paper's own sentences…</div>`)
     :'';
@@ -2274,7 +2371,7 @@ function renderCmp(){
     (shared?`<div class="cmpsh"><b>both papers</b>${shared}</div>`:'')+
     `<div class="cmpgrid">`+
     `<div><div class="cmptag">the paper you were reading</div>${card(CMP.a,true)}</div>`+
-    `<div><div class="cmptag">the similar paper you picked</div>${card(CMP.b,true)}</div>`+
+    `<div><div class="cmptag">${CMP.why==='cite'?'the paper it cites':'the similar paper you picked'}</div>${card(CMP.b,true)}</div>`+
     `</div>`;
   // the colour key sits right above the two cards it explains
   { const lg=$('#legend');
@@ -2285,6 +2382,7 @@ function renderCmp(){
   // that paper's neighbours open.
   el.querySelectorAll('[data-sim]').forEach(b=>b.onclick=ev=>{ ev.stopPropagation();
     const j=+b.dataset.sim; CMP=null; render(); openPanel(j); });
+  wireCites(el);
   el.querySelectorAll('[data-mail]').forEach(b=>b.onclick=async ev=>{
     ev.stopPropagation();
     const addr=b.dataset.mail, was=b.textContent;
@@ -3027,8 +3125,21 @@ function render(){
   wireFold($('#results'));
 }
 // compact card -> unfold in place; the chevron on an unfolded card refolds it
+function wireCites(root){
+  if(!root)return;
+  root.querySelectorAll('.citelink').forEach(el=>el.onclick=ev=>{
+    ev.stopPropagation();
+    if(el.dataset.cg===undefined)return;        // external: the href acts
+    const j=BYID[+el.dataset.cg];
+    if(j===undefined)return;
+    const a2=+el.closest('.p').dataset.i;
+    CMP={a:a2,b:j,why:'cite'};
+    renderCmp();
+  });
+}
 function wireFold(root){
   if(!root)return;
+  wireCites(root);
   root.querySelectorAll('.p.cpt').forEach(el=>el.onclick=()=>{
     EXP.add(+el.dataset.i); render();});
   root.querySelectorAll('.p.exp').forEach(el=>el.onclick=ev=>{
@@ -3401,7 +3512,7 @@ def main() -> int:
     for r in payload["papers"]:
         spans_by[keys_by_ci[r["cy"]]][str(r["i"])] = [
             r.pop("n"), r.pop("L"), r.pop("K"), r.pop("R"), r.pop("c1"),
-            r.pop("D")]
+            r.pop("D"), r.pop("cl")]
     for k, v in spans_by.items():
         parts[f"spans_{k}.json"] = dump(v)
     parts["search.json"] = dump({"terms": payload.pop("terms"),
