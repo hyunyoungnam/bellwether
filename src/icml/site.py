@@ -713,15 +713,17 @@ def build_payload(span_source: str) -> dict:
                 hit = next((r3 for r3 in refs
                             if surname and surname in _cnorm(r3) and yr in r3), None)
                 if not hit:
+                    # no reference list to resolve against (no arXiv match, or
+                    # PDF-era file) — a labelled SEARCH is not a guessed fact
+                    out2.append([nm, None, None, yr])
                     continue
                 hn = " " + _cnorm(hit) + " "
                 tg = next((tg2 for t3, tg2 in tindex if t3 in hn), None)
                 if tg is not None and tg != g2:
-                    out2.append([nm, tg, None])
+                    out2.append([nm, tg, None, yr])
                 else:
                     m2 = _ARX2.search(hit)
-                    if m2:
-                        out2.append([nm, None, m2.group(1)])
+                    out2.append([nm, None, m2.group(1) if m2 else None, yr])
             if out2:
                 cite_links[g2] = out2
 
@@ -2189,11 +2191,13 @@ function ensureSpans(cys){
 // reference carries an id. Tag-safe: only text between tags is touched.
 function linkCites(html,pCl){
   if(!pCl||!pCl.length)return html;
-  for(const [nm,tg,ax] of pCl){
+  for(const [nm,tg,ax,yr] of pCl){
     const rx=new RegExp('('+nm.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+')');
     const rep=tg!=null
       ?`<a class="citelink" data-cg="${tg}">$1</a>`
-      :`<a class="citelink ext" href="https://arxiv.org/abs/${ax}" target="_blank" rel="noopener">$1↗</a>`;
+      :ax
+      ?`<a class="citelink ext" href="https://arxiv.org/abs/${ax}" target="_blank" rel="noopener">$1↗</a>`
+      :`<a class="citelink ext" title="search this citation" href="https://scholar.google.com/scholar?q=${encodeURIComponent(nm+' '+(yr||''))}" target="_blank" rel="noopener">$1↗</a>`;
     let done=false;
     html=html.split(/(<[^>]+>)/).map(seg=>{
       if(done||seg.startsWith('<'))return seg;
