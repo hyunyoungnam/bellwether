@@ -1551,6 +1551,21 @@ details.deep summary::-webkit-details-marker{display:none}
 .dp{margin-top:8px;font-size:12.5px;line-height:1.55;color:var(--ink2)}
 .dp b{display:block;font-size:9.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--mut);
   font-weight:700;margin-bottom:2px}
+.p.cpt{cursor:pointer}
+.p.cpt .body{padding:11px 18px}
+.p.cpt .ti{font-size:13.5px;margin-bottom:0}
+.p.cpt:hover{border-color:var(--acc)}
+.cline{display:flex;gap:4px 16px;margin-top:5px;font-size:11.5px;color:var(--ink2);
+  overflow:hidden;white-space:nowrap}
+.cline .tm{overflow:hidden;text-overflow:ellipsis;flex:0 1 auto;min-width:0}
+.cptfall{overflow:hidden;text-overflow:ellipsis;display:block}
+.chv{font-style:normal;color:var(--mut);margin-right:7px;font-size:11px;cursor:pointer}
+.p.exp .chv:hover{color:var(--acc)}
+.vtog{margin-left:auto;display:inline-flex;border:1px solid var(--ring);border-radius:8px;overflow:hidden}
+.vtog button{border:0;background:var(--card);font:inherit;font-size:11px;padding:4px 11px;
+  cursor:pointer;color:var(--ink2)}
+.vtog button.on{background:var(--ink);color:#fff}
+#cmp .vtog{display:none}
 .famchip.sel .per{color:#fff}
 .pfoot{display:flex;align-items:center;gap:8px;margin-top:7px}
 
@@ -1600,7 +1615,8 @@ body.haspanel #cmp{margin-right:max(0px,calc(352px - (100vw - 1266px)/2))}
   <span class="sw"><span class="hl why">why it was needed</span></span>
   <span class="sw"><span class="hl new">what is new</span></span>
   <span class="sw"><span class="hl eff">what it achieved</span></span>
-  <span>— the paper's own sentences, cut but never rewritten. The colours and the order are ours.</span></div>
+  <span>— the paper's own sentences, cut but never rewritten. The colours and the order are ours.</span>
+  <span class="vtog" id="vtog"><button data-v="cpt">compact</button><button data-v="full">full</button></span></div>
 
 <div class="res" id="results"></div>
 
@@ -2028,7 +2044,32 @@ function deepHTML(pD){
     ?`<div class="dp"><b>${lab}</b>${pD[ix].map(s2=>`<span>${esc(s2)}</span>`).join(' ')}</div>`:'').join('');
   return `<details class="deep"><summary>from the full paper — the mechanism, the numbers, the admitted limits</summary>${body}</details>`;
 }
-function card(i){
+// Collapsed by default: the list scans as "which problem - what name - on
+// what - which data", one row per paper; a click unfolds the highlighter card
+// in place. No toggle to remember — the fold IS the reading flow.
+const EXP=new Set();
+let VIEW='cpt'; try{ VIEW=localStorage.getItem('view')||'cpt'; }catch(e){}
+function cardCompact(i){
+  const p=P[i];
+  const term=(lab,v,cls)=>v?`<span class="tm ${cls}"><b>${lab}</b>${hl(v)}</span>`:'';
+  const names=(arr,fn)=>arr.map(x=>abbr(fn(x))).join(', ');
+  let line=[term('tasks',names(p.s,tname),''),
+            term('proposes',names(p.p,mname),'new'),
+            term('builds on',names(p.u,mname),''),
+            term('data',names(p.k,dname),'eff')].filter(Boolean).join('');
+  if(!line){
+    const sx=SPX[p.i];
+    const y=(sx&&(sx[2]||(sx[0]||[])[0]))||'';
+    line=y?`<span class="hl new cptfall">${esc(y)}</span>`:'';
+  }
+  return `<div class="p cpt" data-i="${i}"><div class="body">
+    <div class="ti"><i class="chv">▸</i>${hl(p.t)}${p.o===2?`<span class="badge sp">${esc(CY[p.cy].hw||'Spotlight')}</span>`:''}
+      <span class="cyst" style="color:var(--v${vhue(p.cy)})">${esc(CY[p.cy].v)} ${CY[p.cy].y}</span></div>
+    ${line?`<div class="cline">${line}</div>`:''}
+  </div></div>`;
+}
+function card(i,full){
+  if(!full&&VIEW!=='full'&&!EXP.has(i))return cardCompact(i);
   const p=P[i];
   const sx=SPX[p.i], spReady=!!sx;
   const pn=sx?sx[0]:[], pL=sx?sx[1]:null, pK=sx?sx[2]:null, pR=sx?sx[3]:null,
@@ -2063,8 +2104,8 @@ function card(i){
         : `${esc(lead)}${etal}`)
     : '';
 
-  return `<div class="p ${st.sel===i?'sel':''}" data-i="${i}"><div class="body">
-    <div class="ti">${hl(p.t)}${p.o===2?`<span class="badge sp">${esc(CY[p.cy].hw||'Spotlight')}</span>`:''}</div>
+  return `<div class="p ${st.sel===i?'sel':''} ${full?'':'exp'}" data-i="${i}"><div class="body">
+    <div class="ti">${full?'':'<i class="chv">▾</i>'}${hl(p.t)}${p.o===2?`<span class="badge sp">${esc(CY[p.cy].hw||'Spotlight')}</span>`:''}</div>
     <div class="meta"><span class="cyst" style="color:var(--v${vhue(p.cy)})">${esc(CY[p.cy].v)} ${CY[p.cy].y}</span>${who}${nearBadge(p)}</div>
     <div class="rule"></div>
     ${parts.length?`<div class="passage">${parts.join(' ')}</div>`
@@ -2189,8 +2230,8 @@ function renderCmp(){
     `<span class="cmphd">side by side</span></div>`+
     (shared?`<div class="cmpsh"><b>both papers</b>${shared}</div>`:'')+
     `<div class="cmpgrid">`+
-    `<div><div class="cmptag">the paper you were reading</div>${card(CMP.a)}</div>`+
-    `<div><div class="cmptag">the similar paper you picked</div>${card(CMP.b)}</div>`+
+    `<div><div class="cmptag">the paper you were reading</div>${card(CMP.a,true)}</div>`+
+    `<div><div class="cmptag">the similar paper you picked</div>${card(CMP.b,true)}</div>`+
     `</div>`;
   // the colour key sits right above the two cards it explains
   { const lg=$('#legend');
@@ -2889,6 +2930,7 @@ function render(){
           document.body.appendChild(t2); t2.select(); document.execCommand('copy'); t2.remove(); }
         el.textContent='copied'; el.classList.add('done');
         setTimeout(()=>{ el.textContent=was; el.classList.remove('done'); },1200);});
+      wireFold($('#results'));
     } else {
       $('#results').innerHTML=`<div class="start">Search above, pick a mover on the left — or go back for the full digest.`+
         `<span>Nothing is listed until you do — ${(st.corp===-1?P.length:CY[st.corp].n).toLocaleString()} papers is the problem, not the answer.</span></div>`;
@@ -2946,6 +2988,16 @@ function render(){
   $('#results').querySelectorAll('[data-sim]').forEach(el=>el.onclick=ev=>{
     ev.stopPropagation();
     openPanel(+el.dataset.sim);});
+  wireFold($('#results'));
+}
+// compact card -> unfold in place; the chevron on an unfolded card refolds it
+function wireFold(root){
+  if(!root)return;
+  root.querySelectorAll('.p.cpt').forEach(el=>el.onclick=()=>{
+    EXP.add(+el.dataset.i); render();});
+  root.querySelectorAll('.p.exp .chv').forEach(el=>el.onclick=ev=>{
+    ev.stopPropagation();
+    EXP.delete(+el.closest('.p').dataset.i); render();});
 }
 
 // The count shown is the count returned, within whatever else is chosen.
@@ -3177,7 +3229,7 @@ function clearPicks(){
   st.q=[]; st.qraw=''; const q=$('#q'); if(q)q.value='';
   st.sel=null; st.grouped=false;
   st.topics.clear(); st.fams.clear(); st.meth=null; st.mfam=null; st.ds=null;
-  st.lim=null; STORY=null; CMP=null; closePanel();
+  st.lim=null; STORY=null; CMP=null; EXP.clear(); closePanel();
 }
 function applyChgRow(k,id){
   // the row handlers set STORY right beside the pick — clearing the picks
@@ -3231,7 +3283,8 @@ function renderGrouped(res){
     gr.ids.slice(0,6).map(i=>`<div class="grow" data-i="${i}">${esc(P[i].t)}</div>`).join('')+
     (gr.ids.length>6?`<div class="gmore">and ${gr.ids.length-6} more</div>`:'')+`</div>`).join('');
   $('#results').innerHTML=html;
-  $('#results').querySelectorAll('[data-i]').forEach(el=>el.onclick=()=>{
+  wireFold($('#results'));
+  $('#results').querySelectorAll('.p:not(.cpt)[data-i]').forEach(el=>el.onclick=()=>{
     st.grouped=false; st.q=[]; $('#q').value=''; st.sel=+el.dataset.i; render();
     $(`.p[data-i="${st.sel}"]`)?.scrollIntoView({block:'center'});});
 }
@@ -3243,6 +3296,12 @@ $('#q').addEventListener('input',e=>{
   st.q=e.target.value.toLowerCase().split(/\s+/).filter(Boolean);
   clearTimeout(QT); QT=setTimeout(render,180);});
 $('#pclose').onclick=()=>{ if(CMP){ CMP=null; closePanel(); render(); } else closePanel(); };
+function syncVtog(){ document.querySelectorAll('#vtog button').forEach(b=>
+  b.classList.toggle('on',b.dataset.v===VIEW)); }
+document.querySelectorAll('#vtog button').forEach(b=>b.onclick=()=>{
+  VIEW=b.dataset.v; try{ localStorage.setItem('view',VIEW); }catch(e){}
+  EXP.clear(); syncVtog(); render(); });
+syncVtog();
 
 const c=D.coverage;
 // The coverage caveats are no longer a paragraph at the foot of the page. Each
