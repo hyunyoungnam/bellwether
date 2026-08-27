@@ -2124,7 +2124,7 @@ function card(i,full){
 
   // The extracted terms are part of the summary, not a footnote under it.
   const term=(lab,v,cls)=>v?`<span class="tm ${cls}"><b>${lab}</b>${hl(v)}</span>`:'';
-  const src=p.f?'<span class="tm src">read from the full paper</span>':'';
+  const src='';
   const terms=[term('proposes',names(p.p,mname),'new'),
                term('builds on',names(p.u,mname),''),
                term('compared with',names(p.v,mname),''),
@@ -2853,13 +2853,7 @@ function railSetCard(res,vset){
     .map(([id,c])=>`<button class="scchip" data-ck="${kind}" data-cid="${id}" title="${esc(name(id))}">${esc(disp(name(id)))}<b>${c}</b></button>`).join('');
   const dch=chips(dk,'d',dname), mch=chips(mk,'m',i=>MV[i]);
   const nf=res.filter(i=>P[i].f).length;
-  // Highlights are not a filter — the distinction shows as a badge, the list
-  // is already ordered highlights first, and this line says how many.
-  let nSpot=0;
-  for(const i of res) if(P[i].o===2)nSpot++;
-  const hword=st.corp>=0?(CY[st.corp].hw||'Spotlight').toLowerCase():'venue-highlighted';
-  const tiers=nSpot
-    ?`<div class="scsub">${nSpot} ${hword}${nSpot>1&&st.corp>=0?'s':''} — listed first</div>`:'';
+  const tiers='';
   const V2=slotState();
   const fch=[];
   if(V2.k)fch.push(['k',V2.k]);
@@ -2877,7 +2871,6 @@ function railSetCard(res,vset){
     (sib.length>1?`<div class="scsub">the same pick, in each edition — share of that year</div>`:'')+
     (dch?`<div class="rh" style="margin-top:11px">Tested on <em>in this set</em></div><div class="scchips">${dch}</div>`:'')+
     (mch?`<div class="rh" style="margin-top:11px">Builds on <em>in this set</em></div><div class="scchips">${mch}</div>`:'')+
-    (nf?`<div class="scsub" style="margin-top:9px">${nf} of ${res.length} cards use full text</div>`:'')+
     `<button class="scsplit ${st.grouped?'on':''}" id="grptog2">${st.grouped?'Show papers':'Split into subgroups'}</button>`+
     `</div>`;
 }

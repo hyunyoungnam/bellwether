@@ -514,10 +514,13 @@ alternative was worse: a uniformly thin card fails the test in *The product is
 processing, not access*, and does so for all 6,637 papers to avoid an artifact
 that affects the appearance of 4,601.
 
-Two rules keep this from becoming the artifact CLAUDE.md warns about: **nothing
-sorts, scores, or filters on how full a card is**, and the coverage line states
-how many cards use full text. Build the flag `--spans {abstract,fulltext}` into
-anything new so the uniform view stays one argument away.
+One rule keeps this from becoming the artifact CLAUDE.md warns about: **nothing
+sorts, scores, or filters on how full a card is**. Build the flag
+`--spans {abstract,fulltext}` into anything new so the uniform view stays one
+argument away. (2026-08-27, owner decision: the per-card "read from the full
+paper" tag and the sidebar "N of M cards use full text" line were removed —
+with ~77% coverage on every corpus the asymmetry is small and the labels read
+as clutter; the highlight screen's caption still states its coverage.)
 
 ---
 
