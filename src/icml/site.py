@@ -1770,6 +1770,7 @@ background:none;cursor:pointer;color:var(--ink2)}
 .lane{display:block;position:relative;height:8px;margin:1.5px 0}
 .lane i{position:absolute;left:0;top:0;height:100%;border-radius:0 2px 2px 0}
 
+:root{--vu:#70707a}
 .hlhd{font-size:15px;font-weight:700;margin:2px 0 12px;color:var(--ink)}
 .hlhd em{display:block;font-style:normal;font-weight:500;font-size:11.5px;color:var(--mut);margin-top:3px}
 .p.cpt{cursor:pointer;padding:14px 30px 11px}
@@ -2980,11 +2981,39 @@ function drawInside(){
 // it applies the topic, because a trend a reader cannot act on is trivia.
 function railTrend(){
   const prs=venuePairs();
-  const pr=st.corp===-1?prs[0]:prs.find(p=>p.c1===st.corp||p.c0===st.corp);
-  if(!pr)return '';
+  if(!prs.length)return '';
+  const all=st.corp===-1;
+  const pr=all?null:prs.find(p=>p.c1===st.corp||p.c0===st.corp);
+  if(!all&&!pr)return '';
+  // At ALL scope the movers pool every venue's own pair — the union the
+  // digest uses; a single venue's pair must never stand in for the union.
+  let raw, n0, n1, hue, head;
+  if(all){
+    const acc=new Map();
+    n0=0; n1=0;
+    for(const p2 of prs){
+      n0+=CYN[p2.c0]; n1+=CYN[p2.c1];
+      for(const r of changedRows(p2.c0,p2.c1).t){
+        let e=acc.get(r.id); if(!e)acc.set(r.id,e={id:r.id,l:r.l,a:0,b:0});
+        e.a+=r.a; e.b+=r.b;
+      }
+    }
+    raw=[...acc.values()].map(e=>({...e,s0:e.a/n0*1000,s1:e.b/n1*1000}));
+    hue='u';
+    head=`<div class="rh">All venues <em class="rleg">`+
+      `<i style="background:color-mix(in srgb, var(--vu) 34%, var(--card))"></i>previous`+
+      `<i style="background:var(--vu)"></i>latest</em></div>`;
+  } else {
+    n0=CYN[pr.c0]; n1=CYN[pr.c1];
+    raw=changedRows(pr.c0,pr.c1).t;
+    hue=pr.hue;
+    const pale=`color-mix(in srgb, var(--v${pr.hue}) 34%, var(--card))`;
+    head=`<div class="rh">${esc(pr.v)} <em class="rleg">`+
+      `<i style="background:${pale}"></i>${pr.y0}`+
+      `<i style="background:var(--v${pr.hue})"></i>${pr.y1}</em></div>`;
+  }
   const rows=[];
-  for(const r of changedRows(pr.c0,pr.c1).t){
-    const n0=CYN[pr.c0], n1=CYN[pr.c1];
+  for(const r of raw){
     const pp=(r.a+r.b)/(n0+n1), se=Math.sqrt(pp*(1-pp)*(1/n0+1/n1));
     const z=se?(r.b/n1-r.a/n0)/se:0;
     const lo=Math.min(r.s0,r.s1), hi=Math.max(r.s0,r.s1);
@@ -2996,17 +3025,12 @@ function railTrend(){
   if(!top.length)return '';
   const M=Math.max(...top.flatMap(r=>[r.s0,r.s1]),CHG_F*2);
   const X=logX(M);
-  // years wear their swatches, exactly like the landing legend — the pale one
-  // is the earlier edition, and no arrow or sentence is needed
-  const pale=`color-mix(in srgb, var(--v${pr.hue}) 34%, var(--card))`;
-  return `<div class="rh">${esc(pr.v)} <em class="rleg">`+
-    `<i style="background:${pale}"></i>${pr.y0}`+
-    `<i style="background:var(--v${pr.hue})"></i>${pr.y1}</em></div>`+
+  return head+
     top.map(r=>{
       const tag=r.a<=2&&r.b>2?'<em class="tag">new</em>'
                :r.b<=2&&r.a>2?'<em class="tag gone">gone</em>':'';
       return `<button class="mrr" data-tid="${r.id}"><span class="mrl" title="${esc(r.l)}">${esc(disp(r.l))}${tag}</span>`+
-        `<span class="mrt">${laneHTML({hue:pr.hue,s0:r.s0,s1:r.s1,w0:X(r.s0),w1:X(r.s1)})}</span></button>`;
+        `<span class="mrt">${laneHTML({hue,s0:r.s0,s1:r.s1,w0:X(r.s0),w1:X(r.s1)})}</span></button>`;
     }).join('');
 }
 // After a pick: what the chosen set is MADE OF, held sticky while the list
@@ -3179,16 +3203,26 @@ function render(){
     // A single venue's cold screen leads with the papers the venue itself put
     // forward — its declared spotlights/orals, in its own vocabulary. The
     // union screen keeps the plain start box: its doors are the digest.
-    const hlIdx=st.corp>=0?P.map((p,i2)=>i2).filter(i2=>P[i2].cy===st.corp&&P[i2].o===2):[];
+    const hlIdx=st.corp>=0
+      ?P.map((p,i2)=>i2).filter(i2=>P[i2].cy===st.corp&&P[i2].o===2)
+      :P.map((p,i2)=>i2).filter(i2=>CY_LATEST[P[i2].cy]&&P[i2].o===2);
     if(hlIdx.length){
       $('#legend').hidden=false;   // highlighted sentences on screen -> say what the colours mean
-      const cw=CY[st.corp], word=(cw.hw||'Spotlight').toLowerCase()+'s';
-      const nf=hlIdx.filter(i2=>P[i2].f).length;
+      let hd;
+      const word=st.corp>=0?((CY[st.corp].hw||'Spotlight').toLowerCase()+'s'):'venue picks';
+      if(st.corp>=0){
+        const cw=CY[st.corp];
+        hd=`What ${esc(cw.v)} put forward `+
+          `<em>${hlIdx.length} ${word} — the venue's own selection, not ours · ${hlIdx.filter(i2=>P[i2].f).length} carry full text</em>`;
+      } else {
+        const per=CY.map((c,j)=>({c,j})).filter(x=>CY_LATEST[x.j]&&x.c.hw)
+          .map(x=>`${esc(x.c.v)} ${hlIdx.filter(i2=>P[i2].cy===x.j).length} ${x.c.hw.toLowerCase()}s`);
+        hd=`What the venues put forward <em>${hlIdx.length} picks — ${per.join(' · ')} — each venue's own selection, not ours</em>`;
+      }
       const show=hlIdx.slice(0,MAX_SHOWN);
       ensureSpans(new Set(show.map(i2=>P[i2].cy)));
       $('#results').innerHTML=
-        `<div class="hlhd">What ${esc(cw.v)} put forward `+
-        `<em>${hlIdx.length} ${word} — the venue's own selection, not ours · ${nf} carry full text</em></div>`
+        `<div class="hlhd">${hd}</div>`
         +show.map(i9=>card(i9)).join('')
         +(hlIdx.length>show.length
           ?`<div class="capped">Showing the first ${MAX_SHOWN} of ${hlIdx.length} ${word}. Search or pick a mover to narrow.</div>`:'');
