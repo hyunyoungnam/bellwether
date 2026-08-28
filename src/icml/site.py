@@ -3151,11 +3151,16 @@ function render(){
   $('#rail').hidden=landing;
   document.querySelector('.wrap').classList.toggle('withrail',!landing);
   $('#ttl').classList.toggle('golink',!landing);
-  document.querySelector('.searchrow').hidden=landing;
+  // The search box lives under the title on the landing too — the door into
+  // all six editions at once. The node moves between homes like the legend.
+  { const sr=document.querySelector('.searchrow');
+    sr.hidden=false;
+    if(landing){ document.querySelector('header').after(sr); }
+    else { $('#main').prepend(sr); } }
   if(landing){
     $('#legend').hidden=true; $('#results').innerHTML=''; $('#inset').hidden=true;
     $('#story').hidden=true;
-    $('#q').placeholder='';
+    $('#q').placeholder=`search ${P.length.toLocaleString()} papers across ICML · NeurIPS · ICLR`;
     $('#landing').innerHTML=landingHTML();
     wireLanding();
     return;
@@ -3586,6 +3591,7 @@ $('#q').addEventListener('keydown',e=>{
   const v=e.target.value.trim();
   st.qraw=v;
   st.q=v.toLowerCase().split(/\s+/).filter(Boolean);
+  if(st.corp===null&&v){ go(-1); return; }   // landing: straight into ALL
   render();});
 $('#pclose').onclick=()=>{ if(CMP){ CMP=null; closePanel(); render(); } else closePanel(); };
 
