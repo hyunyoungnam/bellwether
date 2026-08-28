@@ -32,7 +32,7 @@ import re as _re
 from collections import Counter, defaultdict
 from pathlib import Path
 
-from .common import INTERIM, PROCESSED, REPORTS, ROOT, load_json, read_jsonl
+from .common import INTERIM, PROCESSED, REPORTS, ROOT, dump_json, load_json, read_jsonl
 
 UNION = PROCESSED / "union.json"
 EMBED = PROCESSED / "embed_union.json"
@@ -704,6 +704,59 @@ def build_payload(span_source: str) -> dict:
                 if g3 is not None and row2.get("ok") and row2.get("references"):
                     refs_need.setdefault(g3, row2["references"])
         _ARX2 = _re.compile(r"\b(\d{4}\.\d{4,5})(?:v\d+)?\b")
+
+        # When our own reference data cannot resolve a cite, Semantic Scholar's
+        # parsed references of the SAME paper can — that is an indexed fact
+        # about the paper, not a guess. Cached so builds do not re-query.
+        _S2CACHE = INTERIM / "s2_cites.json"
+        _s2 = load_json(_S2CACHE) if _S2CACHE.exists() else {}
+
+        def _s2_resolve(title, nm, yr):
+            key = f"{title[:80]}|{nm}|{yr}"
+            if key in _s2:
+                return _s2[key] or None
+            import time as _t
+            import urllib.parse as _up
+            import urllib.request as _ur
+            url = None
+            try:
+                q = ("https://api.semanticscholar.org/graph/v1/paper/search/match"
+                     "?query=" + _up.quote(title))
+                with _ur.urlopen(q, timeout=20) as fh:
+                    d2 = json.load(fh)
+                pid = d2["data"][0]["paperId"]
+                _t.sleep(1)
+                q2 = (f"https://api.semanticscholar.org/graph/v1/paper/{pid}"
+                      "/references?fields=title,year,authors,externalIds,url&limit=1000")
+                with _ur.urlopen(q2, timeout=30) as fh:
+                    refs2 = json.load(fh)["data"]
+                sn = _cnorm(nm.split("&")[0].replace("et al", "")).split()
+                sn = sn[0] if sn else ""
+                for e2 in refs2:
+                    cp = e2.get("citedPaper") or {}
+                    if str(cp.get("year")) != yr:
+                        continue
+                    if not any(sn and sn in _cnorm(a4.get("name") or "")
+                               for a4 in (cp.get("authors") or [])):
+                        continue
+                    ids2 = cp.get("externalIds") or {}
+                    if ids2.get("ArXiv"):
+                        url = "https://arxiv.org/abs/" + ids2["ArXiv"]
+                    elif ids2.get("DOI"):
+                        url = "https://doi.org/" + ids2["DOI"]
+                    else:
+                        url = cp.get("url")
+                    break
+            except Exception as exc:  # noqa: BLE001
+                print(f"  s2 resolve failed for {nm} {yr}: {exc}")
+                return None            # transient: never cached as a miss
+            _s2[key] = url or 0
+            dump_json(_S2CACHE, _s2)
+            _t.sleep(1)
+            return url
+
+        title_of = {GID.get((p3["_ck"], p3["event_id"])): p3["title"]
+                    for p3 in papers.values()}
         for g2, wants in cite_need.items():
             out2 = []
             refs = refs_need.get(g2) or []
@@ -712,18 +765,20 @@ def build_payload(span_source: str) -> dict:
                 surname = surname[0] if surname else ""
                 hit = next((r3 for r3 in refs
                             if surname and surname in _cnorm(r3) and yr in r3), None)
-                if not hit:
-                    # no reference list to resolve against (no arXiv match, or
-                    # PDF-era file) — a labelled SEARCH is not a guessed fact
-                    out2.append([nm, None, None, yr])
-                    continue
-                hn = " " + _cnorm(hit) + " "
-                tg = next((tg2 for t3, tg2 in tindex if t3 in hn), None)
-                if tg is not None and tg != g2:
-                    out2.append([nm, tg, None, yr])
-                else:
-                    m2 = _ARX2.search(hit)
-                    out2.append([nm, None, m2.group(1) if m2 else None, yr])
+                tg = None
+                ax = None
+                if hit:
+                    hn = " " + _cnorm(hit) + " "
+                    tg = next((tg2 for t3, tg2 in tindex if t3 in hn), None)
+                    if tg == g2:
+                        tg = None
+                    m2 = _ARX2.search(hit) if tg is None else None
+                    ax = m2.group(1) if m2 else None
+                url = None
+                if tg is None and not ax:
+                    url = _s2_resolve(title_of.get(g2) or "", nm, yr)
+                if tg is not None or ax or url:
+                    out2.append([nm, tg, ax, yr, url])
             if out2:
                 cite_links[g2] = out2
 
@@ -2136,9 +2191,10 @@ function roleRanges(text,p){
 }
 function annotate(text,p,plain,pCl){
   const rs=plain?[]:roleRanges(text,p);
-  if(pCl)for(const [nm,tg,ax,yr] of pCl){
+  if(pCl)for(const [nm,tg,ax,yr,url] of pCl){
+    if(tg==null&&!ax&&!url)continue;
     const i2=text.indexOf(nm);
-    if(i2>=0)rs.push({s:i2,e:i2+nm.length,cls:'cite',prio:5,tg,ax,yr,nm});
+    if(i2>=0)rs.push({s:i2,e:i2+nm.length,cls:'cite',prio:5,tg,ax,url});
   }
   for(const w of st.q){                            // search terms share the layer
     if(w.length<2)continue;
@@ -2158,8 +2214,7 @@ function annotate(text,p,plain,pCl){
     const inner=esc(text.slice(r.s,r.e));
     outp+= r.cls==='cite'
       ? (r.tg!=null?`<a class="citelink" data-cg="${r.tg}">${inner}</a>`
-        :r.ax?`<a class="citelink ext" href="https://arxiv.org/abs/${r.ax}" target="_blank" rel="noopener">${inner}↗</a>`
-        :`<a class="citelink ext" title="search this citation" href="https://scholar.google.com/scholar?q=${encodeURIComponent(r.nm+' '+(r.yr||''))}" target="_blank" rel="noopener">${inner}↗</a>`)
+        :`<a class="citelink ext" href="${r.ax?'https://arxiv.org/abs/'+r.ax:r.url}" target="_blank" rel="noopener">${inner}↗</a>`)
       : r.cls==='q' ? `<mark>${inner}</mark>` : `<span class="hm ${r.cls}">${inner}</span>`;
     at=r.e;
   }
