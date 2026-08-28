@@ -1785,9 +1785,8 @@ background:none;cursor:pointer;color:var(--ink2)}
 .sor span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
 .sor:hover span{color:var(--acc)}
 .sor.on{background:var(--hi)}
-.cmprel{text-align:center;font-size:12px;color:var(--mut);margin:0 0 10px}
-.cmprel.on{color:var(--ink)}
-.cmprel b{color:var(--up)}
+.nrel{color:var(--up);font-weight:700}
+.sor b em{font-style:normal;font-weight:500;font-size:9px;color:var(--mut);margin-left:2px}
 .famchip.sel .per{color:#fff}
 .pfoot{display:flex;align-items:center;gap:8px;margin-top:7px}
 
@@ -1804,7 +1803,8 @@ background:none;cursor:pointer;color:var(--ink2)}
 .cmpsh>b{font-size:10px;letter-spacing:.07em;text-transform:uppercase;color:var(--mut);font-weight:700}
 .cmpgrid{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start}
 @media (max-width:980px){.cmpgrid{grid-template-columns:1fr}}
-.cmptag{font-size:10px;letter-spacing:.07em;text-transform:uppercase;color:var(--mut);margin:0 0 6px 2px}
+.cmptag{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink);
+  font-weight:800;margin:0 0 7px 2px}
 .cmpgrid .p{margin:0}
 .nb.cmpon{color:var(--acc);font-weight:600}
 .nb.cmpon .nbm{font-weight:400}
@@ -2420,16 +2420,15 @@ function sharedChips(a,b){
 // The decisive pairwise fact: does either compared paper cite the other?
 // A shared bibliography restates similarity; a direct edge states the
 // RELATION — descendant, ancestor, or parallel work.
-function citeRelHTML(){
-  const A=SPX[P[CMP.a].i], B=SPX[P[CMP.b].i];
-  if(!A||!B)return '';
-  const ab=(A[6]||[]).includes(P[CMP.b].i);
-  const ba=(B[6]||[]).includes(P[CMP.a].i);
-  const t=ab&&ba?'⇄ each cites the other'
-    :ab?'the left paper <b>cites</b> the right one ⟶'
-    :ba?'⟵ the right paper <b>cites</b> the left one'
-    :'neither cites the other';
-  return `<div class="cmprel ${ab||ba?'on':''}">${t}</div>`;
+function citeRel(aIdx,bIdx){
+  const A=SPX[P[aIdx].i], B=SPX[P[bIdx].i];
+  if(!A||!B)return null;
+  const ab=(A[6]||[]).includes(P[bIdx].i);
+  const ba=(B[6]||[]).includes(P[aIdx].i);
+  return ab&&ba?'⇄ they cite each other'
+    :ab?'cited by the left paper'
+    :ba?'cites the left paper'
+    :'';
 }
 function renderCmp(){
   if(!CMP)return;
@@ -2463,7 +2462,6 @@ function renderCmp(){
     `<div class="cmpbar"><button id="cmpx">← back to the list</button>`+
     `<span class="cmphd">side by side</span></div>`+
     (shared?`<div class="cmpsh"><b>both papers</b>${shared}</div>`:'')+
-    citeRelHTML()+
     `<div class="cmpgrid">`+
     `<div><div class="cmptag">the paper you were reading</div>${card(CMP.a,true)}</div>`+
     `<div><div class="cmptag">${CMP.why==='cite'?'the paper it cites':'the similar paper you picked'}</div>${card(CMP.b,true)}</div>`+
@@ -2501,9 +2499,12 @@ function cmpPanel(){
     const rows=ids.slice(0,NEIGHBOURS_SHOWN).map(id=>{
       const j=BYID[id]; if(j===undefined)return '';
       const q=P[j], on=j===CMP.b;
+      let rel=citeRel(CMP.a,j);
+      if(rel===null)rel=''; else if(on&&!rel)rel='no citation either way';
       return `<div class="nb ${on?'cmpon':''}" data-cb="${j}">${esc(q.t)}`+
              `<span class="nbm"><b style="color:var(--v${vhue(q.cy)})">${esc(CY[q.cy].v)} ${CY[q.cy].y}</b>`+
-             `${q.o===2?' · '+(CY[q.cy].hw||'Spotlight'):''}${on?' · on the right':''}</span></div>`;
+             `${q.o===2?' · '+(CY[q.cy].hw||'Spotlight'):''}${on?' · on the right':''}`+
+             `${rel?` · <b class="nrel">${rel}</b>`:''}</span></div>`;
     }).join('');
     $('#pbody').innerHTML=
       `<div class="pseed">${esc(P[a].t)}</div>`+
@@ -3086,12 +3087,12 @@ function standsOnHTML(res){
   }
   const rows=[...cnt.entries()].filter(([,c])=>c>=3).sort((x,y)=>y[1]-x[1]).slice(0,5);
   if(!rows.length)return '';
-  return `<div class="rh" style="margin-top:11px">Stands on <em>cited within this set</em></div>`+
+  return `<div class="rh" style="margin-top:11px">Stands on <em>how many of this set cite each</em></div>`+
     `<div class="soul">`+rows.map(([g,c])=>{
       const j2=BYID[g]; if(j2===undefined)return '';
       const q2=P[j2];
-      return `<button class="sor ${st.anc===g?'on':''}" data-anc="${g}" title="${esc(q2.t)} — show the ${c} papers here that cite it">`+
-        `<b>${c}×</b><i style="background:var(--v${vhue(q2.cy)})"></i><span>${esc(q2.t)}</span></button>`;
+      return `<button class="sor ${st.anc===g?'on':''}" data-anc="${g}" title="${esc(q2.t)} — ${c} papers in this set cite it; click to show them">`+
+        `<b>${c}<em>cite</em></b><i style="background:var(--v${vhue(q2.cy)})"></i><span>${esc(q2.t)}</span></button>`;
     }).join('')+`</div>`+
     (pending?`<div class="scsub">counting citations…</div>`:'');
 }
