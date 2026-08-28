@@ -2134,8 +2134,12 @@ function roleRanges(text,p){
   }
   return out;
 }
-function annotate(text,p,plain){
+function annotate(text,p,plain,pCl){
   const rs=plain?[]:roleRanges(text,p);
+  if(pCl)for(const [nm,tg,ax,yr] of pCl){
+    const i2=text.indexOf(nm);
+    if(i2>=0)rs.push({s:i2,e:i2+nm.length,cls:'cite',prio:5,tg,ax,yr,nm});
+  }
   for(const w of st.q){                            // search terms share the layer
     if(w.length<2)continue;
     let re; try{re=new RegExp(RX_ESC(w),'gi');}catch(e){continue;}
@@ -2152,7 +2156,11 @@ function annotate(text,p,plain){
   for(const r of kept){
     outp+=esc(text.slice(at,r.s));
     const inner=esc(text.slice(r.s,r.e));
-    outp+= r.cls==='q' ? `<mark>${inner}</mark>` : `<span class="hm ${r.cls}">${inner}</span>`;
+    outp+= r.cls==='cite'
+      ? (r.tg!=null?`<a class="citelink" data-cg="${r.tg}">${inner}</a>`
+        :r.ax?`<a class="citelink ext" href="https://arxiv.org/abs/${r.ax}" target="_blank" rel="noopener">${inner}↗</a>`
+        :`<a class="citelink ext" title="search this citation" href="https://scholar.google.com/scholar?q=${encodeURIComponent(r.nm+' '+(r.yr||''))}" target="_blank" rel="noopener">${inner}↗</a>`)
+      : r.cls==='q' ? `<mark>${inner}</mark>` : `<span class="hm ${r.cls}">${inner}</span>`;
     at=r.e;
   }
   return outp+esc(text.slice(at));
@@ -2186,27 +2194,6 @@ function ensureSpans(cys){
     }).catch(()=>{SP_LOADED[k]=false;});
   }
 }
-// A governor-cite's retained name becomes a door: to the cited paper's card
-// (side-by-side, like Similar) when it lives in this corpus, to arXiv when the
-// reference carries an id. Tag-safe: only text between tags is touched.
-function linkCites(html,pCl){
-  if(!pCl||!pCl.length)return html;
-  for(const [nm,tg,ax,yr] of pCl){
-    const rx=new RegExp('('+nm.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+')');
-    const rep=tg!=null
-      ?`<a class="citelink" data-cg="${tg}">$1</a>`
-      :ax
-      ?`<a class="citelink ext" href="https://arxiv.org/abs/${ax}" target="_blank" rel="noopener">$1↗</a>`
-      :`<a class="citelink ext" title="search this citation" href="https://scholar.google.com/scholar?q=${encodeURIComponent(nm+' '+(yr||''))}" target="_blank" rel="noopener">$1↗</a>`;
-    let done=false;
-    html=html.split(/(<[^>]+>)/).map(seg=>{
-      if(done||seg.startsWith('<'))return seg;
-      if(rx.test(seg)){done=true;return seg.replace(rx,rep);}
-      return seg;
-    }).join('');
-  }
-  return html;
-}
 // The card is top / middle / bottom: title-venue-year, the edited passage,
 // the extracted terms. Folded (the list default) hides only the MIDDLE — the
 // terms alone say which problem, what name, on what, which data. A click
@@ -2224,9 +2211,9 @@ function card(i,full){
   // in the order a reader needs them, and the colour says which question each
   // answers: why it was needed, what is new, what it achieved.
   const parts=[];
-  if(pL)parts.push(`<span class="hl why">${markLim(annotate(pL,p,true))}</span>`);
+  if(pL)parts.push(`<span class="hl why">${markLim(annotate(pL,p,true,pCl))}</span>`);
   const change=pK||pn[0]||'';
-  if(change)parts.push(`<span class="hl new">${annotate(change,p,true)}</span>`);
+  if(change)parts.push(`<span class="hl new">${annotate(change,p,true,pCl)}</span>`);
   // The deep pass's mechanism sentences (highlight papers, full-paper source)
   // extend the yellow: HOW it works, still the paper's own words in the same
   // wash — full text enriches the passage itself, never a side ledger.
@@ -2238,10 +2225,10 @@ function card(i,full){
       const T2=tk(m);
       if(seen.some(S2=>ov(T2,S2)>=0.6))continue;   // says the same thing again
       seen.push(T2);
-      parts.push(`<span class="hl new">${annotate(m,p,true)}</span>`);
+      parts.push(`<span class="hl new">${annotate(m,p,true,pCl)}</span>`);
     }
   }
-  if(pR)parts.push(`<span class="hl eff">${annotate(pR,p,true)}</span>`);
+  if(pR)parts.push(`<span class="hl eff">${annotate(pR,p,true,pCl)}</span>`);
 
   // The extracted terms are part of the summary, not a footnote under it.
   const term=(lab,v,cls)=>v?`<span class="tm ${cls}"><b>${lab}</b>${hl(v)}</span>`:'';
@@ -2265,7 +2252,7 @@ function card(i,full){
 
   const passage=open
     ?`<div class="rule"></div>`+
-     (parts.length?`<div class="passage">${linkCites(parts.join(' '),pCl)}</div>`
+     (parts.length?`<div class="passage">${parts.join(' ')}</div>`
       :spReady?`<div class="passage miss">no sentence in this paper states what is new</div>`
       :`<div class="passage miss">loading the paper's own sentences…</div>`)
     :'';
