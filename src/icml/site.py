@@ -3102,8 +3102,9 @@ function standsOnHTML(res){
 // composition of the set they picked (see railSetCard).
 function drawRail(){
   $('#rail').hidden=false;
+  // Venue buttons are TOGGLES: lit = scoped to that venue, toggled off = all
+  // venues at once. No separate All button — "no venue chosen" IS all.
   $('#rail').innerHTML=
-    `<button class="rv ${st.corp===-1?'on':''}" data-rv="-1">All<span>${P.length.toLocaleString()}</span></button>`+
     VENUES.map(ven=>{
     const yrs=CY.map((c,j)=>({...c,j})).filter(c=>c.v===ven.v);
     const now=yrs[yrs.length-1];
@@ -3113,7 +3114,9 @@ function drawRail(){
   }).join('');
   $('#rail').insertAdjacentHTML('beforeend','<div class="rtr" id="rtr"></div>');
   $('#rail').querySelectorAll('[data-rv]').forEach(el=>el.onclick=()=>{
-    if(+el.dataset.rv!==st.corp){ CMP=null; go(+el.dataset.rv); }});
+    CMP=null;
+    go(+el.dataset.rv===st.corp?-1:+el.dataset.rv);
+  });
 }
 // The rtr interactions mutate the selection, so they always leave compare —
 // CMP=null is a no-op in the plain list view.
@@ -3160,7 +3163,7 @@ function render(){
   if(landing){
     $('#legend').hidden=true; $('#results').innerHTML=''; $('#inset').hidden=true;
     $('#story').hidden=true;
-    $('#q').placeholder=`search ${P.length.toLocaleString()} papers across ICML · NeurIPS · ICLR`;
+    $('#q').placeholder='';
     $('#landing').innerHTML=landingHTML();
     wireLanding();
     return;
