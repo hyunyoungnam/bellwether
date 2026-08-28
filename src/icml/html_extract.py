@@ -234,7 +234,7 @@ def main() -> int:
                 tally["n"] += 1
                 if row.get("ok"):
                     tally["ok"] += 1
-                    tally["chars"] += row["chars"]
+                    tally["chars"] += row.get("chars", 0)
                     tally["refs"] += len(row.get("references") or [])
                 else:
                     tally["none"] += 1
