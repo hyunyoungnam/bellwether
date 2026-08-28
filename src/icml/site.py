@@ -117,6 +117,20 @@ def _dehyphen(m):
     return left + ("" if joined else "-") + right
 
 
+# MathML text puts the accent BEFORE its base letter ("ˆV" for V-hat); compose
+# it as the combining mark after the letter instead — typography, not content,
+# same class as the line-break hyphen repair.
+# NO backtick/acute here: ``these'' are LaTeX quotes, not accents
+_ACC = {"\u02c6": "\u0302", "\u02dc": "\u0303", "\u00af": "\u0304",
+        "\u02d9": "\u0307"}
+_ACC_RX = _re.compile("([" + "".join(_ACC) + "])([A-Za-z])")
+
+
+def _compose_accents(s: str) -> str:
+    s = s.replace("``", "\u201c").replace("''", "\u201d")
+    return _ACC_RX.sub(lambda m: m.group(2) + _ACC[m.group(1)], s)
+
+
 def detex(t: str) -> str:
     """Render author TeX as text. Display-only; never used for matching or counts."""
     s = _PDF_HYPHEN.sub(_dehyphen, t or "")
@@ -143,7 +157,7 @@ def detex(t: str) -> str:
     s = _re.sub(r"\\([%&#_])", r"\1", s)     # escaped punctuation
     s = _re.sub(r"\\[a-zA-Z]+", "", s)       # any macro we do not know
     s = s.replace("{", "").replace("}", "").replace("\\", "")
-    return _re.sub(r"\s+", " ", s).strip()
+    return _compose_accents(_re.sub(r"\s+", " ", s).strip())
 
 
 # Deletion-only editing: characters may be removed, never added or changed. What
