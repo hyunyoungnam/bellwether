@@ -3062,7 +3062,6 @@ function railSetCard(res,vset){
   if(V2.u)fch.push(['u','built on '+V2.u]);
   if(V2.b)fch.push(['b','on '+V2.b]);
   if(st.lim!==null)fch.push(['l','struggles: “'+st.lim+'”']);
-  if(st.qraw)fch.push(['q','“'+st.qraw+'”']);
   const fchips=fch.length
     ?`<div class="scchips" style="margin-bottom:8px">`+fch.map(([ax,l])=>
        `<button class="scchip on2" data-fc="${ax}" title="${esc(l)}">${esc(disp(l))} ×</button>`).join('')+`</div>`
