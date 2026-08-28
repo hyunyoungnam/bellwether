@@ -1610,8 +1610,9 @@ border:1px solid var(--ring);background:var(--card);color:var(--ink2);display:fl
 .mrl{font-size:12.5px;color:var(--ink2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
   display:block;margin-bottom:1px}
 .mrl .tag{margin-left:5px}
-.mrt{position:relative;height:6px;display:block}
-.mrt .lane{position:absolute;inset:0;height:auto;margin:0}
+.mrt{position:relative;display:block}
+.mrt .lane{height:6px;margin:0 0 2px}
+.mrt .lane:last-child{margin-bottom:0}
 /* the set card: composition of the current selection, in reach while scrolling */
 .setcard{margin-top:14px;border-top:1px solid var(--ring);padding-top:10px}
 .scn{font-size:22px;font-weight:700;letter-spacing:-.02em}
@@ -2987,8 +2988,11 @@ function railTrend(){
   if(!all&&!pr)return '';
   // At ALL scope the movers pool every venue's own pair — the union the
   // digest uses; a single venue's pair must never stand in for the union.
-  let raw, n0, n1, hue, head;
+  let raw, n0, n1, hue, head, byPair=null;
   if(all){
+    // selection still pools (the union decides significance), but each row
+    // DRAWS per-venue lanes — the same encoding as the landing chart
+    byPair=prs.map(p2=>new Map(changedRows(p2.c0,p2.c1).t.map(r=>[r.id,r])));
     const acc=new Map();
     n0=0; n1=0;
     for(const p2 of prs){
@@ -3000,9 +3004,7 @@ function railTrend(){
     }
     raw=[...acc.values()].map(e=>({...e,s0:e.a/n0*1000,s1:e.b/n1*1000}));
     hue='u';
-    head=`<div class="rh">All venues <em class="rleg">`+
-      `<i style="background:color-mix(in srgb, var(--vu) 34%, var(--card))"></i>previous`+
-      `<i style="background:var(--vu)"></i>latest</em></div>`;
+    head=`<div class="rh">All venues <em>every venue's own pair</em></div>`;
   } else {
     n0=CYN[pr.c0]; n1=CYN[pr.c1];
     raw=changedRows(pr.c0,pr.c1).t;
@@ -3023,14 +3025,22 @@ function railTrend(){
   rows.sort((x,y)=>Math.abs(y.z)-Math.abs(x.z));
   const top=rows.slice(0,8);
   if(!top.length)return '';
-  const M=Math.max(...top.flatMap(r=>[r.s0,r.s1]),CHG_F*2);
+  const laneVals=all
+    ?top.flatMap(r=>byPair.flatMap(m2=>{const r2=m2.get(r.id);return r2?[r2.s0,r2.s1]:[];}))
+    :top.flatMap(r=>[r.s0,r.s1]);
+  const M=Math.max(...laneVals,CHG_F*2);
   const X=logX(M);
   return head+
     top.map(r=>{
       const tag=r.a<=2&&r.b>2?'<em class="tag">new</em>'
                :r.b<=2&&r.a>2?'<em class="tag gone">gone</em>':'';
+      const lanes=all
+        ?prs.map((p2,ix)=>{const r2=byPair[ix].get(r.id);
+            return r2?laneHTML({hue:p2.hue,s0:r2.s0,s1:r2.s1,w0:X(r2.s0),w1:X(r2.s1)}):'';})
+          .join('')
+        :laneHTML({hue,s0:r.s0,s1:r.s1,w0:X(r.s0),w1:X(r.s1)});
       return `<button class="mrr" data-tid="${r.id}"><span class="mrl" title="${esc(r.l)}">${esc(disp(r.l))}${tag}</span>`+
-        `<span class="mrt">${laneHTML({hue,s0:r.s0,s1:r.s1,w0:X(r.s0),w1:X(r.s1)})}</span></button>`;
+        `<span class="mrt">${lanes}</span></button>`;
     }).join('');
 }
 // After a pick: what the chosen set is MADE OF, held sticky while the list
