@@ -1763,17 +1763,17 @@ background:none;cursor:pointer;color:var(--ink2)}
 .p.cpt .terms{margin-top:8px}
 .p.cpt:hover{border-color:var(--acc)}
 .p.exp{cursor:pointer}
-.bcbox{margin-top:16px;background:var(--card);border:1px solid var(--ring);border-radius:12px;padding:13px 16px}
-.bchd{font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--mut);margin-bottom:6px}
-.bchd em{font-style:normal;font-weight:500;letter-spacing:0;text-transform:none;margin-left:8px}
-.bcite{display:flex;align-items:baseline;gap:8px;width:100%;text-align:left;border:0;background:none;
-  font:inherit;font-size:12.5px;color:var(--ink);padding:6px 0;border-bottom:1px solid var(--line);cursor:pointer}
-.bcite:last-child{border-bottom:0}
-.bcite:hover span{color:var(--acc)}
-.bcite i{flex:0 0 9px;height:9px;border-radius:2px;align-self:center}
-.bcite em{font-style:normal;color:var(--mut);font-size:11px;white-space:nowrap}
-.bcite.ext{text-decoration:none}
-.bcite.ext i{background:var(--line)}
+.soul{display:flex;flex-direction:column;gap:2px}
+.sor{display:flex;align-items:baseline;gap:6px;border:0;background:none;font:inherit;
+  font-size:11.5px;color:var(--ink2);text-align:left;padding:3px 4px;border-radius:6px;cursor:pointer;width:100%}
+.sor b{font-variant-numeric:tabular-nums;color:var(--ink);flex:0 0 auto}
+.sor i{flex:0 0 8px;height:8px;border-radius:2px;align-self:center}
+.sor span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.sor:hover span{color:var(--acc)}
+.sor.on{background:var(--hi)}
+.cmprel{text-align:center;font-size:12px;color:var(--mut);margin:0 0 10px}
+.cmprel.on{color:var(--ink)}
+.cmprel b{color:var(--up)}
 .famchip.sel .per{color:#fff}
 .pfoot{display:flex;align-items:center;gap:8px;margin-top:7px}
 
@@ -1977,14 +1977,14 @@ function papersWithWord(w){
 // Papers are shown only once the reader has asked for some. Listing all 6,637 on
 // arrival is the problem this product exists to remove, not a neutral default.
 const MAX_SHOWN=80, NEIGHBOURS_SHOWN=5;
-const st={corp:null,q:[],qraw:'',topics:new Set(),fams:new Set(),sel:null,panel:null,ds:null,meth:null,mfam:null,grouped:false,lim:null};
+const st={corp:null,q:[],qraw:'',anc:null,topics:new Set(),fams:new Set(),sel:null,panel:null,ds:null,meth:null,mfam:null,grouped:false,lim:null};
 // The claim the reader clicked to get here — the door's face, carried to the
 // destination so "why am I looking at this set?" never needs remembering.
 let STORY=null;
 // A conference pick alone is NOT a selection. Picking "ICML 2026" leaves 6,637
 // papers, which is the problem this product exists to remove — the reader still
 // has to say what their field is.
-const chosen=()=>st.q.length||st.topics.size||st.fams.size||st.ds!==null||st.meth!==null||st.mfam!==null||st.lim!==null;
+const chosen=()=>st.q.length||st.topics.size||st.fams.size||st.ds!==null||st.meth!==null||st.mfam!==null||st.lim!==null||st.anc!==null;
 
 // How strongly each literal hit matches — used to pick seeds, so the centroid is
 // built from the papers the query is actually about, not the weakest 700.
@@ -2403,40 +2403,19 @@ function sharedChips(a,b){
           d?`<span class="tm eff"><b>data</b>${d}</span>`:'',
           t?`<span class="tm"><b>tasks</b>${t}</span>`:''].filter(Boolean).join('');
 }
-// What the two compared papers BOTH cite — in-corpus rows first (a click
-// swaps the right card to the shared ancestor), then shared arXiv references
-// from outside these editions. Five rows in all.
-let CX=null, CX_P=null;
-function ensureCites(){
-  return CX_P??=part('cites.json').then(d=>{ CX=d; }).catch(()=>{ CX_P=null; });
-}
-function bothCiteHTML(){
+// The decisive pairwise fact: does either compared paper cite the other?
+// A shared bibliography restates similarity; a direct edge states the
+// RELATION — descendant, ancestor, or parallel work.
+function citeRelHTML(){
   const A=SPX[P[CMP.a].i], B=SPX[P[CMP.b].i];
   if(!A||!B)return '';
-  const cb=new Set(B[6]||[]);
-  const inSh=(A[6]||[]).filter(g=>cb.has(g));
-  let extSh=[];
-  if(CX){
-    const xb=new Set(CX.x[String(P[CMP.b].i)]||[]);
-    extSh=(CX.x[String(P[CMP.a].i)]||[]).filter(id=>xb.has(id));
-  } else ensureCites().then(()=>{ if(CMP)renderCmp(); });
-  const total=inSh.length+extSh.length;
-  if(!total)return '';
-  const rows=[];
-  for(const g of inSh.slice(0,5)){
-    const j=BYID[g]; if(j===undefined)continue;
-    const q=P[j];
-    rows.push(`<button class="bcite" data-bc="${j}"><i style="background:var(--v${vhue(q.cy)})"></i>`+
-      `<span>${esc(q.t)}</span><em>${esc(CY[q.cy].v)} ${CY[q.cy].y}</em></button>`);
-  }
-  for(const id of extSh.slice(0,Math.max(0,5-rows.length))){
-    const t2=(CX&&CX.t[id])||('arXiv:'+id);
-    rows.push(`<a class="bcite ext" href="https://arxiv.org/abs/${id}" target="_blank" rel="noopener">`+
-      `<i></i><span>${esc(t2)}</span><em>arXiv ↗</em></a>`);
-  }
-  return `<div class="bcbox"><div class="bchd">Both cite`+
-    `<em>${inSh.length?'these editions first, then shared arXiv references':'shared arXiv references'}`+
-    `${total>5?` · showing 5 of ${total}`:''}</em></div>`+rows.join('')+`</div>`;
+  const ab=(A[6]||[]).includes(P[CMP.b].i);
+  const ba=(B[6]||[]).includes(P[CMP.a].i);
+  const t=ab&&ba?'⇄ each cites the other'
+    :ab?'the left paper <b>cites</b> the right one ⟶'
+    :ba?'⟵ the right paper <b>cites</b> the left one'
+    :'neither cites the other';
+  return `<div class="cmprel ${ab||ba?'on':''}">${t}</div>`;
 }
 function renderCmp(){
   if(!CMP)return;
@@ -2470,10 +2449,11 @@ function renderCmp(){
     `<div class="cmpbar"><button id="cmpx">← back to the list</button>`+
     `<span class="cmphd">side by side</span></div>`+
     (shared?`<div class="cmpsh"><b>both papers</b>${shared}</div>`:'')+
+    citeRelHTML()+
     `<div class="cmpgrid">`+
     `<div><div class="cmptag">the paper you were reading</div>${card(CMP.a,true)}</div>`+
     `<div><div class="cmptag">${CMP.why==='cite'?'the paper it cites':'the similar paper you picked'}</div>${card(CMP.b,true)}</div>`+
-    `</div>`+bothCiteHTML();
+    `</div>`;
   // the colour key sits right above the two cards it explains
   { const lg=$('#legend');
     if(lg){ el.querySelector('.cmpgrid').before(lg); lg.hidden=false; } }
@@ -2484,8 +2464,7 @@ function renderCmp(){
   el.querySelectorAll('[data-sim]').forEach(b=>b.onclick=ev=>{ ev.stopPropagation();
     const j=+b.dataset.sim; CMP=null; render(); openPanel(j); });
   wireCites(el);
-  el.querySelectorAll('[data-bc]').forEach(b=>b.onclick=()=>{
-    CMP={a:CMP.a,b:+b.dataset.bc,why:'cite'}; renderCmp(); });
+
   el.querySelectorAll('[data-mail]').forEach(b=>b.onclick=async ev=>{
     ev.stopPropagation();
     const addr=b.dataset.mail, was=b.textContent;
@@ -3062,6 +3041,8 @@ function railSetCard(res,vset){
   if(V2.u)fch.push(['u','built on '+V2.u]);
   if(V2.b)fch.push(['b','on '+V2.b]);
   if(st.lim!==null)fch.push(['l','struggles: “'+st.lim+'”']);
+  if(st.anc!==null){const j2=BYID[st.anc];
+    fch.push(['a','stands on “'+(j2!==undefined?P[j2].t.slice(0,40):'')+'”']);}
   const fchips=fch.length
     ?`<div class="scchips" style="margin-bottom:8px">`+fch.map(([ax,l])=>
        `<button class="scchip on2" data-fc="${ax}" title="${esc(l)}">${esc(disp(l))} ×</button>`).join('')+`</div>`
@@ -3072,8 +3053,33 @@ function railSetCard(res,vset){
     (sib.length>1?`<div class="scsub">the same pick, in each edition — share of that year</div>`:'')+
     (dch?`<div class="rh" style="margin-top:11px">Tested on <em>in this set</em></div><div class="scchips">${dch}</div>`:'')+
     (mch?`<div class="rh" style="margin-top:11px">Builds on <em>in this set</em></div><div class="scchips">${mch}</div>`:'')+
+    standsOnHTML(res)+
     `<button class="scsplit ${st.grouped?'on':''}" id="grptog2">${st.grouped?'Show papers':'Split into subgroups'}</button>`+
     `</div>`;
+}
+// What this set STANDS ON: the papers most of the selection cites, counted
+// within the selection — the field's load-bearing ancestors, compressed to a
+// handful. Pairwise shared bibliographies restate similarity; set-level
+// recurrence is a signal (like TESTED ON). Every row is a door: clicking
+// narrows the set to the papers that cite that ancestor.
+function standsOnHTML(res){
+  ensureSpans(new Set(res.map(i2=>P[i2].cy)));
+  const cnt=new Map(); let pending=0;
+  for(const i2 of res){
+    const sx2=SPX[P[i2].i];
+    if(sx2===undefined){pending++;continue;}
+    for(const g of (sx2[6]||[]))cnt.set(g,(cnt.get(g)||0)+1);
+  }
+  const rows=[...cnt.entries()].filter(([,c])=>c>=3).sort((x,y)=>y[1]-x[1]).slice(0,5);
+  if(!rows.length)return '';
+  return `<div class="rh" style="margin-top:11px">Stands on <em>cited within this set</em></div>`+
+    `<div class="soul">`+rows.map(([g,c])=>{
+      const j2=BYID[g]; if(j2===undefined)return '';
+      const q2=P[j2];
+      return `<button class="sor ${st.anc===g?'on':''}" data-anc="${g}" title="${esc(q2.t)} — show the ${c} papers here that cite it">`+
+        `<b>${c}×</b><i style="background:var(--v${vhue(q2.cy)})"></i><span>${esc(q2.t)}</span></button>`;
+    }).join('')+`</div>`+
+    (pending?`<div class="scsub">counting citations…</div>`:'');
 }
 // The rail chrome, shared by the list view and the compare view. The rail
 // carries whatever the reader should press NEXT: before a pick, this venue's
@@ -3102,6 +3108,7 @@ function wireRtr(rt){
     CMP=null;
     const ax=el.dataset.fc;
     if(ax==='l')st.lim=null;
+    else if(ax==='a')st.anc=null;
     else if(ax==='q'){ st.q=[]; st.qraw=''; const q2=$('#q'); if(q2)q2.value=''; }
     else clearSlot(ax);
     render();});
@@ -3112,6 +3119,11 @@ function wireRtr(rt){
     render();});
   rt.querySelectorAll('[data-tid]').forEach(el=>el.onclick=()=>{
     CMP=null; applyChgRow('t',+el.dataset.tid); render();});
+  rt.querySelectorAll('[data-anc]').forEach(el=>el.onclick=()=>{
+    CMP=null;
+    const g=+el.dataset.anc;
+    st.anc=st.anc===g?null:g;
+    render();});
 }
 function render(){
   // While comparing, every repaint (spans arriving, etc.) repaints the compare
@@ -3182,7 +3194,14 @@ function render(){
   { const V3=slotState();
     const scope=V3.k||V3.d||(st.lim!==null?`“${st.lim}”`:null)||V3.u||V3.b;
     $('#q').placeholder=scope?`search within ${scope}…`:''; }
-  const res=results();
+  let res=results();
+  if(st.anc!==null){
+    // citers of the chosen ancestor, within the selection — cg rides the
+    // spans parts, so papers whose part is still loading are counted on the
+    // repaint their arrival triggers
+    ensureSpans(new Set(res.map(i2=>P[i2].cy)));
+    res=res.filter(i2=>{const sx2=SPX[P[i2].i];return sx2&&(sx2[6]||[]).includes(st.anc);});
+  }
   if(qPending()){
     $('#inset').hidden=true;
     $('#results').innerHTML='<div class="capped">searching…</div>';
@@ -3483,7 +3502,7 @@ function clearPicks(){
   st.q=[]; st.qraw=''; const q=$('#q'); if(q)q.value='';
   st.sel=null; st.grouped=false;
   st.topics.clear(); st.fams.clear(); st.meth=null; st.mfam=null; st.ds=null;
-  st.lim=null; STORY=null; CMP=null; EXP.clear(); closePanel();
+  st.lim=null; st.anc=null; STORY=null; CMP=null; EXP.clear(); closePanel();
 }
 function applyChgRow(k,id){
   // the row handlers set STORY right beside the pick — clearing the picks
@@ -3624,11 +3643,6 @@ def main() -> int:
             r.pop("D"), r.pop("cg"), r.pop("cl")]
     for k, v in spans_by.items():
         parts[f"spans_{k}.json"] = dump(v)
-    _CIT2 = PROCESSED / "citations.json"
-    if _CIT2.exists():
-        _cd = load_json(_CIT2)
-        parts["cites.json"] = dump({"x": _cd.get("ext") or {},
-                                    "t": _cd.get("ext_titles") or {}})
     parts["search.json"] = dump({"terms": payload.pop("terms"),
                                  "lims": payload.pop("lims")})
     parts["emb.json"] = dump({"emb": payload.pop("emb"),
