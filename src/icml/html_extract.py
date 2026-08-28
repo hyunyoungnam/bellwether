@@ -125,13 +125,33 @@ def parse_html(text: str) -> dict:
         if bucket != "back":
             sections.append({"bucket": bucket, "title": name or bucket, "text": txt})
 
+    # author block: personnames in document order, each mailto anchor pairs
+    # with the personname it follows — the paper's own printed fact, no
+    # corresponding-author guess
+    authors = []
+    for blk in root.xpath(".//div[contains(@class,'ltx_authors')]")[:1]:
+        cur = None
+        for el in blk.iter():
+            cls = el.get("class") or ""
+            if "ltx_personname" in cls:
+                nm = _clean(el.text_content())
+                if nm and (not authors or authors[-1][0] != nm):
+                    authors.append([nm, None])
+                    cur = len(authors) - 1
+            elif (el.tag == "a" and (el.get("href") or "").startswith("mailto:")) \
+                    or "ltx_email" in cls:
+                em = _clean(el.text_content()).strip("<>")
+                if em and "@" in em and "{" not in em and cur is not None \
+                        and authors[cur][1] is None:
+                    authors[cur][1] = em
+
     refs = []
     for li in root.xpath(".//li[contains(@class,'ltx_bibitem')]"):
         t = _clean(li.text_content())
         if len(t) > 20:
             refs.append(t[:600])
 
-    return {"sections": sections, "references": refs}
+    return {"sections": sections, "references": refs, "authors": authors}
 
 
 def main() -> int:
@@ -143,7 +163,15 @@ def main() -> int:
     ap.add_argument("--delay", type=float, default=0.8,
                     help="per-worker sleep — arXiv is a shared resource")
     ap.add_argument("--limit", type=int, default=0)
+    ap.add_argument("--archive", default=None,
+                    help="directory for gzipped HTML — cheap insurance against "
+                         "the NEXT field we discover we need (decided 2026-08-28)")
+    ap.add_argument("--authors-only", action="store_true",
+                    help="harvest the author block only; sections/references "
+                         "are not rewritten")
     args = ap.parse_args()
+    if args.archive:
+        Path(args.archive).mkdir(parents=True, exist_ok=True)
 
     out = Path(args.out)
     out.parent.mkdir(parents=True, exist_ok=True)
@@ -175,7 +203,13 @@ def main() -> int:
             text = fetch_html(base)
             if text is None:
                 return {**row, "ok": False, "error": "no-html"}
+            if args.archive:
+                import gzip
+                (Path(args.archive) / f"{base}.html.gz").write_bytes(
+                    gzip.compress(text.encode("utf-8"), 6))
             parsed = parse_html(text)
+            if args.authors_only:
+                return {**row, "ok": True, "authors": parsed["authors"]}
             kept = sum(len(s["text"]) for s in parsed["sections"])
             if kept < 500:
                 return {**row, "ok": False, "error": f"thin ({kept} chars)"}

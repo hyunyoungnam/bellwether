@@ -556,6 +556,11 @@ while a query is live, the tiers order otherwise. Restart after reboot:
 then `setsid nohup python3 scripts/serve.py &`.
 
 **Full text routes (decided 2026-08-25, measured):**
+- **HTML is archived; PDFs are not (revised 2026-08-28).** The whole HTML
+  corpus gzips to ~1.2 GB — after paying the refetch cost three times
+  (sentences, then references, then author emails), keeping
+  `data/raw/html/*.html.gz` is cheap insurance against the next field.
+  The PDF rule below stands unchanged.
 - **PDFs are an intermediate, never an archive.** Parse -> keep the sectioned
   JSONL (286 MB for both ICML passes) -> delete the PDF. The 39 GB of raw
   PDFs were deleted after integrity-checking the parsed text; re-download is
