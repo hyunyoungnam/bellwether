@@ -37,6 +37,21 @@ class Handler(SimpleHTTPRequestHandler):
         self.send_header("Cache-Control", "no-cache")
         super().end_headers()
 
+    def do_GET(self):
+        # test hook: a resource that finishes late, so headless screenshots
+        # taken "after load" happen after the page's async work too
+        if self.path.startswith("/slow"):
+            import time as _t
+            _t.sleep(4)
+            body = b"ok"
+            self.send_response(200)
+            self.send_header("Content-Type", "text/plain")
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            self.wfile.write(body)
+            return
+        super().do_GET()
+
     def do_POST(self):
         MEILI = ROUTES.get(self.path)
         if MEILI is None:
