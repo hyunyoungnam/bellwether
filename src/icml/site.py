@@ -3286,7 +3286,11 @@ function render(){
   const live=st.qraw&&!MQ.down&&MQ.q===st.qraw&&MQ.rank;
   const ordered=live?res:[...res].sort((a2,b2)=>
     (CY_LATEST[P[b2].cy]-CY_LATEST[P[a2].cy])||(P[b2].o-P[a2].o)||(a2-b2));
-  const show=ordered.slice(0,MAX_SHOWN);
+  let show=ordered.slice(0,MAX_SHOWN);
+  // a paper picked from the grouped view (or any selection) must be VISIBLE:
+  // if the cap cut it, it leads the list instead of silently not existing
+  if(st.sel!==null&&res.includes(st.sel)&&!show.includes(st.sel))
+    show=[st.sel,...show.slice(0,MAX_SHOWN-1)];
   // No "show more": nobody reads to the end of 6,637. Past the cap the answer is
   // to narrow, and the count above says how much is not on screen.
   const extraShown=extra.slice(0, res.length>=MAX_SHOWN?0:Math.min(extra.length,MAX_SHOWN-res.length));
@@ -3513,8 +3517,9 @@ function changedHTML(){
   const grid='<div class="chgg mv">'+ticks.map(t=>`<i style="left:${X(t).toFixed(2)}%"></i>`).join('')+'</div>';
   const axis='<div class="chgax mv">'+ticks.map(t=>`<b style="left:${X(t).toFixed(2)}%">${t/10}%</b>`).join('')+'</div>';
   const pill=(x,ti)=>{
-    const kind=x.ax==='u'?'m':x.ax==='d'?'t':null;
-    const attrs=kind?`data-pill="${ti}:${x.ax}:${x.id}"`:'disabled';
+    // every axis is clickable: methods filter, topics filter, and tasks apply
+    // as the same-name topic when one exists, as a search otherwise
+    const attrs=`data-pill="${ti}:${x.ax}:${x.id}"`;
     return `<button class="pill ${x.up?'up':'dn'}" ${attrs} title="${esc(x.l)}">${esc(disp(x.l))} `+
       `<i>${x.up?'↑':'↓'}</i> <b>${(x.s0/10).toFixed(0)}→${(x.s1/10).toFixed(0)}%</b>`+
       `${x.nw?'<span class="nw2">NEW</span>':''}</button>`;
@@ -3587,10 +3592,21 @@ function wireChanged(){
     const [ti,ax,id]=el.dataset.pill.split(':').map((v,ix)=>ix===1?v:+v);
     const r=(DG.mix||[]).find(r2=>r2.ti===ti);
     if(r)STORY=mixStoryFor(r,r.shifts.find(x=>x.ax===ax&&x.id===id)||r.shifts[0]);
+    const applyAx=()=>{
+      if(ax==='u'){ st.meth=id; st.mfam=null; }
+      else if(ax==='d')st.topics.add(id);
+      else if(ax==='s'){
+        const lb=tname(id);
+        const tj=T.findIndex(t2=>t2.l===lb);
+        if(tj>=0)st.topics.add(tj);
+        else { st.qraw=lb; st.q=lb.toLowerCase().split(/\s+/).filter(Boolean);
+               const q2=$('#q'); if(q2)q2.value=lb; }
+      }
+    };
     if(st.corp===null){
-      enterWith(()=>{st.topics.add(ti); if(ax==='u')st.meth=id; else if(ax==='d')st.topics.add(id);});
+      enterWith(()=>{st.topics.add(ti); applyAx();});
     }else{
-      st.topics.add(ti); if(ax==='u'){st.meth=id;st.mfam=null;} else if(ax==='d')st.topics.add(id);
+      st.topics.add(ti); applyAx();
       render();
     }});
   document.querySelectorAll('.cr[data-id]').forEach(el=>el.onclick=()=>{
@@ -3624,8 +3640,8 @@ function renderGrouped(res){
     (gr.ids.length>6?`<div class="gmore">and ${gr.ids.length-6} more</div>`:'')+`</div>`).join('');
   $('#results').innerHTML=html;
   wireFold($('#results'));
-  $('#results').querySelectorAll('.p:not(.cpt)[data-i]').forEach(el=>el.onclick=()=>{
-    st.grouped=false; st.q=[]; $('#q').value=''; st.sel=+el.dataset.i; render();
+  $('#results').querySelectorAll('.grow[data-i]').forEach(el=>el.onclick=()=>{
+    st.grouped=false; st.sel=+el.dataset.i; EXP.add(st.sel); render();
     $(`.p[data-i="${st.sel}"]`)?.scrollIntoView({block:'center'});});
 }
 
@@ -3656,7 +3672,7 @@ render();
 // prefetch the on-demand parts once the first paint is done — a reader on the
 // landing costs nothing extra, a reader who searches never notices the split
 setTimeout(()=>{ ensureSearch(); ensureEmb();
-  if(st.corp!==null)ensureSpans([st.corp]); },1200);
+  if(st.corp!==null&&st.corp>=0)ensureSpans([st.corp]); },1200);
 
 </script></body></html>"""
 
