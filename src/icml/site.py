@@ -3007,6 +3007,7 @@ function railSetCard(res,vset){
   if(V2.u)fch.push(['u','built on '+V2.u]);
   if(V2.b)fch.push(['b','on '+V2.b]);
   if(st.lim!==null)fch.push(['l','struggles: “'+st.lim+'”']);
+  if(st.qraw)fch.push(['q','“'+st.qraw+'”']);
   const fchips=fch.length
     ?`<div class="scchips" style="margin-bottom:8px">`+fch.map(([ax,l])=>
        `<button class="scchip on2" data-fc="${ax}" title="${esc(l)}">${esc(disp(l))} ×</button>`).join('')+`</div>`
@@ -3046,7 +3047,9 @@ function wireRtr(rt){
   rt.querySelectorAll('[data-fc]').forEach(el=>el.onclick=()=>{
     CMP=null;
     const ax=el.dataset.fc;
-    if(ax==='l')st.lim=null; else clearSlot(ax);
+    if(ax==='l')st.lim=null;
+    else if(ax==='q'){ st.q=[]; st.qraw=''; const q2=$('#q'); if(q2)q2.value=''; }
+    else clearSlot(ax);
     render();});
   rt.querySelectorAll('[data-ck]').forEach(el=>el.onclick=()=>{
     CMP=null;
@@ -3487,11 +3490,15 @@ function renderGrouped(res){
 }
 
 
-let QT=null;
-$('#q').addEventListener('input',e=>{
-  st.qraw=e.target.value.trim();
-  st.q=e.target.value.toLowerCase().split(/\s+/).filter(Boolean);
-  clearTimeout(QT); QT=setTimeout(render,180);});
+// Search commits on Enter, and stays committed: clearing the box does not
+// clear the results — the set holds until a NEW query is entered (or its
+// chip in THIS SET is removed). Typing is a draft, not a filter.
+$('#q').addEventListener('keydown',e=>{
+  if(e.key!=='Enter')return;
+  const v=e.target.value.trim();
+  st.qraw=v;
+  st.q=v.toLowerCase().split(/\s+/).filter(Boolean);
+  render();});
 $('#pclose').onclick=()=>{ if(CMP){ CMP=null; closePanel(); render(); } else closePanel(); };
 
 const c=D.coverage;
