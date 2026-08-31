@@ -796,6 +796,79 @@ def build_payload(span_source: str) -> dict:
             if out2:
                 cite_links[g2] = out2
 
+    # ---- "One problem, several venues": highlight papers from DIFFERENT
+    # venues whose abstracts nearly coincide — the union's own discovery.
+    # Cosine >= 0.78 sits in the extreme tail (p99.9 of cross-venue highlight
+    # pairs is 0.69); components capped at 6, members at 4. Computed over the
+    # full 1024-d embeddings at build time.
+    twins = []
+    try:
+        import numpy as _np
+        _ukeys = load_json(UNION)["keys"]
+        _sizes: dict[str, int] = {}
+        for k3 in _ukeys:
+            _sizes[k3] = _sizes.get(k3, 0) + 1
+        _emb = _np.empty((len(_ukeys), 1024), dtype="float32")
+        _off = 0
+        for k3 in sorted(_sizes):
+            _m = _np.load(PROCESSED / f"emb_{k3}_{_sizes[k3]}_BAAI_bge-m3.npy").astype("float32")
+            _emb[_off:_off + _sizes[k3]] = _m
+            _off += _sizes[k3]
+        _emb /= _np.clip(_np.linalg.norm(_emb, axis=1, keepdims=True), 1e-9, None)
+        _latest = {}
+        for c in corpora:
+            _latest[c.venue] = max(_latest.get(c.venue, 0), c.year)
+        row_of_gid = {r["i"]: r for r in rows}
+        hl2 = [r["i"] for r in rows
+               if r["o"] == 2 and corpora[r["cy"]].year == _latest[corpora[r["cy"]].venue]
+               and r["i"] < _emb.shape[0]]
+        vn2 = {g: corpora[row_of_gid[g]["cy"]].venue for g in hl2}
+        _V = _emb[_np.array(hl2)]
+        _S = _V @ _V.T
+        parent = {g: g for g in hl2}
+
+        def _find(x):
+            while parent[x] != x:
+                parent[x] = parent[parent[x]]
+                x = parent[x]
+            return x
+
+        pair_top: dict[int, float] = {}
+        _iu = _np.triu_indices(len(hl2), 1)
+        for ai, bi in zip(*(_iu[0][_S[_iu] >= 0.78], _iu[1][_S[_iu] >= 0.78])):
+            ga, gb = hl2[int(ai)], hl2[int(bi)]
+            if vn2[ga] == vn2[gb]:
+                continue
+            ra, rb = _find(ga), _find(gb)
+            if ra != rb:
+                parent[ra] = rb
+            simv = float(_S[int(ai), int(bi)])
+            for g3 in (ga, gb):
+                pair_top[g3] = max(pair_top.get(g3, 0), simv)
+        comps: dict[int, list] = defaultdict(list)
+        for g3 in pair_top:
+            comps[_find(g3)].append(g3)
+        for members in comps.values():
+            if len({vn2[g3] for g3 in members}) < 2:
+                continue
+            # label: the task/topic names every member shares
+            names = None
+            for g3 in members:
+                r3 = row_of_gid[g3]
+                own = {task.items[t4] for t4 in r3["s"]} |                       {topics_out[t4]["l"] for t4, _k in r3["g"]}
+                names = own if names is None else (names & own)
+            label = sorted(names, key=len)[-1] if names else ""
+            top = max(pair_top[g3] for g3 in members)
+            _vord = {v4.venue: i4 for i4, v4 in enumerate(corpora)}
+            members.sort(key=lambda g3: (_vord.get(vn2[g3], 9),
+                                         row_of_gid[g3]["t"]))
+            twins.append({"l": label, "s": round(top, 2), "ids": members[:4]})
+        twins.sort(key=lambda t4: -t4["s"])
+        twins = twins[:6]
+        print(f"  twins: {len(twins)} cross-venue highlight clusters")
+    except Exception as exc:  # noqa: BLE001
+        print(f"  twins skipped: {exc}")
+
     # Intra-corpus citations (icml.citations): cited-gid list per citing paper,
     # shipped with the sentences — the compare view intersects two of these
     # for its "both cite" strip. Coverage is the six editions, said on screen.
@@ -1217,6 +1290,8 @@ def build_payload(span_source: str) -> dict:
         "both": both,
         "n_datasets_real": sum(1 for di in ds_count if not is_placeholder(data.items[di])),
         "topics": topics_out,
+        # cross-venue highlight clusters for the union cold screen
+        "twins": twins,
         # Indexed by gid, and computed over the UNION: "more like this" has to be
         # able to return last year's paper and the other venue's paper.
         "neighbors": ({"k": nb["k"], "nbr": nb["nbr"]} if nb else None),
@@ -1772,6 +1847,15 @@ background:none;cursor:pointer;color:var(--ink2)}
 .lane i{position:absolute;left:0;top:0;height:100%;border-radius:0 2px 2px 0}
 
 :root{--vu:#70707a}
+.twbox{margin:0 0 18px}
+.twhd{font-size:13px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--ink);margin-bottom:9px}
+.twhd em{display:block;font-style:normal;font-weight:500;font-size:11.5px;letter-spacing:0;text-transform:none;color:var(--mut);margin-top:2px}
+.twc{display:block;width:100%;text-align:left;font:inherit;background:var(--card);
+  border:1px solid var(--ring);border-radius:12px;padding:11px 15px;margin-bottom:8px;cursor:pointer}
+.twc:hover{border-color:var(--acc)}
+.twc b{display:block;font-size:12px;color:var(--ink);margin-bottom:5px}
+.twr{display:flex;align-items:baseline;gap:7px;font-size:12.5px;color:var(--ink2);padding:2px 0}
+.twr i{flex:0 0 8px;height:8px;border-radius:2px;align-self:center}
 .hlhd{font-size:15px;font-weight:700;margin:2px 0 12px;color:var(--ink)}
 .hlhd em{display:block;font-style:normal;font-weight:500;font-size:11.5px;color:var(--mut);margin-top:3px}
 .p.cpt{cursor:pointer;padding:14px 30px 11px}
@@ -1993,14 +2077,14 @@ function papersWithWord(w){
 // Papers are shown only once the reader has asked for some. Listing all 6,637 on
 // arrival is the problem this product exists to remove, not a neutral default.
 const MAX_SHOWN=80, NEIGHBOURS_SHOWN=5;
-const st={corp:null,q:[],qraw:'',anc:null,topics:new Set(),fams:new Set(),sel:null,panel:null,ds:null,meth:null,mfam:null,grouped:false,lim:null};
+const st={corp:null,q:[],qraw:'',anc:null,pick:null,topics:new Set(),fams:new Set(),sel:null,panel:null,ds:null,meth:null,mfam:null,grouped:false,lim:null};
 // The claim the reader clicked to get here — the door's face, carried to the
 // destination so "why am I looking at this set?" never needs remembering.
 let STORY=null;
 // A conference pick alone is NOT a selection. Picking "ICML 2026" leaves 6,637
 // papers, which is the problem this product exists to remove — the reader still
 // has to say what their field is.
-const chosen=()=>st.q.length||st.topics.size||st.fams.size||st.ds!==null||st.meth!==null||st.mfam!==null||st.lim!==null||st.anc!==null;
+const chosen=()=>st.q.length||st.topics.size||st.fams.size||st.ds!==null||st.meth!==null||st.mfam!==null||st.lim!==null||st.anc!==null||st.pick!==null;
 
 // How strongly each literal hit matches — used to pick seeds, so the centroid is
 // built from the papers the query is actually about, not the weakest 700.
@@ -3090,6 +3174,7 @@ function railSetCard(res,vset){
   if(V2.u)fch.push(['u','built on '+V2.u]);
   if(V2.b)fch.push(['b','on '+V2.b]);
   if(st.lim!==null)fch.push(['l','struggles: “'+st.lim+'”']);
+  if(st.pick!==null&&st.pick.__l)fch.push(['p','one problem: '+st.pick.__l]);
   if(st.anc!==null){const j2=BYID[st.anc];
     fch.push(['a','stands on “'+(j2!==undefined?P[j2].t.slice(0,40):'')+'”']);}
   const fchips=fch.length
@@ -3161,6 +3246,7 @@ function wireRtr(rt){
     const ax=el.dataset.fc;
     if(ax==='l')st.lim=null;
     else if(ax==='a')st.anc=null;
+    else if(ax==='p')st.pick=null;
     else if(ax==='q'){ st.q=[]; st.qraw=''; const q2=$('#q'); if(q2)q2.value=''; }
     else clearSlot(ax);
     render();});
@@ -3231,8 +3317,18 @@ function render(){
       }
       const show=hlIdx.slice(0,MAX_SHOWN);
       ensureSpans(new Set(show.map(i2=>P[i2].cy)));
+      const twins=(st.corp===-1&&(D.twins||[]).length)
+        ?`<div class="twbox"><div class="twhd">One problem, several venues`+
+         `<em>highlight papers from different venues whose abstracts nearly coincide — click a cluster to hold it</em></div>`+
+         D.twins.map((t2,ti2)=>`<button class="twc" data-tw="${ti2}">`+
+           (t2.l?`<b>${esc(disp(t2.l))}</b>`:'')+
+           t2.ids.map(g=>{const j2=BYID[g]; if(j2===undefined)return '';
+             const q2=P[j2];
+             return `<span class="twr"><i style="background:var(--v${vhue(q2.cy)})"></i>${esc(q2.t)}</span>`;
+           }).join('')+`</button>`).join('')+`</div>`
+        :'';
       $('#results').innerHTML=
-        `<div class="hlhd">${hd}</div>`
+        twins+`<div class="hlhd">${hd}</div>`
         +show.map(i9=>card(i9)).join('')
         +(hlIdx.length>show.length
           ?`<div class="capped">Showing the first ${MAX_SHOWN} of ${hlIdx.length} ${word}. Search or pick a mover to narrow.</div>`:'');
@@ -3248,6 +3344,10 @@ function render(){
           document.body.appendChild(t2); t2.select(); document.execCommand('copy'); t2.remove(); }
         el.textContent='copied'; el.classList.add('done');
         setTimeout(()=>{ el.textContent=was; el.classList.remove('done'); },1200);});
+      $('#results').querySelectorAll('[data-tw]').forEach(el=>el.onclick=()=>{
+        const t2=D.twins[+el.dataset.tw];
+        st.pick=t2.ids.slice(); st.pick.__l=t2.l||'cross-venue cluster';
+        render();});
       wireFold($('#results'));
     } else {
       $('#results').innerHTML=`<div class="start">Search above, pick a mover on the left — or go back for the full digest.`+
@@ -3262,6 +3362,8 @@ function render(){
     const scope=V3.k||V3.d||(st.lim!==null?`“${st.lim}”`:null)||V3.u||V3.b;
     $('#q').placeholder=scope?`search within ${scope}…`:''; }
   let res=results();
+  if(st.pick!==null)
+    res=st.pick.map(g=>BYID[g]).filter(j2=>j2!==undefined);
   if(st.anc!==null){
     // citers of the chosen ancestor, within the selection — cg rides the
     // spans parts, so papers whose part is still loading are counted on the
@@ -3574,7 +3676,7 @@ function clearPicks(){
   st.q=[]; st.qraw=''; const q=$('#q'); if(q)q.value='';
   st.sel=null; st.grouped=false;
   st.topics.clear(); st.fams.clear(); st.meth=null; st.mfam=null; st.ds=null;
-  st.lim=null; st.anc=null; STORY=null; CMP=null; EXP.clear(); closePanel();
+  st.lim=null; st.anc=null; st.pick=null; STORY=null; CMP=null; EXP.clear(); closePanel();
 }
 function applyChgRow(k,id){
   // the row handlers set STORY right beside the pick — clearing the picks
