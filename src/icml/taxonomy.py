@@ -469,6 +469,11 @@ def declared_with_folded(corpus: Corpus, vocab: set[str]) -> tuple[dict[str, set
     members: dict[str, set[int]] = defaultdict(set)
     folded: dict[str, set[int]] = defaultdict(set)
     fold_labels = [lb for lb in vocab if len(lb) >= 8]
+    # phrase aliases the containment fold cannot see: the contained phrase on
+    # the left names the SAME task as the vocabulary label on the right
+    fold_alias = {"language generation": "text generation",
+                  "language modelling": "language modeling"}
+    fold_alias = {k2: v2 for k2, v2 in fold_alias.items() if v2 in vocab}
     for eid, f in corpus.read_facts().items():
         cands = []
         if f.get("domain"):
@@ -479,11 +484,15 @@ def declared_with_folded(corpus: Corpus, vocab: set[str]) -> tuple[dict[str, set
         for lab in cands:
             if is_label(lab):
                 members[lab].add(eid)
-            else:
-                pad = " " + lab + " "
-                for lb in fold_labels:
-                    if " " + lb + " " in pad:
-                        folded[lb].add(eid)
+            if lab in vocab:
+                continue           # exact vocabulary hit needs no folding
+            pad = " " + lab + " "
+            for lb in fold_labels:
+                if " " + lb + " " in pad:
+                    folded[lb].add(eid)
+            for ph, lb in fold_alias.items():
+                if " " + ph + " " in pad:
+                    folded[lb].add(eid)
     for lb in folded:
         folded[lb] -= members.get(lb, set())
     return members, folded
