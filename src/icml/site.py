@@ -1286,6 +1286,15 @@ def build_payload(span_source: str) -> dict:
         # id, papers, family index, parent id (null when top level)
         "methods": payload_methods,
         "mvocab": mvocab.items,
+        # 1 = a MODEL/artifact name (gpt-4o, llama-3), 0 = a technique (RL,
+        # CoT). The builds-on field mixes both; the tag keeps the reader from
+        # reading a product name as a method family. Rule-based, conservative.
+        "mk": [1 if _re.search(
+            r"\b(gpt|llama|qwen|claude|gemini|deepseek|mistral|gemma|phi-\d|"
+            r"bert|t5|vit|clip|sam\b|dino|whisper|stable diffusion|sdxl|sora|"
+            r"o[134](?:-mini)?\b|resnet|yolo)\b|\d+\s*[bB]\b|-v\d|\bv\d+\b"
+            r"|\d\.\d", m3, _re.I) else 0
+            for m3 in mvocab.items],
         "mfams": mfam_names,
         "both": both,
         "n_datasets_real": sum(1 for di in ds_count if not is_placeholder(data.items[di])),
@@ -1842,6 +1851,8 @@ background:none;cursor:pointer;color:var(--ink2)}
 .tag{font-style:normal;font-size:9px;font-weight:700;letter-spacing:.04em;color:var(--nw);
   margin-left:6px;vertical-align:1px}
 .tag.gone{color:var(--mut)}
+.mtag{font-style:normal;font-size:8.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;
+  color:var(--mut);border:1px solid var(--line);border-radius:4px;padding:0 4px;margin-left:5px;vertical-align:1px}
 .trk{position:relative}
 .lane{display:block;position:relative;height:8px;margin:1.5px 0}
 .lane i{position:absolute;left:0;top:0;height:100%;border-radius:0 2px 2px 0}
@@ -1940,7 +1951,7 @@ body.haspanel #cmp{margin-right:max(0px,calc(352px - (100vw - 1266px)/2))}
 <script>
 const $=s=>document.querySelector(s);
 const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-const V=D.vocab, P=D.papers, T=D.topics;
+const V=D.vocab, P=D.papers, T=D.topics, MK=D.mk||[];
 const mname=i=>V.m[i], dname=i=>V.d[i], tname=i=>V.t[i];
 
 // Display-only shortening: the universally-known acronyms, applied at render
@@ -3163,7 +3174,7 @@ function railSetCard(res,vset){
   }
   const chips=(map,kind,name)=>[...map.entries()].filter(([,c])=>c>=2)
     .sort((a,b)=>b[1]-a[1]).slice(0,4)
-    .map(([id,c])=>`<button class="scchip" data-ck="${kind}" data-cid="${id}" title="${esc(name(id))}">${esc(disp(name(id)))}<b>${c}</b></button>`).join('');
+    .map(([id,c])=>`<button class="scchip" data-ck="${kind}" data-cid="${id}" title="${esc(name(id))}">${esc(disp(name(id)))}${kind==='m'&&MK[id]?'<em class="mtag">model</em>':''}<b>${c}</b></button>`).join('');
   const dch=chips(dk,'d',dname), mch=chips(mk,'m',i=>MV[i]);
   const nf=res.filter(i=>P[i].f).length;
   const tiers='';
@@ -3481,7 +3492,7 @@ const CHG={};
 function changedRows(c0,c1){
   const key=c0+':'+c1;
   if(CHG[key])return CHG[key];
-  const out={t:[],m:[],d:[]};
+  const out={t:[],m:[],d:[],s:[]};
   const push=(arr,l,id,a,b,min)=>{
     if(a+b<min)return;
     const s0=a/CYN[c0]*1000, s1=b/CYN[c1]*1000;
@@ -3493,6 +3504,24 @@ function changedRows(c0,c1){
     for(const i of TOPIC_PAPERS[ti]){ if(P[i].cy===c0)a++; else if(P[i].cy===c1)b++; }
     push(out.t,t.l,ti,a,b,12);
   });
+  // tasks: the FINE-grained axis — "speculative decoding", "arithmetic
+  // reasoning" — for the reader whose field-level rows are too coarse.
+  // Straight from the abstract-pass task vocabulary; topic labels are skipped
+  // (they live on the fields tab).
+  {
+    const tl=new Set(T.map(t=>t.l));
+    const sc=new Map();
+    for(const p of P){ if(p.cy!==c0&&p.cy!==c1)continue; const seen=new Set();
+      for(const si of new Set(p.s0||[])){
+        if(seen.has(si))continue; seen.add(si);
+        let c=sc.get(si); if(!c)sc.set(si,c=new Map());
+        c.set(p.cy,(c.get(p.cy)||0)+1); } }
+    for(const [si,c] of sc){
+      const l=tname(si);
+      if(tl.has(l))continue;
+      push(out.s,l,si,c.get(c0)||0,c.get(c1)||0,8);
+    }
+  }
   // methods: children roll up to their top-level parent, as the menu does
   const par=new Map(); for(const [id,,,pa] of MS) par.set(id,pa==null?id:pa);
   const mc=new Map();
@@ -3540,7 +3569,7 @@ const Z_SHOW=2.576, LABEL_CAP=5, D_MIN=2, FOLD_MIN=1.5;
 function sections(tab){
   const pairs=venuePairs();
   if(!pairs.length)return null;
-  const minS=tab==='d'?2:3;
+  const minS=tab==='t'?3:2;
   let tot1=0, tot0=0; for(const pr of pairs){tot1+=CYN[pr.c1]; tot0+=CYN[pr.c0];}
   const by=new Map();
   for(const pr of pairs){
@@ -3636,6 +3665,7 @@ function changedHTML(){
       const p=P[i]; if(p.cy!==sg.ci)continue;
       if(chgTab==='t'){ for(const [ti] of p.g) if(ti===id){c++;break;} }
       else if(chgTab==='m'){ for(const m of (p.mu0||[])) if(mtop(m)===id){c++;break;} }
+      else if(chgTab==='s'){ if((p.s0||[]).includes(id))c++; }
       else { if(p.k0.includes(id))c++; }
     }
     return c/sg.n*1000;
@@ -3657,7 +3687,7 @@ function changedHTML(){
     const pills=mix?`<div class="pillrow"><span class="pillhd">inside</span>`+
       mix.shifts.slice(0,3).map(x=>pill(x,e.id)).join('')+`</div>`:'';
     return `<button class="cr mv" data-k="${chgTab}" data-id="${e.id}">`+
-      `<span class="crl" title="${esc(e.l)} · ${(u0/10).toFixed(1)}→${(u1/10).toFixed(1)}% across the paired venues">${esc(disp(e.l))}${tag}</span>`+
+      `<span class="crl" title="${esc(e.l)} · ${(u0/10).toFixed(1)}→${(u1/10).toFixed(1)}% across the paired venues">${esc(disp(e.l))}${chgTab==='m'&&MK[e.id]?'<em class="mtag">model</em>':''}${tag}</span>`+
       `<span class="trk">${lanes}</span></button>`+pills;
   }).join('')).join('');
   const leg=S.pairs.length>1?''
@@ -3665,7 +3695,7 @@ function changedHTML(){
      `<span><i style="background:var(--v${S.pairs[0].hue})"></i>${S.pairs[0].y1}</span></div>`;
   const tab=(k,l)=>`<button class="chgtab ${chgTab===k?'on':''}" data-tab="${k}">${l}</button>`;
   return `<div class="chgbox"><div class="chghd">Shifts<em>since last year</em>`+
-    `<span class="chgtabs">${tab('t','fields')}${tab('m','methods')}${tab('d','benchmarks')}</span></div>`+
+    `<span class="chgtabs">${tab('t','fields')}${tab('s','tasks')}${tab('m','methods')}${tab('d','benchmarks')}</span></div>`+
     `${axis.replace('chgax','chgax top')}<div class="chgplot mv">${grid}${body}</div>${axis}${leg}</div>`;
 }
 // The whole selection, dropped at once: a chart pick replaces it (the reader
@@ -3684,7 +3714,16 @@ function applyChgRow(k,id){
   const keepStory=STORY;
   clearPicks();
   STORY=keepStory;
-  if(k==='t')st.topics.add(id); else if(k==='m')st.meth=id; else st.ds=id;
+  if(k==='t')st.topics.add(id);
+  else if(k==='m')st.meth=id;
+  else if(k==='s'){
+    const lb=tname(id);
+    const tj=T.findIndex(t2=>t2.l===lb);
+    if(tj>=0)st.topics.add(tj);
+    else { st.qraw=lb; st.q=lb.toLowerCase().split(/\s+/).filter(Boolean);
+           const q2=$('#q'); if(q2)q2.value=lb; }
+  }
+  else st.ds=id;
 }
 function wireChanged(){
   document.querySelectorAll('[data-tab]').forEach(el=>el.onclick=()=>{
@@ -3714,7 +3753,7 @@ function wireChanged(){
   document.querySelectorAll('.cr[data-id]').forEach(el=>el.onclick=()=>{
     const k=el.dataset.k, id=+el.dataset.id;
     if(st.corp===null){
-      const nm=k==='t'?T[id].l:k==='m'?MV[id]:dname(id);
+      const nm=k==='t'?T[id].l:k==='m'?MV[id]:k==='s'?tname(id):dname(id);
       STORY={label:`<b>${esc(nm)}</b>`,sub:'picked from Shifts',
              ...(k==='t'?{ti:id}:k==='d'?{di:id}:{})};
     }

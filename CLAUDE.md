@@ -729,6 +729,11 @@ Still weak:
   picking `robotics` cuts 139 benchmarks to 9, picking `GSM8K` cuts 91 topics to
   12, and nothing is invented — a chip disappears only when no selected paper
   uses it. Aliasing is still unresolved (`LIBERO` vs `LIBERO benchmark`).
+  For TASKS it is now half-resolved (2026-09-01): a task containing a topic
+  label at a word boundary ("efficient llm inference") joins that topic's
+  via/kind-2 class — `declared_with_folded` in taxonomy.py; measured 5,743
+  foldable mentions, "llm inference" went 4→23 at ICML alone. Labels under
+  8 chars stay exact-only ("llm" is contained in half the vocabulary).
 - Rows with a `proposed` method but `unknown` type carry
   `flag: "unknown-type-with-proposed-method"`. The flag records the
   inconsistency; never silently auto-repair it.

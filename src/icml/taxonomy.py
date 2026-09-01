@@ -456,6 +456,39 @@ def declared(corpus: Corpus) -> dict[str, set[int]]:
     return members
 
 
+def declared_with_folded(corpus: Corpus, vocab: set[str]) -> tuple[dict[str, set[int]], dict[str, set[int]]]:
+    """(exact members, folded members) per label.
+
+    Folded (added 2026-09-01): a task that CONTAINS a label at a word boundary
+    — "efficient llm inference", "long-context llm inference" — is that label
+    said NARROWER, and joins the via/kind-2 class. Without this, "llm
+    inference" held 6 papers while dozens sat one adjective away (measured:
+    5,743 foldable mentions corpus-wide). Labels under 8 chars stay exact-only:
+    "llm" is contained in half the vocabulary.
+    """
+    members: dict[str, set[int]] = defaultdict(set)
+    folded: dict[str, set[int]] = defaultdict(set)
+    fold_labels = [lb for lb in vocab if len(lb) >= 8]
+    for eid, f in corpus.read_facts().items():
+        cands = []
+        if f.get("domain"):
+            lab = canon(f["domain"])
+            cands.append(DOMAIN_ALIASES.get(lab, lab))
+        for t in f.get("tasks") or []:
+            cands.append(canon(t["name"]))
+        for lab in cands:
+            if is_label(lab):
+                members[lab].add(eid)
+            else:
+                pad = " " + lab + " "
+                for lb in fold_labels:
+                    if " " + lb + " " in pad:
+                        folded[lb].add(eid)
+    for lb in folded:
+        folded[lb] -= members.get(lb, set())
+    return members, folded
+
+
 def share(n: int, total: int) -> float:
     """Papers per 1,000 — the only count comparable across corpus sizes."""
     return 1000.0 * n / max(total, 1)
@@ -560,7 +593,7 @@ def discover(corpora: list[Corpus], min_share: float, min_papers: int) -> dict:
 def label_corpus(corpus: Corpus, tax: dict) -> dict:
     """Apply a FIXED vocabulary to one corpus. No new labels are created here."""
     vocab = {t["label"] for t in tax["topics"]}
-    m = declared(corpus)
+    m, m_fold = declared_with_folded(corpus, vocab)
     total = len(corpus.read_papers(with_abstract=True))
     out = []
     for t in tax["topics"]:
@@ -568,6 +601,7 @@ def label_corpus(corpus: Corpus, tax: dict) -> dict:
         via: set[int] = set()
         for kid in t.get("children", ()):
             via |= m.get(kid, set())
+        via |= m_fold.get(t["label"], set())
         via -= direct
         # Direct and rolled-up are reported apart, like explicit and expanded
         # membership: "said so" and "said something narrower" are not the same
