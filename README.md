@@ -14,8 +14,43 @@ project turns the proceedings into three answerable questions:
    displayed sentence exists verbatim in the paper and is machine-verified
    against it.
 
-Currently loaded: ICML 2025 (3,339 papers) and ICML 2026 (6,637 papers).
-NeurIPS and ICLR are planned; their feeds share the same format.
+Currently loaded: six editions across three conferences — ICML 2025/2026,
+NeurIPS 2024/2025, ICLR 2025/2026 — 29,605 papers in one cross-venue index.
+
+## Install & run
+
+Runs locally and serves on your network: install on one machine, browse from
+any device on the same LAN. Python 3.10+ is the only requirement — the serving
+layer is standard-library only (Linux and macOS verified; Windows is designed
+for but not yet tested on a real machine).
+
+```bash
+git clone https://github.com/hyunyoungnam/whatsnewai && cd whatsnewai
+pip install -e .
+
+wnai setup                            # search-engine binary for your platform + keys
+wnai fetch-data --file <bundle>       # the data bundle (site + search index, ~450 MB)
+wnai serve
+```
+
+`wnai serve` starts everything on one port and prints both addresses:
+
+```
+  local:    http://127.0.0.1:8001
+  network:  http://192.168.0.180:8001   <- other devices on this network
+```
+
+Ctrl+C stops everything. `wnai status` shows what is running and what data
+exists. The data bundle is produced by `wnai bundle` on a build machine; a
+downloadable release URL (for `wnai fetch-data --url`) will accompany the
+first public release.
+
+### Connect a coding agent (no API key)
+
+The repo ships an MCP server over stdio — `wnai mcp` — with read-only tools
+for search, similarity, topics, citations, and each paper's verified
+sentences. Claude Code picks it up automatically from `.mcp.json` when opened
+in this directory; the agent brings its own model, so no API key is involved.
 
 ## How the site is organised
 
@@ -75,8 +110,9 @@ would make that year look artificially richer.
 Feed collection → abstract scrape → normalisation (dedup: orals are listed
 twice) → arXiv/PMLR full-text fetch and sectioning → structured extraction
 with verbatim-span verification (local vLLM) → shared frozen taxonomy →
-union embeddings and cross-year neighbours → a single self-contained
-`reports/index.html`.
+union embeddings and cross-venue neighbours → the site (`reports/`) plus a
+Meilisearch index, packed by `wnai bundle` for installs. The pipeline needs a
+GPU machine; an install only serves its output.
 
 See `CLAUDE.md` for the full build documentation, data traps, and measured
 quality numbers.
