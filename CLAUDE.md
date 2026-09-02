@@ -8,7 +8,7 @@ serves three questions a researcher actually asks, in this order:
 1. **"There are 6,600 papers. Which ones are in my field?"**
    Banal to state, and the whole product fails without it.
 2. **"I now have 40. What is in them, and which do I read?"**
-   Answered by **visualising the set the reader just selected** — arranged so the
+   Answered by **visualizing the set the reader just selected** — arranged so the
    shape of their field is visible and the choice of what to open is obvious.
 3. **"What is the new idea in this paper?"**
    Answered by showing **the paper's own sentences**, so they can skip the rest.
@@ -51,7 +51,7 @@ Guardrail 2 is the hard edge here and is unchanged: every displayed string is
 either extracted verbatim or computed from `data/processed/`. "Better than the
 abstract" is earned by **structure** — the right sentence pulled out, the claim
 split into proposes / builds on / compares against / data, the paper placed among
-its neighbours — and never by paraphrase. **A fluent model-written summary is a
+its neighbors — and never by paraphrase. **A fluent model-written summary is a
 regression here, not an improvement**, however much better it reads.
 
 ---
@@ -62,7 +62,7 @@ Two engines run in this project and the boundary between them is the guarantee.
 
 | Work | Runs on | Why |
 |---|---|---|
-| Collection, parsing, normalisation, schema design | **Claude Code** | written once, executed repeatedly; 6,637 papers need no LLM to be fetched or reshaped |
+| Collection, parsing, normalization, schema design | **Claude Code** | written once, executed repeatedly; 6,637 papers need no LLM to be fetched or reshaped |
 | **Selecting** sentences (limitation / key_change / result_claim) | **local model** | bulk and repeated — 17k papers/hour on the A100 |
 | **Editing** those sentences (cutting the opening frame) | **rules** | a regex is auditable; a model here would end the extractive guarantee |
 | Rule and prompt design, failure analysis | **Claude Code** | work like "why did 31.5% fail verification" |
@@ -213,7 +213,7 @@ Ranked by trust, highest first:
    driving far more reliably than keywords, because using the dataset is a
    commitment, not a word choice. 3,973 distinct datasets are already extracted.
 2. **Extracted tasks and methods** from the census pass.
-3. **Embedding neighbourhoods** — papers that sit together usually belong
+3. **Embedding neighborhoods** — papers that sit together usually belong
    together; useful for pulling in papers that avoid the expected vocabulary.
 4. **Keyword rules** — cheapest, most brittle, and the easiest to over-trust.
 
@@ -222,7 +222,7 @@ the expected vocabulary are missed.
 
 **Let the user define their field by example too.** A field is often
 cross-cutting ("efficient attention for long context") and matches no node in any
-taxonomy. Seed papers → nearest neighbours is a first-class entry path, not a
+taxonomy. Seed papers → nearest neighbors is a first-class entry path, not a
 nice-to-have.
 
 ---
@@ -247,8 +247,8 @@ structured claim must be traceable to a span.
 
 ### The card is one edited passage, not a form (2026-08-18)
 
-The three spans are no longer three labelled rows. They run together as a single
-passage in the order a reader needs, and **colour carries the role** instead of a
+The three spans are no longer three labeled rows. They run together as a single
+passage in the order a reader needs, and **color carries the role** instead of a
 label:
 
 | Highlighter | The question it answers |
@@ -258,7 +258,7 @@ label:
 | sky blue | what it achieved, with the paper's own numbers |
 
 Text stays near-black on a translucent wash, so contrast is ~14:1 under every
-colour. The extracted terms (proposes / builds on / compared with / data / tasks)
+color. The extracted terms (proposes / builds on / compared with / data / tasks)
 sit inside the passage block, not in a footnote under it — they are part of the
 summary, not metadata about it.
 
@@ -297,7 +297,7 @@ The schema therefore carries three more **verbatim, verified** single sentences:
 | `result_claim` | the outcome, with numbers where the paper gives them |
 
 They go through the same `verify_spans()` check as `novelty_spans`; a near-miss
-is a rewrite and a rewrite is not evidence. **This is not licence to write
+is a rewrite and a rewrite is not evidence. **This is not license to write
 summaries** — the fields are cut from the paper and rearranged, and the reader
 gets structure, not prose. See *The product is processing, not access*.
 
@@ -317,7 +317,7 @@ invents more when given more text.
 
 The verifier was not strict, it was **brittle**. It rejected the paper's own
 sentences because of how the typesetter wrapped them, and that rejection was
-being read as a hallucination rate. `verify_spans` now normalises line-break
+being read as a hallucination rate. `verify_spans` now normalizes line-break
 hyphens and punctuation on both sides. It is deliberately NOT relaxed to
 subsequence matching: a subsequence of a 24,000-character document is nearly free
 to satisfy and would stop being evidence.
@@ -349,7 +349,7 @@ So "extract the novelty claim" returns ~5,400 structurally identical claims:
 
 **Decision (2026-07-31): we do not attempt relational novelty for now** —
 novelty measured against what a reader already knows, or against a paper's
-neighbours. The product shows what each paper states about itself. Revisit only
+neighbors. The product shows what each paper states about itself. Revisit only
 on explicit request.
 
 Consequence to respect: **do not rank papers by novelty.** With 83% claiming it,
@@ -368,7 +368,7 @@ has been handed the original problem at 1/166 scale.
 by tag, by subarea, by search, or by seed paper — the view's job is to make that
 set legible at a glance: where its papers clump and where one sits alone, which
 methods and datasets recur across it, which subareas it straddles, which are
-orals. That is a visualisation problem, and it is the part of this product that
+orals. That is a visualization problem, and it is the part of this product that
 is least built.
 
 **This is not the corpus atlas that was rejected on 2026-07-31.** The distinction
@@ -419,7 +419,7 @@ Built and validated. Reusable under the new framing.
 | Asset | Size | Use |
 |---|---|---|
 | `data/processed/papers.jsonl` | 6,637 | canonical records; area/subarea, 99.3% abstracts |
-| `data/processed/emb_6592_*.npy` | 6,592 × 1024 | BGE-M3 embeddings → neighbours, field-by-example |
+| `data/processed/emb_6592_*.npy` | 6,592 × 1024 | BGE-M3 embeddings → neighbors, field-by-example |
 | `data/interim/facts_abstract.jsonl` | 6,590 | census extraction: tasks/methods/datasets + evidence |
 | `data/interim/facts_fulltext.jsonl` | 4,579 | richer extraction from arXiv PDFs |
 | `data/interim/fulltext*.jsonl` | 286 MB | parsed full text (PDFs deleted after parsing) |
@@ -458,7 +458,7 @@ the whole corpus.
 | 5 | `.venv/bin/python -m icml.extract_facts --source {abstract,fulltext}` | structured facts + evidence |
 | 6 | `.venv/bin/python -m icml.landscape` | embeddings + layout (cached `.npy`) |
 | 7 | `.venv/bin/python -m icml.topics` | `topics.json` — level-3 multi-label tags |
-| 8 | `.venv/bin/python -m icml.embed` | union embeddings + `neighbors_union.json` + `embed_union.json` — "more like this" across every active corpus (42% of nearest neighbours cross corpora; per-corpus lists could not return those). `union.json` defines **gid**, the only global paper key (now 25,068 vectors across five corpora; 76% of nearest neighbours cross corpora) — `event_id` collides across venues and tracks |
+| 8 | `.venv/bin/python -m icml.embed` | union embeddings + `neighbors_union.json` + `embed_union.json` — "more like this" across every active corpus (42% of nearest neighbors cross corpora; per-corpus lists could not return those). `union.json` defines **gid**, the only global paper key (now 25,068 vectors across five corpora; 76% of nearest neighbors cross corpora) — `event_id` collides across venues and tracks |
 | 9 | `.venv/bin/python -m icml.site --dist` | `reports/index.html` + uploadable `dist/` |
 
 **Earlier years, for trends only** (added 2026-08-13). One year cannot say what is
@@ -549,7 +549,7 @@ carry `_vectors: {bge: null}` to opt out. The page reaches the engine through
 server-side — no other Meilisearch endpoint is exposed through the tunnel.
 Both features degrade the same way: engine down → search falls back to the
 shipped abstract-term index (word-AND, no typo tolerance), the Similar panel
-falls back to the shipped 20-neighbour list. Result order is engine relevance
+falls back to the shipped 20-neighbor list. Result order is engine relevance
 while a query is live, the tiers order otherwise. Restart after reboot:
 `setsid nohup ./bin/meilisearch --db-path data/meili/db --http-addr
 127.0.0.1:7700 --master-key "$(cat data/meili/master_key)" --no-analytics &`
@@ -609,14 +609,14 @@ then `setsid nohup python3 scripts/serve.py &`.
   stacked per-corpus embedding blocks in `available()` order (ICML first) while
   gid sorts rows by key string ("iclr" < "icml" < "neurips"). The two orders
   coincided for four corpora and silently diverged when ICLR joined — every
-  paper wore another paper's neighbours, and nothing crashed. Rows are now
+  paper wore another paper's neighbors, and nothing crashed. Rows are now
   placed by index (`emb[idx] = block`), never stacked. Anything new that joins
   per-corpus arrays onto gid must be checked against `union.json` order, not
   against the corpus loop.
 - **NeurIPS and ICLR give an oral's second listing a SYNTHETIC OpenReview id**
   (`2025-Oral--451-87f1fe27`) where ICML repeats the real one — so keying
   dedup on the id left every ICLR/NeurIPS oral double-counted (210 surviving
-  pairs at ICLR 2025). `normalize.dedupe_key()` now keys on the normalised
+  pairs at ICLR 2025). `normalize.dedupe_key()` now keys on the normalized
   title, which is safe by measurement: across all five collected feeds, no two
   distinct real papers share one.
 - **Orals are listed twice** — once as Oral, once as Poster, different ids.
@@ -666,7 +666,7 @@ then `setsid nohup python3 scripts/serve.py &`.
   `facts_abstract_<year>.jsonl` — never merged into `facts_abstract.jsonl`, or
   every corpus count silently becomes a three-year total.
 - **The extractor writes absent values as the *string* `"null"`.** It survived
-  canonicalisation and shipped as a topic chip labelled `null` holding 15 papers
+  canonicalization and shipped as a topic chip labeled `null` holding 15 papers
   across 9 subareas. `topics.NULL_LITERALS` filters it. Any new field that
   becomes a label needs the same guard — a length check does not catch it,
   `"null"` is four characters.
@@ -808,7 +808,7 @@ Still weak:
 - **The failure glossary is OURS, and says so (2026-08-25).** Struggles rows
   define their term on hover with a curated one-line gloss (FIGHT_GLOSS in
   site.py) — interface copy in the same class as a caption stating a unit, not
-  paper data — visually separated and labelled "our gloss", with the papers'
+  paper data — visually separated and labeled "our gloss", with the papers'
   own sentences beneath as evidence. Guardrail 2 still governs everything
   attributed to a paper; the gloss never is.
 - **A venue's cold screen leads with what the venue put forward (2026-08-26).**
@@ -841,7 +841,7 @@ Still weak:
   cites"), else arXiv/DOI/S2 via the paper's own or Semantic Scholar's
   parsed references — never a guess.
 - **Picking a similar paper opens a side-by-side compare (2026-08-25).** The
-  Similar panel's neighbour click no longer scrolls-or-walks: it opens a
+  Similar panel's neighbor click no longer scrolls-or-walks: it opens a
   two-card split view — the read paper left, the picked one right, a "both
   papers" strip naming their shared methods/data/tasks above. The sidebars
   leave (the question at that moment is "what differs between these two",
@@ -860,13 +860,13 @@ Still weak:
 - **The landing is conference-first (2026-08-19).** One card per venue, opening
   the newest year. An earlier year is never a browsing category — nobody goes
   back to browse 2025 — it exists as the baseline: it feeds the "Since last
-  year" chart and appears in a paper's neighbours, stamped with its year, and
+  year" chart and appears in a paper's neighbors, stamped with its year, and
   nowhere else.
 - **"Since last year" shows what a rule selects, not a top-N.** A row is
-  coloured and labelled only when its share change clears a two-proportion
+  colored and labeled only when its share change clears a two-proportion
   z-test at |z| ≥ 2.576 (99%) — the corpus sizes decide what is noise, not a
-  hand-picked cutoff. The two largest current shares are kept as grey anchors.
-  Everything else is not drawn: the grey context mass was tried and is what
+  hand-picked cutoff. The two largest current shares are kept as gray anchors.
+  Everything else is not drawn: the gray context mass was tried and is what
   made the chart unreadable.
 - **Search first, then show the set, then the paper.** Those are the three
   questions in order. A picture of the whole corpus is not a step in that path
@@ -888,7 +888,7 @@ Still weak:
   the tunnel. Sized for six corpora; a single file was 21.8 MB raw at two.
 - Charts follow the project dataviz standard; **load the `dataviz` skill before
   touching one.** A scatter is an all-pairs form and caps at three categorical
-  hues — research areas are never eight colours; use emphasis instead.
+  hues — research areas are never eight colors; use emphasis instead.
 - **Look at what you built** before calling it done:
   ```bash
   firefox --headless --window-size=1400,1200 \
@@ -909,6 +909,6 @@ Still weak:
 - A reader for the papers themselves — PDF pane, full-text search, "read it here"
 
 **Not a non-goal, and easy to confuse with the first and sixth items:
-visualising the set a reader has selected.** That is *Problem 3* and it is wanted.
+visualizing the set a reader has selected.** That is *Problem 3* and it is wanted.
 What was abandoned is the picture of the conference; what is wanted is the
 picture of your forty papers.
