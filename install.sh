@@ -14,7 +14,9 @@
 set -euo pipefail
 
 REPO="${WNAI_REPO:-https://github.com/hyunyoungnam/whatsnewai}"
-DIR="${WNAI_HOME:-$HOME/whatsnewai}"
+# an app dir, not a workspace: hidden by default, like other installed tools.
+# Everything inside stays inspectable — the data being auditable is a feature.
+DIR="${WNAI_HOME:-$HOME/.wnai}"
 BIN="${WNAI_BIN:-$HOME/.local/bin}"
 
 say() { printf '\033[1m%s\033[0m\n' "$*"; }

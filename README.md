@@ -32,7 +32,8 @@ curl -fsSL https://raw.githubusercontent.com/hyunyoungnam/whatsnewai/main/instal
 open the Ubuntu terminal, and run the same line. Everything below happens
 inside WSL; the browser on Windows reaches it at the printed address.
 
-The script clones into `~/whatsnewai`, installs the `wnai` command into its
+The script installs into `~/.wnai` (an app directory — everything in it,
+data included, stays inspectable), puts the `wnai` command on PATH via its
 own venv, and fetches the search-engine binary and keys. Then:
 
 ```bash
