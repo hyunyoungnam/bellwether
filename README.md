@@ -9,7 +9,7 @@ project turns the proceedings into three answerable questions:
 2. **What is in the set I picked?** — the selection is counted, grouped, and
    compared, so deciding what to open is possible at a glance.
 3. **What is new in this paper?** — each card shows the paper's **own
-   sentences**, colour-marked: pink for why the work was needed, yellow for
+   sentences**, color-marked: pink for why the work was needed, yellow for
    what is new, blue for what it achieved. Nothing is paraphrased; every
    displayed sentence exists verbatim in the paper and is machine-verified
    against it.
@@ -65,7 +65,7 @@ for search, similarity, topics, citations, and each paper's verified
 sentences. Claude Code picks it up automatically from `.mcp.json` when opened
 in this directory; the agent brings its own model, so no API key is involved.
 
-## How the site is organised
+## How the site is organized
 
 - **Landing** — one card per conference, opening its newest edition, plus
   *Since last year*: which topics, methods, and benchmarks take a
@@ -78,7 +78,7 @@ in this directory; the agent brings its own model, so no API key is involved.
   the corresponding author where the paper names one, and links out.
 - **An earlier year is never a browsing category.** Last year's edition exists
   as a baseline: it powers *Since last year* and appears among a paper's
-  nearest neighbours (stamped with its year), nowhere else.
+  nearest neighbors (stamped with its year), nowhere else.
 
 ## How "Since last year" picks its rows
 
@@ -120,10 +120,10 @@ would make that year look artificially richer.
 
 ## Pipeline (summary)
 
-Feed collection → abstract scrape → normalisation (dedup: orals are listed
+Feed collection → abstract scrape → normalization (dedup: orals are listed
 twice) → arXiv/PMLR full-text fetch and sectioning → structured extraction
 with verbatim-span verification (local vLLM) → shared frozen taxonomy →
-union embeddings and cross-venue neighbours → the site (`reports/`) plus a
+union embeddings and cross-venue neighbors → the site (`reports/`) plus a
 Meilisearch index, packed by `wnai bundle` for installs. The pipeline needs a
 GPU machine; an install only serves its output.
 
