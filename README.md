@@ -20,18 +20,30 @@ NeurIPS 2024/2025, ICLR 2025/2026 — 29,605 papers in one cross-venue index.
 ## Install & run
 
 Runs locally and serves on your network: install on one machine, browse from
-any device on the same LAN. Python 3.10+ is the only requirement — the serving
-layer is standard-library only (Linux and macOS verified; Windows is designed
-for but not yet tested on a real machine).
+any device on the same LAN. Requirements: git and Python 3.10+.
+
+**Linux / macOS** — one line:
 
 ```bash
-git clone https://github.com/hyunyoungnam/whatsnewai && cd whatsnewai
-pip install -e .
+curl -fsSL https://raw.githubusercontent.com/hyunyoungnam/whatsnewai/main/install.sh | bash
+```
 
-wnai setup                            # search-engine binary for your platform + keys
+**Windows** — install WSL once (PowerShell: `wsl --install`, then reboot),
+open the Ubuntu terminal, and run the same line. Everything below happens
+inside WSL; the browser on Windows reaches it at the printed address.
+
+The script clones into `~/whatsnewai`, installs the `wnai` command into its
+own venv, and fetches the search-engine binary and keys. Then:
+
+```bash
 wnai fetch-data --file <bundle>       # the data bundle (site + search index, ~450 MB)
 wnai serve
 ```
+
+(While this repo is private the one-liner needs an authenticated clone —
+`git clone` it yourself and run `bash install.sh`; the curl form works from
+the first public release. Set `WNAI_BUNDLE=<file-or-url>` before the
+installer to fold `fetch-data` in.)
 
 `wnai serve` starts everything on one port and prints both addresses:
 

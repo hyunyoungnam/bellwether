@@ -135,6 +135,10 @@ def _refresh_search_key(master: str, force: bool = False) -> bool:
             found = made["key"]
         sk_file.write_text(found)
         return True
+    except urllib.error.HTTPError:
+        # something else answers on the port, or it rejects our master key —
+        # never crash setup over it; serve degrades and status explains
+        return False
     finally:
         if started:
             started.terminate()
