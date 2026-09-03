@@ -34,7 +34,11 @@ SYSTEM = (
     "your conclusion FROM the cards — recurring key_change ideas are a "
     "technique rising, recurring limitations nobody's key_change answers are "
     "a gap. Distribution figures must be restated exactly as the tools "
-    "computed them (per-1k shares, z), never invented. For DEPTH questions "
+    "computed them (per-1k shares, z), never invented. For GAP / blue-ocean "
+    "questions call gap_scan(topic): the reader sees its derivation tree "
+    "rendered directly, so do NOT restate every branch — interpret it: which "
+    "gap candidates look real, which are lexical artifacts, anchored to "
+    "specific papers. For DEPTH questions "
     "about one paper (how it works, its numbers), read its actual text with "
     "paper_text: list sections, then read the relevant one. PROTOCOL: after each "
     "claim about a specific paper, append an anchor of the exact form "
@@ -277,6 +281,22 @@ def stream(body: dict, emit) -> None:
             cmd += ["--resume", sid]
 
     result_text, new_sid, failed = None, None, None
+    trees: list[dict] = []
+
+    def _tool_event(name: str, arg_map: dict) -> None:
+        emit({"t": "tool", "name": name, "arg": _summ(arg_map)})
+        # the derivation tree renders as a component, not prose: recompute the
+        # same deterministic scan server-side and hand it to the page directly
+        if name == "gap_scan" and (arg_map or {}).get("topic"):
+            try:
+                from .mcp import t_gap_scan
+                tree = t_gap_scan({"topic": arg_map["topic"]})
+                if "error" not in tree:
+                    trees.append(tree)
+                    emit({"t": "tree", "tree": tree})
+            except Exception:  # noqa: BLE001 — the prose answer still lands
+                pass
+
     try:
         with subprocess.Popen(cmd, cwd=ROOT, stdout=subprocess.PIPE,
                               stderr=subprocess.PIPE, text=True,
@@ -300,12 +320,11 @@ def stream(body: dict, emit) -> None:
                         it = ev.get("item") or {}
                         ity = it.get("type") or ""
                         if "mcp" in ity and ty == "item.started":
-                            emit({"t": "tool",
-                                  "name": (it.get("tool") or it.get("name")
-                                           or "tool").split("__")[-1],
-                                  "arg": _summ(it.get("arguments")
-                                               if isinstance(it.get("arguments"), dict)
-                                               else {})})
+                            _tool_event((it.get("tool") or it.get("name")
+                                         or "tool").split("__")[-1],
+                                        it.get("arguments")
+                                        if isinstance(it.get("arguments"), dict)
+                                        else {})
                         elif ity == "agent_message" and ty == "item.completed":
                             result_text = it.get("text") or result_text
                 else:
@@ -315,9 +334,8 @@ def stream(body: dict, emit) -> None:
                             # harness plumbing is noise to the reader
                             if c.get("type") == "tool_use" \
                                     and c["name"].startswith("mcp__wnai__"):
-                                emit({"t": "tool",
-                                      "name": c["name"].split("__")[-1],
-                                      "arg": _summ(c.get("input"))})
+                                _tool_event(c["name"].split("__")[-1],
+                                            c.get("input") or {})
                     elif ev.get("type") == "result":
                         result_text = ev.get("result") or ""
                         new_sid = ev.get("session_id")
@@ -332,6 +350,8 @@ def stream(body: dict, emit) -> None:
     segs, checked, passed = segment(result_text, store, ver)
     turn = {"q": q, "segs": segs,
             "verified": {"checked": checked, "passed": passed}}
+    if trees:
+        turn["trees"] = trees
     CHAT_DIR.mkdir(parents=True, exist_ok=True)
     if doc is None:
         doc = {"id": cid, "title": q[:80], "ts": int(time.time()),

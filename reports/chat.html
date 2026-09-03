@@ -119,6 +119,29 @@ body{margin:0;background:var(--bg);color:var(--ink);
   letter-spacing:.08em;text-transform:uppercase;color:var(--mut)}
 .scard details p{font-size:12.5px;line-height:1.55;color:var(--ink2);margin:4px 0 0}
 
+/* ---- derivation tree: the gap scan's working shown, not told ---- */
+.gt{background:var(--card);border:1px solid var(--ring);border-radius:12px;
+  padding:14px 16px;margin:10px 0;white-space:normal}
+.gt .gth{font-size:13px;font-weight:700}
+.gt .gth em{font-style:normal;font-weight:500;font-size:11.5px;color:var(--mut);margin-left:8px}
+.gbr{border-top:1px solid var(--ring);padding:9px 0 8px}
+.gbr summary{list-style:none;cursor:pointer;display:flex;align-items:baseline;gap:9px}
+.gbr summary::-webkit-details-marker{display:none}
+.gbr .gterm{font-weight:650;font-size:13px}
+.gbr .gnum{font:11px ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--mut);white-space:nowrap}
+.gbr .gbar{flex:1;height:6px;border-radius:3px;background:var(--bg);overflow:hidden;min-width:60px;align-self:center}
+.gbr .gbar i{display:block;height:100%;background:color-mix(in srgb,var(--hb) 70%,var(--mut))}
+.gbr.gap0 .gterm{color:var(--no)}
+.gbr.gap0 .gbar i{background:color-mix(in srgb,var(--hp) 80%,var(--no))}
+.gcap{font-size:10.5px;letter-spacing:.04em;color:var(--no);font-weight:700;
+  border:1px solid color-mix(in srgb,var(--no) 45%,var(--ring));border-radius:5px;padding:0 6px}
+.gbody{margin:8px 0 2px;padding-left:2px}
+.grep{font-size:12.5px;line-height:1.6;margin:0 0 7px}
+.grep i{font-style:normal;background:color-mix(in srgb,var(--hp) 42%,transparent);
+  padding:1px 3px;border-radius:3px;-webkit-box-decoration-break:clone;box-decoration-break:clone}
+.gset{font-size:10px;letter-spacing:.07em;text-transform:uppercase;color:var(--mut);margin:6px 0 3px}
+.gnote{font-size:11px;color:var(--mut);margin-top:9px;border-top:1px solid var(--ring);padding-top:7px}
+
 /* ---- settings ---- */
 .set{max-width:640px;margin:0 auto;padding:34px 20px}
 .set h1{font-size:21px;letter-spacing:-.01em;margin:0 0 20px}
@@ -355,6 +378,46 @@ async function toggleCard(btn){
      <div class="pass">${pass}</div></div>`);
 }
 const md=s=>esc(s).replace(/\*\*([^*]+)\*\*/g,'<b>$1</b>');
+// ---- the derivation tree: branches = failures the field names, split into
+// namers vs attackers; an unattacked branch IS the gap candidate
+function chipOf(g){
+  const d=PCACHE[g];
+  const lab=d&&d.title?`${d.venue} ${d.year} · ${d.title}`:('gid '+g);
+  return `<button class="cite" data-pg="${g}" title="">${esc(lab)}</button>`;
+}
+function treeHTML(tr){
+  const mx=Math.max(...tr.branches.map(b=>b.named_by),1);
+  const rows=tr.branches.map(b=>{
+    const gap=b.attacked_by===0;
+    const atk=(b.attackers||[]).map(chipOf).join('');
+    const nam=(b.namers||[]).map(chipOf).join('');
+    const yrs=Object.entries(b.by_year).map(([y,n])=>`${y}:${n}`).join(' ');
+    return `<details class="gbr ${gap?'gap0':''}">
+      <summary><span class="gterm">${esc(b.term)}</span>
+        <span class="gbar"><i style="width:${(b.named_by/mx*100).toFixed(0)}%"></i></span>
+        <span class="gnum">${b.named_by} named · ${b.attacked_by} attacked · ${esc(yrs)}</span>
+        ${gap?`<span class="gcap">GAP?</span>`:''}</summary>
+      <div class="gbody">
+        <div class="grep"><i>${esc(b.rep.sentence)}</i></div>
+        ${atk?`<div class="gset">attacked by</div><div class="bcites">${atk}</div>`:''}
+        ${nam?`<div class="gset">named, not attacked</div><div class="bcites">${nam}</div>`:''}
+      </div></details>`;
+  }).join('');
+  return `<div class="gt"><div class="gth">${esc(tr.field)}
+      <em>${tr.papers_in_field} papers · ${tr.with_limitation} state a limitation</em></div>
+    ${rows}<div class="gnote">${esc(tr.note)}</div></div>`;
+}
+async function hydrateTree(el,tr){
+  const gids=new Set();
+  for(const b of tr.branches){ (b.attackers||[]).forEach(g=>gids.add(g)); (b.namers||[]).forEach(g=>gids.add(g)); gids.add(b.rep.gid); }
+  await Promise.all([...gids].map(async g=>{
+    if(!PCACHE[g]){ try{PCACHE[g]=await (await fetch('/paper/'+g)).json();}catch(e){} }
+  }));
+  el.querySelectorAll('.cite[data-pg]').forEach(bt=>{
+    const d=PCACHE[+bt.dataset.pg];
+    if(d&&d.title){ bt.textContent=`${d.venue} ${d.year} · ${d.title}`; }
+  });
+}
 function aHTML(t){
   const body=t.segs.map(s=>s.t==='p'?md(s.s):citeHTML(s)).join('');
   const v=t.verified||{checked:0,passed:0};
@@ -362,7 +425,8 @@ function aHTML(t){
     ${v.passed===v.checked?'✓':'✗'} ${v.passed}/${v.checked}</span></div>`:'';
   const trail=(t.trail&&t.trail.length)?`<details class="trail"><summary>${STR[LANG].steps(t.trail.length)}</summary>
     ${t.trail.map(x=>`<div>${esc(x)}</div>`).join('')}</details>`:'';
-  return `<div class="amsg">${body}</div>${foot}${trail}`;
+  const trees=(t.trees||[]).map(treeHTML).join('');
+  return `<div class="amsg">${body}</div>${trees}${foot}${trail}`;
 }
 function turnHTML(t){
   return `<div class="qmsg"><div>${esc(t.q)}</div></div>`+aHTML(t);
@@ -387,6 +451,8 @@ function showThread(turns){
   $('#tin').innerHTML=turns.map(turnHTML).join('');
   wireComposer(); markHist();
   for(const t of turns)for(const s of (t.segs||[]))if(s.t==='c')addPaper(s.gid);
+  const tin=$('#tin');
+  turns.forEach(t=>(t.trees||[]).forEach(tr=>hydrateTree(tin,tr)));
   const th=$('.thread'); th.scrollTop=th.scrollHeight;
 }
 
@@ -400,7 +466,7 @@ async function send(text){
   tin.insertAdjacentHTML('beforeend',
     `<div class="qmsg"><div>${esc(v)}</div></div><div id="pend"></div>`);
   const pend=$('#pend'), th=$('.thread'); th.scrollTop=th.scrollHeight;
-  const trail=[];
+  const trail=[], trees=[];
   const line=msg=>{pend.insertAdjacentHTML('beforeend',
     `<div class="live"><i></i>${esc(msg)}</div>`); th.scrollTop=th.scrollHeight;};
   line('…');
@@ -421,6 +487,10 @@ async function send(text){
         const ev=JSON.parse(chunk.slice(6));
         if(ev.t==='tool'){ const s=ev.name+(ev.arg?'  '+ev.arg:''); trail.push(s); line(s);
           if(ev.name==='get_paper')addPaper(ev.arg); }
+        else if(ev.t==='tree'){ trees.push(ev.tree);
+          pend.insertAdjacentHTML('beforebegin',treeHTML(ev.tree));
+          const el=pend.previousElementSibling; hydrateTree(el,ev.tree);
+          th.scrollTop=th.scrollHeight; }
         else if(ev.t==='error'){ pend.outerHTML=`<div class="errmsg">${esc(ev.error)}</div>`; }
         else if(ev.t==='done'){
           CHAT=ev.chat;

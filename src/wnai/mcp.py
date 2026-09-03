@@ -440,6 +440,138 @@ def t_field_trend(a: dict) -> dict:
                     "as computed shares, never as paper quotes"}
 
 
+# discourse words that name no failure — the register, not the content
+_GAP_STOP = {
+    "existing", "current", "prior", "previous", "conventional", "traditional",
+    "methods", "method", "approaches", "approach", "models", "model", "works",
+    "work", "often", "typically", "however", "remain", "remains", "limited",
+    "limitation", "limitations", "challenge", "challenges", "challenging",
+    "difficult", "difficulty", "problem", "problems", "issue", "issues",
+    "significant", "significantly", "large", "high", "low", "widely", "many",
+    "various", "based", "rely", "relies", "require", "requires", "requiring",
+    "expensive", "costly", "cost", "costs", "lack", "lacks", "fail", "fails",
+    "failure", "unable", "cannot", "still", "these", "those", "such", "them",
+    "their", "this", "that", "which", "when", "while", "with", "without",
+    "performance", "tasks", "task", "data", "training", "learning", "either",
+    "struggle", "struggles", "suffer", "suffers", "make", "makes", "making",
+    # function words the tokenizer admits
+    "the", "and", "for", "are", "but", "not", "can", "due", "may", "has",
+    "have", "been", "was", "were", "will", "would", "could", "should", "its",
+    "into", "from", "they", "there", "where", "what", "who", "how", "why",
+    "than", "then", "also", "only", "both", "each", "more", "most", "less",
+    "other", "others", "same", "well", "even", "much", "very", "between",
+    "across", "over", "under", "within", "about", "because", "since",
+    "although", "though", "thus", "hence", "therefore", "moreover",
+    "furthermore", "despite", "unlike", "among", "along", "against", "does",
+    "usually", "generally", "highly", "particularly", "especially", "several",
+    "including", "include", "includes", "leading", "leads", "lead", "given",
+    "using", "used", "uses", "use", "via", "per", "yet", "own", "new", "one",
+    "two", "way", "ways", "key", "main", "real", "world", "recent", "recently",
+    "different", "single", "multiple", "specific", "important", "common",
+    "poor", "poorly", "hard", "hinder", "hinders", "hindering", "prevent",
+    "prevents", "prevented", "ignore", "ignores", "ignoring", "overlook",
+    "overlooks", "neglect", "neglects", "capture", "captures", "capturing",
+    "achieve", "achieves", "achieving", "obtain", "handle", "handling",
+    "address", "addresses", "addressing", "remain", "result", "results",
+    "focus", "focuses", "focusing", "focused", "consider", "considers",
+    "resulting", "propose", "proposed", "approaches", "solutions", "solution",
+}
+_TOK = re.compile(r"[a-z][a-z\-]{2,}")
+
+
+def t_gap_scan(a: dict) -> dict:
+    """The blue-ocean derivation, computed — the agent interprets, never
+    invents. Within a field: cluster the failures its papers NAME (verbatim
+    limitation sentences), then split each cluster into papers that merely
+    cite the failure as motivation vs papers whose key_change/proposals
+    ATTACK it. A failure widely named but barely attacked is a gap
+    candidate — a structural fact, not a score."""
+    want = a["topic"].strip().lower()
+    gids = []
+    for key in S.union["corpora"]:
+        try:
+            tj = S.topics(key)
+        except FileNotFoundError:
+            continue
+        for t0 in tj["topics"]:
+            if t0["label"].lower() == want:
+                eids = list(t0.get("explicit", ())) + list(t0.get("via_child", ()))
+                gids += [S.gid_by[(key, e)] for e in eids if (key, e) in S.gid_by]
+    if not gids:
+        return {"error": f"no topic labelled '{a['topic']}' — see list_topics"}
+    label_words = set(_TOK.findall(a["topic"].lower()))
+    # gather each member's L text, K text, names, edition
+    rows = []
+    for g in gids:
+        sp = S.span_entry(g) or [None] * 4
+        L, K = sp[1] or "", sp[2] or ""
+        n = sp[0] or []
+        key, eid = S.where(g)
+        t2 = S.terms(key, eid)
+        names = " ".join((t2.get("p") or []) + (t2.get("t") or []))
+        rows.append({"g": g, "L": L.lower(), "Lraw": L,
+                     "atk": (K + " " + " ".join(n) + " " + names).lower(),
+                     "year": int(key.rsplit("-", 1)[1])})
+    withL = [x for x in rows if x["L"]]
+    # candidate failure terms: unigrams+bigrams by document frequency in L
+    from collections import Counter
+    df: Counter = Counter()
+    for x in withL:
+        toks = [w for w in _TOK.findall(x["L"]) if w not in _GAP_STOP
+                and w not in label_words]
+        toks_u = [w for w in toks if len(w) >= 5]
+        big = [f"{u} {v}" for u, v in zip(toks, toks[1:])]
+        for term in set(toks_u) | set(big):
+            df[term] += 1
+    n_mem = len(withL)
+    cands = [(t3, c) for t3, c in df.items()
+             if c >= max(3, n_mem // 60) and c <= n_mem * 0.5]
+    # prefer bigrams over their own words when nearly as frequent
+    keep = []
+    bigs = {t3 for t3, _ in cands if " " in t3}
+    for t3, c in sorted(cands, key=lambda p: -p[1]):
+        if " " not in t3 and any(t3 in b for b in bigs
+                                 if df[b] >= c * 0.6):
+            continue
+        keep.append((t3, c))
+    branches = []
+    used: set = set()
+    for term, _c in keep:
+        if any(term in u or u in term for u in used):
+            continue
+        namers = [x for x in withL if term in x["L"]]
+        if len(namers) < 3:
+            continue
+        attackers = [x for x in namers if term in x["atk"]]
+        motiv = [x for x in namers if term not in x["atk"]]
+        rep = min(namers, key=lambda x: len(x["Lraw"]))
+        yrs = Counter(x["year"] for x in namers)
+        branches.append({
+            "term": term,
+            "named_by": len(namers),
+            "attacked_by": len(attackers),
+            "motivation_only": len(motiv),
+            "by_year": dict(sorted(yrs.items())),
+            "rep": {"gid": rep["g"], "sentence": rep["Lraw"]},
+            "attackers": [x["g"] for x in attackers][:12],
+            "namers": [x["g"] for x in motiv][:12],
+        })
+        used.add(term)
+        if len(branches) >= 10:
+            break
+    # structural order: unattacked first, then how widely named
+    branches.sort(key=lambda b: (b["attacked_by"] > 0, -b["named_by"]))
+    return {"field": a["topic"], "papers_in_field": len(gids),
+            "with_limitation": n_mem, "branches": branches,
+            "note": "branches are failure terms from the papers' own "
+                    "limitation sentences (register words and the field's own "
+                    "name filtered); attacked_by counts papers whose "
+                    "key_change or proposal names the term. A widely named, "
+                    "barely attacked branch is a gap CANDIDATE — judge it, "
+                    "don't rank it. Term matching is lexical; coverage "
+                    "understates fields that phrase failures differently."}
+
+
 def t_paper_text(a: dict) -> dict:
     """Read a paper's parsed full text, section by section — the on-demand
     depth path (no pre-extraction): list sections first, then read one."""
@@ -531,6 +663,17 @@ TOOLS = [
      "fn": t_field_trend,
      "inputSchema": {"type": "object", "required": ["topic"], "properties": {
          "topic": {"type": "string"}}}},
+    {"name": "gap_scan",
+     "description": "The blue-ocean derivation for a field: clusters the "
+                    "failures its papers name (verbatim limitation "
+                    "sentences) and splits each into namers vs attackers — "
+                    "a widely named, barely attacked failure is a gap "
+                    "candidate. Call this for 'where are the gaps / blue "
+                    "ocean / unsolved problems' questions, then interpret "
+                    "the branches; the reader sees the tree itself.",
+     "fn": t_gap_scan,
+     "inputSchema": {"type": "object", "required": ["topic"], "properties": {
+         "topic": {"type": "string", "description": "a label from list_topics"}}}},
     {"name": "paper_text",
      "description": "Read one paper's parsed FULL TEXT on demand — first call "
                     "lists its sections (abstract/intro/method/experiments/"
