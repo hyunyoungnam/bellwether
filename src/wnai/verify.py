@@ -64,6 +64,10 @@ class Verifier:
                 if r:
                     out.append(("a", norm((r.get("title") or "") + " "
                                           + (r.get("abstract") or ""))))
+                ft = self.store.fulltext(gid)
+                if ft:
+                    out.append(("f", norm(" ".join(
+                        x["text"] for x in ft["sections"]))))
             except Exception:  # noqa: BLE001 — a bad gid is just unverified
                 pass
             self._fields[gid] = [(role, " " + t + " ") for role, t in out if t]

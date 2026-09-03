@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import sys
 import urllib.error
 import urllib.request
@@ -23,6 +24,18 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 PROCESSED = ROOT / "data" / "processed"
 RDATA = ROOT / "reports" / "data"
+INTERIM = ROOT / "data" / "interim"
+ARXRAW = ROOT / "data" / "raw" / "arxiv"
+
+# parsed full text per corpus (richest source each), plus the arxiv-id bridge
+_FT = {
+    "icml-2026": ("fulltext_html_icml_2026.jsonl", "resolved.jsonl"),
+    "icml-2025": ("fulltext_pmlr_2025.jsonl", None),   # rows carry event_id
+    "neurips-2024": ("fulltext_neurips_2024.jsonl", "resolved_neurips-2024.jsonl"),
+    "neurips-2025": ("fulltext_neurips_2025.jsonl", "resolved_neurips-2025.jsonl"),
+    "iclr-2025": ("fulltext_iclr_2025.jsonl", "resolved_iclr-2025.jsonl"),
+    "iclr-2026": ("fulltext_iclr_2026.jsonl", "resolved_iclr-2026.jsonl"),
+}
 MEILI_ADDR = os.environ.get("WNAI_MEILI_ADDR", "127.0.0.1:7700")
 
 _VENUE = {"icml": "ICML", "neurips": "NeurIPS", "iclr": "ICLR"}
@@ -99,6 +112,49 @@ class Store:
                 .get(str(eid), {})
         except FileNotFoundError:
             return {}
+
+    def _ft_index(self, key: str) -> dict:
+        """eid -> byte offset into the corpus's full-text jsonl. One linear
+        scan per corpus per process; rows are then read by seek."""
+        ck = f"ftix:{key}"
+        if ck not in self._c:
+            ix: dict[int, int] = {}
+            spec = _FT.get(key)
+            if spec and (INTERIM / spec[0]).exists():
+                to_eid = None
+                if spec[1]:
+                    to_eid = {}
+                    for line in open(ARXRAW / spec[1], encoding="utf-8"):
+                        r = json.loads(line)
+                        if r.get("arxiv_base"):
+                            to_eid.setdefault(r["arxiv_base"], r["event_id"])
+                with open(INTERIM / spec[0], "rb") as fh:
+                    off = 0
+                    for raw in fh:
+                        head = raw[:200].decode("utf-8", "ignore")
+                        eid = None
+                        if to_eid is None:
+                            m = re.search(r'"event_id":\s*(\d+)', head)
+                            eid = int(m.group(1)) if m else None
+                        else:
+                            m = re.search(r'"arxiv_base":\s*"([^"]+)"', head)
+                            eid = to_eid.get(m.group(1)) if m else None
+                        if eid is not None and eid not in ix:
+                            ix[eid] = off
+                        off += len(raw)
+            self._c[ck] = ix
+        return self._c[ck]
+
+    def fulltext(self, gid: int) -> dict | None:
+        key, eid = self.where(gid)
+        ix = self._ft_index(key)
+        if eid not in ix:
+            return None
+        spec = _FT[key]
+        with open(INTERIM / spec[0], "rb") as fh:
+            fh.seek(ix[eid])
+            row = json.loads(fh.readline())
+        return row if row.get("ok", True) and row.get("sections") else None
 
     @property
     def cites_out(self) -> dict:
@@ -384,6 +440,31 @@ def t_field_trend(a: dict) -> dict:
                     "as computed shares, never as paper quotes"}
 
 
+def t_paper_text(a: dict) -> dict:
+    """Read a paper's parsed full text, section by section — the on-demand
+    depth path (no pre-extraction): list sections first, then read one."""
+    gid = int(a["gid"])
+    row = S.fulltext(gid)
+    if row is None:
+        return {"error": "no parsed full text for this paper — coverage is "
+                         "~77% and not random (theory/statistics preprint "
+                         "less); the card fields and abstract still apply",
+                "paper": S.brief(gid)}
+    secs = row["sections"]
+    sec = a.get("section")
+    if not sec:
+        return {"paper": S.brief(gid),
+                "sections": [{"bucket": x["bucket"], "title": x.get("title"),
+                              "chars": len(x["text"])} for x in secs],
+                "note": "call again with section=<bucket> to read one"}
+    txt = " ".join(x["text"] for x in secs if x["bucket"] == sec)
+    if not txt:
+        return {"error": f"no section bucket '{sec}'",
+                "available": sorted({x["bucket"] for x in secs})}
+    return {"paper": S.brief(gid), "section": sec, "chars": len(txt),
+            "text": txt[:12000], "truncated": len(txt) > 12000}
+
+
 def t_citations(a: dict) -> dict:
     gid = int(a["gid"])
     return {"paper": S.brief(gid),
@@ -450,6 +531,15 @@ TOOLS = [
      "fn": t_field_trend,
      "inputSchema": {"type": "object", "required": ["topic"], "properties": {
          "topic": {"type": "string"}}}},
+    {"name": "paper_text",
+     "description": "Read one paper's parsed FULL TEXT on demand — first call "
+                    "lists its sections (abstract/intro/method/experiments/"
+                    "conclusion/appendix/...), a second call with section= "
+                    "returns that section's own words. THE tool for depth "
+                    "questions about how a specific paper works.",
+     "fn": t_paper_text,
+     "inputSchema": {"type": "object", "required": ["gid"], "properties": {
+         "gid": _GID, "section": {"type": "string"}}}},
     {"name": "get_citations",
      "description": "Which of our corpus papers this paper cites, and which "
                     "cite it (edges within the six editions only).",
