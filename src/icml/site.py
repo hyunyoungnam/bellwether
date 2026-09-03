@@ -1651,6 +1651,31 @@ margin-right:8px;white-space:nowrap}
 .per{margin-left:5px;color:var(--acc);font-size:10px;font-weight:600}
 .simbtn.on{background:var(--ink);color:#fff;border-color:var(--ink)}
 /* landing */
+/* research briefs: the workspace list and one open brief */
+.briefs{background:var(--card);border-radius:12px;padding:16px 18px;margin:4px 0 14px}
+.bfhd{font-size:14px;font-weight:700}
+.bfhd em{display:block;font-style:normal;font-weight:500;font-size:12px;color:var(--mut);margin:2px 0 8px}
+.bfempty{font-size:13px;color:var(--mut);padding:8px 0 2px}
+.bfempty code{display:block;margin-top:8px;font-size:12px;background:var(--bg);border:1px solid var(--ring);
+  border-radius:7px;padding:7px 10px;color:var(--ink2);width:fit-content}
+.bfrow{display:block;width:100%;text-align:left;font:inherit;background:none;border:0;cursor:pointer;
+  padding:9px 10px;border-radius:8px;border:1px solid transparent}
+.bfrow:hover{border-color:var(--acc)}
+.bfrow b{display:block;font-size:14px;font-weight:650}
+.bfmeta{font-size:11.5px;color:var(--mut)}
+.bdoc .bq{font-size:19px;font-weight:700;letter-spacing:-.01em;margin:8px 0 2px;text-wrap:balance}
+.bback{font:inherit;font-size:12.5px;background:none;border:0;color:var(--mut);cursor:pointer;padding:0}
+.bback:hover{color:var(--ink)}
+.bblock{margin:14px 0 0}
+.bblock p{font-size:14px;line-height:1.55;margin:0 0 6px}
+.bcites{display:flex;flex-wrap:wrap;gap:6px}
+.bcite{font:inherit;font-size:11.5px;text-align:left;background:var(--bg);border:1px solid var(--ring);
+  border-radius:7px;padding:3px 9px;cursor:pointer;color:var(--ink2);max-width:100%;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bcite:hover{border-color:var(--acc)}
+.bcite i{font-style:normal;font-weight:650;margin-right:6px}
+.bcite u{text-decoration:none;color:#b3452c;font-weight:650;margin-left:6px}
+.bcite.bad{border-color:#d9a292}
 .venues{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:4px}
 @media(max-width:760px){.venues{grid-template-columns:1fr}}
 .vcard{text-align:center;background:var(--card);border-radius:12px;padding:16px 18px}
@@ -2088,7 +2113,7 @@ function papersWithWord(w){
 // Papers are shown only once the reader has asked for some. Listing all 6,637 on
 // arrival is the problem this product exists to remove, not a neutral default.
 const MAX_SHOWN=80, NEIGHBOURS_SHOWN=5;
-const st={corp:null,q:[],qraw:'',anc:null,pick:null,topics:new Set(),fams:new Set(),sel:null,panel:null,ds:null,meth:null,mfam:null,grouped:false,lim:null};
+const st={corp:null,q:[],qraw:'',anc:null,pick:null,topics:new Set(),fams:new Set(),sel:null,panel:null,ds:null,meth:null,mfam:null,grouped:false,lim:null,brief:null};
 // The claim the reader clicked to get here — the door's face, carried to the
 // destination so "why am I looking at this set?" never needs remembering.
 let STORY=null;
@@ -2784,7 +2809,89 @@ function landingHTML(){
       ${now?`<div class="vn">${now.n.toLocaleString()} papers</div>`:`<div class="vsoon">not collected yet</div>`}
     </button>`;
   }).join('');
-  return `<div class="venues">${cards}</div>`+venueLegendHTML()+changedHTML()+digestHTML()+allFieldsHTML();
+  // 2026-09-03 pivot: the landing is a research workspace, not an analytics
+  // page. Briefs (agent-written, span-cited) lead; venue cards stay as the
+  // browsing door; the charts left the landing — their computations remain
+  // available to the agent as tools, summoned by a question instead of shown
+  // to everyone up front. An open brief owns the whole landing.
+  if(st.brief)return briefHTML();
+  return briefsHTML()+`<div class="venues">${cards}</div>`+allFieldsHTML();
+}
+
+// ---- Research briefs: the workspace ----------------------------------------
+// A brief is written by the reader's own coding agent (Claude Code / Codex)
+// through the MCP tools, saved under reports/briefs/, and verified by
+// scripts/verify_brief.py — every citation carries a verbatim quote checked
+// against the paper. The page only READS briefs; it never writes them.
+let BRIEFS=null, BRIEFDOC=null;
+// briefs cite by gid (the union key the MCP tools speak); the page's arrays
+// are row-indexed with the gid in `.i` — map once, never mix the two
+let _ROWOF=null;
+const rowOfGid=g=>{ if(!_ROWOF){_ROWOF=new Map(); P.forEach((p,ix)=>_ROWOF.set(p.i,ix));} return _ROWOF.get(g); };
+async function loadBriefs(){
+  try{ const r=await fetch('briefs/index.json'); BRIEFS=r.ok?await r.json():[]; }
+  catch(e){ BRIEFS=[]; }
+  if(st.corp===null)render();
+}
+function briefsHTML(){
+  if(st.brief)return briefHTML();
+  if(BRIEFS===null){ loadBriefs(); return `<div class="briefs"><div class="bfhd">Research briefs</div><div class="bfempty">loading…</div></div>`; }
+  const rows=[...BRIEFS].reverse().map(b=>`<button class="bfrow" data-brief="${esc(b.id)}">
+      <b>${esc(b.question)}</b>
+      <span class="bfmeta">${esc(b.date||'')}${b.cites?` · ${b.cites} citations · ${b.verified??0} verified`:''}</span>
+    </button>`).join('');
+  return `<div class="briefs"><div class="bfhd">Research briefs
+    <em>a question, answered from the corpus in the papers' own words — written by your coding agent, every quote verified here</em></div>
+    ${rows||`<div class="bfempty">No briefs yet. Open this repo in Claude Code and ask:
+      <code>/research-brief What changed in KV cache compression this year?</code></div>`}
+  </div>`;
+}
+async function loadBriefDoc(){
+  try{ const r=await fetch('briefs/'+encodeURIComponent(st.brief)+'.json');
+       BRIEFDOC=r.ok?await r.json():{id:st.brief,question:'brief not found',answer:[]}; }
+  catch(e){ BRIEFDOC={id:st.brief,question:'brief unavailable',answer:[]}; }
+  if(st.corp===null)render();
+}
+function briefHTML(){
+  const b=BRIEFDOC;
+  if(!b||b.id!==st.brief){ loadBriefDoc(); return `<div class="briefs"><div class="bfempty">loading the brief…</div></div>`; }
+  const blocks=(b.answer||[]).map(bl=>{
+    // one chip per paper per block — two quotes from one paper answer the same
+    // "which paper?" question once; an unverified cite still gets its own chip
+    const seen=new Set();
+    const cites=(bl.cites||[]).filter(c=>{
+      if(c.v===false)return true;
+      if(seen.has(c.gid))return false;
+      seen.add(c.gid); return true;
+    }).map(c=>{
+      const ix=rowOfGid(c.gid), p=ix!==undefined?P[ix]:null, cy=p?CY[p.cy]:null;
+      return `<button class="bcite${c.v===false?' bad':''}" data-g="${c.gid}" title="${esc(c.quote||'')}">`+
+        `<i>${cy?esc(cy.v+' '+cy.y):'?'}</i>${esc(p?p.t:'gid '+c.gid)}${c.v===false?' <u>unverified</u>':''}</button>`;
+    }).join('');
+    return `<div class="bblock"><p>${esc(bl.text)}</p>${cites?`<div class="bcites">${cites}</div>`:''}</div>`;
+  }).join('');
+  const ver=b.verified
+    ?`${b.verified.passed}/${b.verified.checked} quotes verified against the papers`
+    :'not yet verified';
+  return `<div class="briefs bdoc">
+    <button class="bback" id="bback">← all briefs</button>
+    <div class="bq">${esc(b.question)}</div>
+    <div class="bfmeta">${esc(b.date||'')} · ${ver}</div>
+    ${blocks}</div>`;
+}
+function wireBriefs(){
+  document.querySelectorAll('[data-brief]').forEach(el=>el.onclick=()=>{
+    st.brief=el.dataset.brief; BRIEFDOC=null; render(); });
+  const bb=$('#bback'); if(bb)bb.onclick=()=>{ st.brief=null; render(); };
+  document.querySelectorAll('.bcite[data-g]').forEach(el=>el.onclick=()=>openPaper(+el.dataset.g));
+}
+// a citation opens the ALL screen with that paper's card selected and unfolded
+function openPaper(g){
+  const ix=rowOfGid(g);
+  if(ix===undefined)return;
+  st.corp=-1; st.sel=ix; st.grouped=false; EXP.add(ix);
+  history.pushState(null,'','#all'); render();
+  requestAnimationFrame(()=>$(`.p[data-i="${ix}"]`)?.scrollIntoView({block:'center'}));
 }
 // Which hue is which conference — pinned under the cards, where the eye goes
 // before the bars. Venues with a single edition are named but carry no bar.
@@ -2908,9 +3015,8 @@ function wireDigest(){
   const af=$('#aftog'); if(af)af.onclick=()=>{AF_OPEN=!AF_OPEN;render();};
 }
 function wireLanding(){
-  wireDigest();
+  wireBriefs();
   document.querySelectorAll('[data-corp]').forEach(el=>el.onclick=()=>go(+el.dataset.corp));
-  wireChanged();
 }
 
 // ---- V1: the title is the query --------------------------------------------
@@ -3326,7 +3432,11 @@ function render(){
           .map(x=>`${esc(x.c.v)} ${hlIdx.filter(i2=>P[i2].cy===x.j).length} ${x.c.hw.toLowerCase()}s`);
         hd=`What the venues put forward <em>${hlIdx.length} picks — ${per.join(' · ')} — each venue's own selection, not ours</em>`;
       }
-      const show=hlIdx.slice(0,MAX_SHOWN);
+      let show=hlIdx.slice(0,MAX_SHOWN);
+      // a brief citation (or any selection) landing on the cold screen must be
+      // visible even when the paper is not a venue highlight
+      if(st.sel!==null&&!show.includes(st.sel)&&(st.corp===-1||P[st.sel].cy===st.corp))
+        show=[st.sel,...show];
       ensureSpans(new Set(show.map(i2=>P[i2].cy)));
       const twins=(st.corp===-1&&(D.twins||[]).length)
         ?`<div class="twbox"><div class="twhd">One problem, several venues`+
@@ -3400,9 +3510,10 @@ function render(){
   const ordered=live?res:[...res].sort((a2,b2)=>
     (CY_LATEST[P[b2].cy]-CY_LATEST[P[a2].cy])||(P[b2].o-P[a2].o)||(a2-b2));
   let show=ordered.slice(0,MAX_SHOWN);
-  // a paper picked from the grouped view (or any selection) must be VISIBLE:
-  // if the cap cut it, it leads the list instead of silently not existing
-  if(st.sel!==null&&res.includes(st.sel)&&!show.includes(st.sel))
+  // a paper picked from the grouped view, a brief citation, or any selection
+  // must be VISIBLE: if the cap (or the current filter) cut it, it leads the
+  // list instead of silently not existing
+  if(st.sel!==null&&!show.includes(st.sel)&&(st.corp===-1||P[st.sel].cy===st.corp))
     show=[st.sel,...show.slice(0,MAX_SHOWN-1)];
   // No "show more": nobody reads to the end of 6,637. Past the cap the answer is
   // to narrow, and the count above says how much is not on screen.

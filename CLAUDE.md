@@ -761,6 +761,20 @@ Still weak:
 
 ## Interface principles
 
+- **The landing is a research workspace, not an analytics page (2026-09-03,
+  owner decision — supersedes the "analysis first" landing of 2026-08-24).**
+  The landing shows: search, the RESEARCH BRIEFS list, venue cards, and the
+  quiet all-fields index. The digest/since-last-year/struggles charts left the
+  landing — do not restore them there; their computations remain build-time
+  material destined for agent tools. A brief is written by the reader's own
+  coding agent (Claude Code/Codex via the wnai MCP server, `.claude/skills/
+  research-brief`), saved to `reports/briefs/`, and verified by
+  `scripts/verify_brief.py`: prose is the agent's, every cite carries a
+  verbatim quote checked against the paper, unverified quotes are marked on
+  the page, never hidden. Cite chips open the paper's card on the ALL screen.
+  Briefs cite by **gid**; the page's `P` is row-indexed with the gid in `.i`
+  — `rowOfGid()` is the only legal bridge (the gid trap, again).
+
 - **If a view needs a sentence to be understood, redesign the view.** This is the
   stated goal of the interface: intuitively readable without auxiliary
   explanation. Captions may state a unit or a coverage figure; they must never
