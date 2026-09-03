@@ -2,7 +2,8 @@
 # Raw PDFs alone are 26 GB; nothing here belongs in a git repo.
 data/
 run/
-reports/
+reports/*
+!reports/chat.html
 dist/
 .bak/
 .cache/

@@ -34,7 +34,7 @@ MEILI_ADDR = os.environ.get("WNAI_MEILI_ADDR", "127.0.0.1:7700")
 # runs on the user's machine): the site, the search index, and the processed
 # files the MCP tools read. Embedding matrices and interim files stay out.
 BUNDLE_GLOBS = [
-    "reports/index.html", "reports/data",
+    "reports/index.html", "reports/chat.html", "reports/data",
     "data/meili/db",
     "data/processed/union.json", "data/processed/topics*.json",
     "data/processed/card_terms.json",
