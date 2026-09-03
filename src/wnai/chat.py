@@ -123,13 +123,23 @@ def card(gid: int) -> dict:
     venue, year = key.rsplit("-", 1)
     sp = store.span_entry(gid) or [None] * 8
     n, L, K, R = sp[0] or [], sp[1], sp[2], sp[3]
+    topics = []
+    try:
+        for t in store.topics(key)["topics"]:
+            if _eid in t.get("explicit", ()) or _eid in t.get("via_child", ()):
+                topics.append(t["label"])
+    except FileNotFoundError:
+        pass
     return {"gid": gid, "title": r["title"],
             "venue": _VENUE.get(venue, venue), "year": year,
             "authors": (r.get("authors") or [])[:3],
             "n_authors": r.get("n_authors"),
+            "area": r.get("area"), "subarea": r.get("subarea"),
             "L": L or None,
             "K": K or (n[0] if n else None),
-            "R": R or None}
+            "R": R or None,
+            "novelty": n, "topics": topics,
+            "abstract": r.get("abstract")}
 
 
 # ------------------------------------------------------------- conversations
