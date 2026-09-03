@@ -223,12 +223,17 @@ def delete_chat(cid: str) -> dict:
     return {"ok": True}
 
 
-def rename_chat(cid: str, title: str) -> dict:
+def update_chat(cid: str, body: dict) -> dict:
+    """Rename and/or publish. A published conversation is the brief's heir:
+    the exploration that earned a place on the front screen."""
     p2 = _doc_path(cid)
     d = json.loads(p2.read_text())
-    d["title"] = (title or "").strip()[:80] or d["title"]
+    if body.get("title"):
+        d["title"] = body["title"].strip()[:80] or d["title"]
+    if "pub" in body:
+        d["pub"] = bool(body["pub"])
     p2.write_text(json.dumps(d, ensure_ascii=False))
-    return {"ok": True, "title": d["title"]}
+    return {"ok": True, "title": d["title"], "pub": d.get("pub", False)}
 
 
 def list_chats() -> list[dict]:
@@ -237,7 +242,8 @@ def list_chats() -> list[dict]:
         for f in CHAT_DIR.glob("*.json"):
             try:
                 d = json.loads(f.read_text())
-                out.append({"id": d["id"], "title": d["title"], "ts": d["ts"]})
+                out.append({"id": d["id"], "title": d["title"], "ts": d["ts"],
+                            "pub": d.get("pub", False)})
             except (OSError, KeyError, json.JSONDecodeError):
                 continue
     out.sort(key=lambda e: e["ts"], reverse=True)

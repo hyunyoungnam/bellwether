@@ -776,8 +776,11 @@ Still weak:
   `/browse#p<gid>`, that paper's card selected and unfolded. Guardrails
   transfer: the agent's prose may be wrong and is never dressed as the
   paper's words; a green check means the quote provably exists in the paper.
-- **The landing is a research workspace, not an analytics page (2026-09-03,
-  owner decision — supersedes the "analysis first" landing of 2026-08-24).**
+- **[superseded 2026-09-03B: briefs were absorbed into PUBLISHED CONVERSATIONS
+  — a chat's ★ publish flag; /browse landing is venue cards + field index only;
+  the research-brief skill and verify_brief.py were removed]**
+  The landing is a research workspace, not an analytics page (2026-09-03,
+  owner decision — supersedes the "analysis first" landing of 2026-08-24).
   The landing shows: search, the RESEARCH BRIEFS list, venue cards, and the
   quiet all-fields index. The digest/since-last-year/struggles charts left the
   landing — do not restore them there; their computations remain build-time

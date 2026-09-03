@@ -208,6 +208,13 @@ body{margin:0;background:var(--bg);color:var(--ink);
 .ex button{font:inherit;font-size:12.5px;color:var(--ink2);background:var(--card);
   border:1px solid var(--ring);border-radius:999px;padding:6px 14px;cursor:pointer}
 .ex button:hover{border-color:var(--acc)}
+.pubs{width:min(720px,100%);margin-top:26px}
+.pubhd{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--mut);margin:0 2px 8px}
+.pubrow{display:block;width:100%;text-align:left;font:inherit;font-size:15px;color:var(--ink2);
+  background:var(--card);border:1px solid var(--ring);border-radius:11px;padding:12px 16px;
+  margin:0 0 8px;cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pubrow:hover{border-color:var(--acc)}
+.hrow.pub{color:var(--ink)}
 </style></head><body>
 <div class="app">
   <nav class="rail">
@@ -234,14 +241,14 @@ const STR={
      sTheme:'테마', sLight:'라이트', sDark:'다크', sSystem:'시스템',
      sLang:'언어', sProgram:'프로그램', sIn:'연결됨', sOut:'미설치',
      sDefault:'기본', sBeta:'베타', sCorpus:'코퍼스', sAddr:'주소',
-     delQ:'이 대화를 삭제할까요?', renQ:'대화 이름'},
+     delQ:'이 대화를 삭제할까요?', renQ:'대화 이름', pubHd:'예시 대화'},
  en:{newq:'New question', browse:'Browse 29,605 papers →', today:'Today', etal:' et al.',
      steps:n=>`${n} steps`, papers:'Papers', settings:'⚙ Settings', sTitle:'Settings',
      sAgents:'Agents', sAgentD:'The coding agent that answers — uses the account signed in on this machine',
      sTheme:'Theme', sLight:'Light', sDark:'Dark', sSystem:'System',
      sLang:'Language', sProgram:'Program', sIn:'connected', sOut:'not installed',
      sDefault:'default', sBeta:'beta', sCorpus:'Corpus', sAddr:'Address',
-     delQ:'Delete this conversation?', renQ:'Conversation name'}};
+     delQ:'Delete this conversation?', renQ:'Conversation name', pubHd:'Examples'}};
 let LANG=localStorage.getItem('wn_lang')||'ko';
 const t=k=>STR[LANG][k];
 function applyLang(){
@@ -324,9 +331,13 @@ function composerHTML(){return `<div class="cin">
   <input id="q" autocomplete="off">
   <button id="go" aria-label="ask">↑</button></div>`;}
 
+let PUBS=[];
 function heroHTML(){
+  const ex=PUBS.length?`<div class="pubs"><div class="pubhd">${t('pubHd')}</div>
+    ${PUBS.slice(0,4).map(r=>`<button class="pubrow" data-id="${esc(r.id)}">${esc(r.title)}</button>`).join('')}
+  </div>`:'';
   return `<div class="hero">
-    ${composerHTML()}
+    ${composerHTML()}${ex}
   </div>`;
 }
 function threadHTML(){
@@ -465,6 +476,11 @@ function showEmpty(){
   CHAT=null; clearSide();
   $('#main').innerHTML=heroHTML();
   wireComposer(); markHist();
+  document.querySelectorAll('.pubrow').forEach(el=>el.onclick=async()=>{
+    if(BUSY)return;
+    const d=await (await fetch('/chats/'+el.dataset.id)).json();
+    CHAT=d.id; showThread(d.turns);
+  });
 }
 function showThread(turns){
   clearSide();
@@ -548,16 +564,26 @@ async function loadHist(){
     for(const r of rows){
       const g=day(r.ts)===today?t('today'):day(r.ts);
       if(g!==grp){ h+=`<div class="hgrp">${esc(g)}</div>`; grp=g; }
-      h+=`<div class="hwrap"><button class="hrow" data-id="${esc(r.id)}">${esc(r.title)}</button>
-        <span class="hact"><button data-rn="${esc(r.id)}" title="rename">✎</button>
+      h+=`<div class="hwrap"><button class="hrow ${r.pub?'pub':''}" data-id="${esc(r.id)}">${r.pub?'★ ':''}${esc(r.title)}</button>
+        <span class="hact"><button data-pub="${esc(r.id)}" data-v="${r.pub?0:1}" title="publish">${r.pub?'★':'☆'}</button>
+        <button data-rn="${esc(r.id)}" title="rename">✎</button>
         <button data-del="${esc(r.id)}" title="delete">✕</button></span></div>`;
     }
     $('#hist').innerHTML=h;
+    const hadPubs=PUBS.length; PUBS=rows.filter(r=>r.pub);
+    if(!$('#tin')&&PUBS.length!==hadPubs)showEmpty();
     document.querySelectorAll('.hrow').forEach(el=>el.onclick=async()=>{
       if(BUSY)return;
       const d=await (await fetch('/chats/'+el.dataset.id)).json();
       CHAT=d.id; showThread(d.turns);
       document.querySelector('.rail').classList.remove('open');
+    });
+    document.querySelectorAll('[data-pub]').forEach(el=>el.onclick=async e=>{
+      e.stopPropagation();
+      await fetch('/chats/'+el.dataset.pub,{method:'POST',
+        headers:{'Content-Type':'application/json'},body:JSON.stringify({pub:+el.dataset.v===1})});
+      loadHist();
+      if(!$('#tin'))showEmpty();
     });
     document.querySelectorAll('[data-del]').forEach(el=>el.onclick=async e=>{
       e.stopPropagation();

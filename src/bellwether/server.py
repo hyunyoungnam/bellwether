@@ -116,8 +116,7 @@ class Handler(SimpleHTTPRequestHandler):
                 body = json.loads(
                     self.rfile.read(int(self.headers.get("Content-Length", 0)))
                     or b"{}")
-                self._json(200, chat.rename_chat(self.path[7:],
-                                                 body.get("title") or ""))
+                self._json(200, chat.update_chat(self.path[7:], body))
             except FileNotFoundError:
                 self._json(404, {"error": "no such chat"})
             except Exception as exc:  # noqa: BLE001
