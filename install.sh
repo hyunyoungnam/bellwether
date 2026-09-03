@@ -36,17 +36,22 @@ else
 fi
 
 say "creating the serving venv"
-python3 -m venv "$DIR/.venv-serve" 2>/dev/null || {
-    echo "python3 -m venv failed — on Debian/Ubuntu: sudo apt install python3-venv"
+if ! python3 -m venv "$DIR/.venv-serve" 2>/dev/null; then
+    rm -rf "$DIR/.venv-serve"    # a half-made venv breaks the retry
+    PYV=$(python3 -c 'import sys; print(f"{sys.version_info[0]}.{sys.version_info[1]}")')
+    echo "python3 -m venv failed — on Debian/Ubuntu/WSL run:"
+    echo "    sudo apt install python${PYV}-venv"
+    echo "then re-run this installer."
     exit 1
-}
+fi
 "$DIR/.venv-serve/bin/pip" install -q -e "$DIR"
 
 mkdir -p "$BIN"
 ln -sf "$DIR/.venv-serve/bin/wnai" "$BIN/wnai"
 case ":$PATH:" in
     *":$BIN:"*) ;;
-    *) echo "note: add $BIN to PATH (usually: restart the shell)";;
+    *) echo "note: $BIN is not on PATH yet — open a new terminal (or:"
+       echo "      source ~/.profile) — until then, use $BIN/wnai";;
 esac
 
 say "fetching the search engine + keys"
