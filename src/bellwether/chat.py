@@ -2,7 +2,7 @@
 
 This is the OpenResearch-shaped frame with our difference inside it: the
 agent (Claude Code today; Codex later) runs headless under the USER'S OWN
-subscription login — no API key — with only the wnai MCP tools, and every
+subscription login — no API key — with only the bellwether MCP tools, and every
 factual sentence it writes must carry an anchor `⟦gid|exact quote⟧`. The
 server verifies each anchor against the locally held corpus BEFORE the
 browser shows it, so the reader sees, per citation, whether the quote really
@@ -27,7 +27,7 @@ SYSTEM = (
     "You are the research assistant of a local literature engine holding six "
     "conference editions in full: ICML 2025/26, NeurIPS 2024/25, ICLR "
     "2025/26 — 29,605 papers with verified sentences, embeddings, topics and "
-    "citations. Evidence comes ONLY from the wnai MCP tools; never answer "
+    "citations. Evidence comes ONLY from the bellwether MCP tools; never answer "
     "about papers from memory. METHOD for field-level questions (what is "
     "rising, what is new this year, where are the gaps): read the field in "
     "bulk with field_cards, get computed shares from field_trend, then derive "
@@ -57,7 +57,7 @@ def ask(message: str, sid: str | None = None, timeout: int = 300) -> dict:
     cmd = ["claude", "-p", message, "--output-format", "json",
            "--max-turns", "12",
            "--mcp-config", str(ROOT / ".mcp.json"), "--strict-mcp-config",
-           "--allowedTools", "mcp__wnai",
+           "--allowedTools", "mcp__bellwether",
            "--append-system-prompt", SYSTEM]
     if sid:
         cmd += ["--resume", sid]
@@ -159,7 +159,7 @@ def agents() -> dict:
 
 
 _CODEX_MCP = """
-[mcp_servers.wnai]
+[mcp_servers.bellwether]
 command = "python3"
 args = ["-m", "wnai", "mcp"]
 env = { PYTHONPATH = "%s" }
@@ -170,7 +170,7 @@ def _ensure_codex_mcp() -> None:
     cfg = Path.home() / ".codex" / "config.toml"
     cfg.parent.mkdir(exist_ok=True)
     text = cfg.read_text() if cfg.exists() else ""
-    if "mcp_servers.wnai" not in text:
+    if "mcp_servers.bellwether" not in text:
         cfg.write_text(text + _CODEX_MCP % (ROOT / "src"))
 
 
@@ -275,7 +275,7 @@ def stream(body: dict, emit) -> None:
         cmd = ["claude", "-p", q, "--output-format", "stream-json", "--verbose",
                "--max-turns", "12",
                "--mcp-config", str(ROOT / ".mcp.json"), "--strict-mcp-config",
-               "--allowedTools", "mcp__wnai",
+               "--allowedTools", "mcp__bellwether",
                "--append-system-prompt", SYSTEM]
         if sid:
             cmd += ["--resume", sid]
@@ -333,7 +333,7 @@ def stream(body: dict, emit) -> None:
                             # only corpus tools make the visible trail —
                             # harness plumbing is noise to the reader
                             if c.get("type") == "tool_use" \
-                                    and c["name"].startswith("mcp__wnai__"):
+                                    and c["name"].startswith("mcp__bellwether__"):
                                 _tool_event(c["name"].split("__")[-1],
                                             c.get("input") or {})
                     elif ev.get("type") == "result":

@@ -9,7 +9,7 @@ from data/processed/ — the same guarantee the site gives, now for agents.
 Protocol: JSON-RPC 2.0, one message per line (MCP stdio transport). Stdlib
 only, read-only, no network beyond the local search engine.
 
-    wnai mcp                      # normally launched by the agent, via .mcp.json
+    bellwether mcp                      # normally launched by the agent, via .mcp.json
 """
 from __future__ import annotations
 
@@ -721,7 +721,7 @@ def serve_stdio() -> int:
                 "protocolVersion": msg.get("params", {}).get(
                     "protocolVersion", "2024-11-05"),
                 "capabilities": {"tools": {}},
-                "serverInfo": {"name": "wnai", "version": "0.1.0"}})
+                "serverInfo": {"name": "bellwether", "version": "0.1.0"}})
         elif method == "tools/list":
             _reply(msg_id, {"tools": [
                 {k: t[k] for k in ("name", "description", "inputSchema")}

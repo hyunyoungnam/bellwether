@@ -1,6 +1,6 @@
-# What's new in AI research
+# Bellwether
 
-A reading tool for major AI conference proceedings. One edition of one
+The flock's lead animal reads where a field is going first. Bellwether is a local-first research platform over major AI conference proceedings — ask in conversation, get answers whose every quote is machine-verified against the papers. One edition of one
 conference is ~6,600 accepted papers; nobody reads a list that long. This
 project turns the proceedings into three answerable questions:
 
@@ -25,40 +25,40 @@ any device on the same LAN. Requirements: git and Python 3.10+.
 **Linux / macOS** — one line:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/hyunyoungnam/whatsnewai/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/hyunyoungnam/bellwether/main/install.sh | bash
 ```
 
 **Windows** — install WSL once (PowerShell: `wsl --install`, then reboot),
 open the Ubuntu terminal, and run the same line. Everything below happens
 inside WSL; the browser on Windows reaches it at the printed address.
 
-The script installs into `~/.wnai` (an app directory — everything in it,
-data included, stays inspectable), puts the `wnai` command on PATH via its
+The script installs into `~/.bellwether` (an app directory — everything in it,
+data included, stays inspectable), puts the `bellwether` command on PATH via its
 own venv, and fetches the search-engine binary and keys. Then:
 
 ```bash
 # the data bundle: site + search index for six editions, ~450 MB
-wnai fetch-data --url https://github.com/hyunyoungnam/whatsnewai/releases/download/data-20260902/wnai-data-20260902.tar.gz
-wnai serve
+bellwether fetch-data --url https://github.com/hyunyoungnam/bellwether/releases/download/data-20260902/bellwether-data-20260902.tar.gz
+bellwether serve
 ```
 
 (Set `WNAI_BUNDLE=<file-or-url>` before running the installer to fold the
 `fetch-data` step in.)
 
-`wnai serve` starts everything on one port and prints both addresses:
+`bellwether serve` starts everything on one port and prints both addresses:
 
 ```
   local:    http://127.0.0.1:8001
   network:  http://192.168.0.180:8001   <- other devices on this network
 ```
 
-Ctrl+C stops everything. `wnai status` shows what is running and what data
-exists. The data bundle is produced by `wnai bundle` on a build machine and
+Ctrl+C stops everything. `bellwether status` shows what is running and what data
+exists. The data bundle is produced by `bellwether bundle` on a build machine and
 published as a GitHub release.
 
 ### Connect a coding agent (no API key)
 
-The repo ships an MCP server over stdio — `wnai mcp` — with read-only tools
+The repo ships an MCP server over stdio — `bellwether mcp` — with read-only tools
 for search, similarity, topics, citations, and each paper's verified
 sentences. Claude Code picks it up automatically from `.mcp.json` when opened
 in this directory; the agent brings its own model, so no API key is involved.
@@ -122,7 +122,7 @@ Feed collection → abstract scrape → normalization (dedup: orals are listed
 twice) → arXiv/PMLR full-text fetch and sectioning → structured extraction
 with verbatim-span verification (local vLLM) → shared frozen taxonomy →
 union embeddings and cross-venue neighbors → the site (`reports/`) plus a
-Meilisearch index, packed by `wnai bundle` for installs. The pipeline needs a
+Meilisearch index, packed by `bellwether bundle` for installs. The pipeline needs a
 GPU machine; an install only serves its output.
 
 See `CLAUDE.md` for the full build documentation, data traps, and measured

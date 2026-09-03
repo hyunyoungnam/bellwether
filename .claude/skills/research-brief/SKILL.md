@@ -11,10 +11,10 @@ machine-verified after saving.
 
 ## Rules that make the brief trustworthy
 
-1. **Evidence comes only from the wnai MCP tools** (search_papers,
+1. **Evidence comes only from the bellwether MCP tools** (search_papers,
    similar_papers, get_paper, list_topics, topic_papers, get_citations). If
    they are unavailable, run the same lookups via
-   `PYTHONPATH=src python3` with `wnai.mcp.Store` — never from memory.
+   `PYTHONPATH=src python3` with `bellwether.mcp.Store` — never from memory.
 2. **Every factual claim carries at least one cite**, and every cite's
    `quote` is copied EXACTLY from a tool response — a `verified_sentences`
    field or an abstract sentence. Never trim, bridge, or paraphrase inside a

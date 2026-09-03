@@ -1,22 +1,22 @@
 #!/usr/bin/env bash
 # One-line install for Linux / macOS / Windows-via-WSL:
 #
-#   curl -fsSL https://raw.githubusercontent.com/hyunyoungnam/whatsnewai/main/install.sh | bash
+#   curl -fsSL https://raw.githubusercontent.com/hyunyoungnam/bellwether/main/install.sh | bash
 #
-# What it does: clone the repo to ~/whatsnewai, create a private venv (PEP 668
-# machines refuse bare pip), install the `wnai` command onto PATH, fetch the
+# What it does: clone the repo to ~/.bellwether, create a private venv (PEP 668
+# machines refuse bare pip), install the `bellwether` command onto PATH, fetch the
 # search-engine binary and keys. If WNAI_BUNDLE (a file path or URL) is set,
-# the data bundle is fetched too — otherwise `wnai fetch-data` is the one step
-# left before `wnai serve`.
+# the data bundle is fetched too — otherwise `bellwether fetch-data` is the one step
+# left before `bellwether serve`.
 #
 # Overrides, mainly for testing: WNAI_HOME (install dir), WNAI_REPO (clone
 # source), WNAI_BIN (where the wnai symlink goes).
 set -euo pipefail
 
-REPO="${WNAI_REPO:-https://github.com/hyunyoungnam/whatsnewai}"
+REPO="${WNAI_REPO:-https://github.com/hyunyoungnam/bellwether}"
 # an app dir, not a workspace: hidden by default, like other installed tools.
 # Everything inside stays inspectable — the data being auditable is a feature.
-DIR="${WNAI_HOME:-$HOME/.wnai}"
+DIR="${WNAI_HOME:-$HOME/.bellwether}"
 BIN="${WNAI_BIN:-$HOME/.local/bin}"
 
 say() { printf '\033[1m%s\033[0m\n' "$*"; }
@@ -47,23 +47,23 @@ fi
 "$DIR/.venv-serve/bin/pip" install -q -e "$DIR"
 
 mkdir -p "$BIN"
-ln -sf "$DIR/.venv-serve/bin/wnai" "$BIN/wnai"
+ln -sf "$DIR/.venv-serve/bin/bellwether" "$BIN/bellwether"
 case ":$PATH:" in
     *":$BIN:"*) ;;
     *) echo "note: $BIN is not on PATH yet — open a new terminal (or:"
-       echo "      source ~/.profile) — until then, use $BIN/wnai";;
+       echo "      source ~/.profile) — until then, use $BIN/bellwether";;
 esac
 
 say "fetching the search engine + keys"
-"$BIN/wnai" setup
+"$BIN/bellwether" setup
 
 if [ -n "${WNAI_BUNDLE:-}" ]; then
     say "fetching the data bundle"
     case "$WNAI_BUNDLE" in
-        http*) "$BIN/wnai" fetch-data --url "$WNAI_BUNDLE";;
-        *)     "$BIN/wnai" fetch-data --file "$WNAI_BUNDLE";;
+        http*) "$BIN/bellwether" fetch-data --url "$WNAI_BUNDLE";;
+        *)     "$BIN/bellwether" fetch-data --file "$WNAI_BUNDLE";;
     esac
-    say "done — run: wnai serve"
+    say "done — run: bellwether serve"
 else
-    say "done — next: wnai fetch-data --file <bundle.tar.gz>   then: wnai serve"
+    say "done — next: bellwether fetch-data --file <bundle.tar.gz>   then: bellwether serve"
 fi

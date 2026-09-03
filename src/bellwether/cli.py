@@ -1,8 +1,8 @@
 """The launcher: install on Linux/Windows, serve on the local network.
 
-    wnai serve            # search engine + site on one port; prints the LAN URL
-    wnai setup            # fetch the Meilisearch binary, generate keys
-    wnai status           # what is running, what data exists
+    bellwether serve            # search engine + site on one port; prints the LAN URL
+    bellwether setup            # fetch the Meilisearch binary, generate keys
+    bellwether status           # what is running, what data exists
 
 `serve` is the whole runtime — everything else in this repo (collection,
 extraction, embedding) BUILDS the data this serves and never has to run on the
@@ -87,7 +87,7 @@ def _download(url: str, dest: Path) -> None:
     ctx = ssl.create_default_context()
     if hasattr(ssl, "VERIFY_X509_STRICT"):
         ctx.verify_flags &= ~ssl.VERIFY_X509_STRICT
-    req = urllib.request.Request(url, headers={"User-Agent": "wnai"})
+    req = urllib.request.Request(url, headers={"User-Agent": "bellwether"})
     with urllib.request.urlopen(req, context=ctx, timeout=60) as r, \
             open(dest, "wb") as fh:
         total = int(r.headers.get("Content-Length") or 0)
@@ -187,7 +187,7 @@ def cmd_setup(args: argparse.Namespace) -> int:
         except (urllib.error.URLError, OSError) as exc:
             _MEILI_BIN.unlink(missing_ok=True)
             print(f"download failed ({exc}) — check the network and re-run "
-                  "`wnai setup`", file=sys.stderr)
+                  "`bellwether setup`", file=sys.stderr)
             return 1
         if not _IS_WIN:
             _MEILI_BIN.chmod(0o755)
@@ -208,8 +208,8 @@ def cmd_setup(args: argparse.Namespace) -> int:
     else:
         print("meilisearch did not come up; run setup again", file=sys.stderr)
         return 1
-    print("\nsetup complete — next: `wnai fetch-data --file <bundle>` "
-          "(or build the data with the pipeline), then `wnai serve`")
+    print("\nsetup complete — next: `bellwether fetch-data --file <bundle>` "
+          "(or build the data with the pipeline), then `bellwether serve`")
     return 0
 
 
@@ -231,7 +231,7 @@ def cmd_bundle(args: argparse.Namespace) -> int:
     out_dir = ROOT / "dist"
     out_dir.mkdir(exist_ok=True)
     stamp = time.strftime("%Y%m%d")
-    tar_path = out_dir / f"wnai-data-{stamp}.tar"
+    tar_path = out_dir / f"bellwether-data-{stamp}.tar"
 
     was_up = _port_open(_MEILI_PORT)
     if was_up:
@@ -296,10 +296,10 @@ def cmd_fetch(args: argparse.Namespace) -> int:
         # re-derive under THIS install's master key
         ok = _refresh_search_key(mk_file.read_text().strip(), force=True)
         print("search key refreshed" if ok
-              else "engine not available — rerun `wnai setup` before serving")
+              else "engine not available — rerun `bellwether setup` before serving")
     else:
-        print("no master key yet — run `wnai setup`")
-    print("done — `wnai serve`")
+        print("no master key yet — run `bellwether setup`")
+    print("done — `bellwether serve`")
     return 0
 
 
@@ -325,7 +325,7 @@ def cmd_serve(args: argparse.Namespace) -> int:
             ok = _wait_health()
             print(f"meilisearch: {'up' if ok else 'FAILED (site degrades to shipped indexes)'}")
         else:
-            print("meilisearch: not set up (run `wnai setup`); "
+            print("meilisearch: not set up (run `bellwether setup`); "
                   "site degrades to shipped indexes")
     else:
         print("meilisearch: already running" if _port_open(_MEILI_PORT) else "meilisearch: skipped")
@@ -354,7 +354,7 @@ def cmd_serve(args: argparse.Namespace) -> int:
 def cmd_status(args: argparse.Namespace) -> int:
     site = Path(ROOT, "reports", "index.html")
     print(f"site built:     {'yes' if site.exists() else 'no'}")
-    print(f"meili binary:   {'yes' if _MEILI_BIN.exists() else 'no  (wnai setup)'}")
+    print(f"meili binary:   {'yes' if _MEILI_BIN.exists() else 'no  (bellwether setup)'}")
     print(f"meili index:    {'yes' if (MEILI_DIR / 'db').exists() else 'no  (scripts/search_index.py)'}")
     print(f"meili running:  {'yes' if _port_open(_MEILI_PORT) else 'no'}")
     print(f"server on 8001: {'yes' if _port_open(8001) else 'no'}")
@@ -362,7 +362,7 @@ def cmd_status(args: argparse.Namespace) -> int:
 
 
 def main(argv: list[str] | None = None) -> int:
-    ap = argparse.ArgumentParser(prog="wnai", description=__doc__.split("\n")[0])
+    ap = argparse.ArgumentParser(prog="bellwether", description=__doc__.split("\n")[0])
     sub = ap.add_subparsers(dest="cmd", required=True)
     s = sub.add_parser("serve", help="serve the site + search on the local network")
     s.add_argument("--port", type=int, default=8001)

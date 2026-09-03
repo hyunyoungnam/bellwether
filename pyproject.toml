@@ -3,7 +3,7 @@ requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "whatsnewai"
+name = "bellwether"
 version = "0.1.0"
 description = "Local-first conference-paper research platform: install, serve on your LAN, connect your coding agent"
 requires-python = ">=3.10"
@@ -12,9 +12,10 @@ requires-python = ">=3.10"
 dependencies = []
 
 [project.scripts]
-# provisional name — tracks the pending repo rename; this line is the rename
-wnai = "wnai.cli:main"
+# `wnai` stays as a transition alias
+bellwether = "bellwether.cli:main"
+wnai = "bellwether.cli:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
-include = ["wnai*"]
+include = ["bellwether*"]

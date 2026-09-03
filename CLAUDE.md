@@ -81,7 +81,7 @@ would still be wrong.
 ## Start of session
 
 ```bash
-cd ~/whatsnewai
+cd ~/bellwether
 python3 scripts/status.py          # what exists, what's stale, what to run next
 ```
 
@@ -752,7 +752,7 @@ Still weak:
 - **A100 80GB**, 48 cores, 444 GB RAM. Model size is not a constraint.
 - `.venv/` holds torch/vLLM/sentence-transformers. Stages 1–3 stay stdlib-only so
   collection never breaks.
-- `HF_HOME=~/whatsnewai/.cache/hf` — models stay inside the project.
+- `HF_HOME=~/bellwether/.cache/hf` — models stay inside the project.
 - **Keep every generated file inside this project directory.** Firefox is a snap
   and cannot write to `/tmp`; screenshot to `reports/.preview/` (gitignored),
   never to `~/`.
@@ -769,8 +769,8 @@ Still weak:
   briefs-landing earlier the same day).** `/` serves the chat shell
   (`reports/chat.html`, shown name: **Frontier**, provisional): the reader's
   question spawns their own logged-in coding agent (Claude CLI headless, no
-  API key) armed with only the wnai MCP tools; every anchor `⟦gid|quote⟧` is
-  verified server-side BEFORE display (`wnai/verify.py`), tool calls stream
+  API key) armed with only the bellwether MCP tools; every anchor `⟦gid|quote⟧` is
+  verified server-side BEFORE display (`bellwether/verify.py`), tool calls stream
   live as the trail, conversations persist in `data/chats/`. The built corpus
   view moved to `/browse` and remains the evidence surface — cite chips open
   `/browse#p<gid>`, that paper's card selected and unfolded. Guardrails
@@ -782,7 +782,7 @@ Still weak:
   quiet all-fields index. The digest/since-last-year/struggles charts left the
   landing — do not restore them there; their computations remain build-time
   material destined for agent tools. A brief is written by the reader's own
-  coding agent (Claude Code/Codex via the wnai MCP server, `.claude/skills/
+  coding agent (Claude Code/Codex via the bellwether MCP server, `.claude/skills/
   research-brief`), saved to `reports/briefs/`, and verified by
   `scripts/verify_brief.py`: prose is the agent's, every cite carries a
   verbatim quote checked against the paper, unverified quotes are marked on
@@ -931,8 +931,8 @@ Still weak:
 - **Look at what you built** before calling it done:
   ```bash
   firefox --headless --window-size=1400,1200 \
-    --screenshot ~/whatsnewai/reports/.preview/shot.png \
-    file:///home/hyunyoungnam/whatsnewai/reports/<file>.html
+    --screenshot ~/bellwether/reports/.preview/shot.png \
+    file:///home/hyunyoungnam/bellwether/reports/<file>.html
   ```
 
 ---

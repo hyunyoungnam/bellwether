@@ -22,7 +22,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "src"))
 
-from wnai.verify import Verifier  # noqa: E402  (the one shared implementation)
+from bellwether.verify import Verifier  # noqa: E402  (the one shared implementation)
 
 
 def main() -> int:

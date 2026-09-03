@@ -1,8 +1,8 @@
 {
   "mcpServers": {
-    "wnai": {
+    "bellwether": {
       "command": "python3",
-      "args": ["-m", "wnai", "mcp"],
+      "args": ["-m", "bellwether", "mcp"],
       "env": {"PYTHONPATH": "src"}
     }
   }

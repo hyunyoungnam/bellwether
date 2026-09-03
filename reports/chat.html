@@ -1,6 +1,6 @@
 <!doctype html><html lang="ko"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Frontier</title>
+<title>Bellwether</title>
 <style>
 :root{--bg:#f2f3f5;--card:#fff;--ink:#1c1e21;--ink2:#43474d;--mut:#9096a0;--ring:#e4e6ea;
   --acc:#2f6fe4;--ok:#2e7d32;--no:#b3452c;--hp:#f2b8c6;--hy:#f2d478;--hb:#a8cdf0;
@@ -12,30 +12,33 @@ html[data-theme="dark"]{--bg:#17181b;--card:#212327;--ink:#e9eaee;--ink2:#c3c7cf
 html,body{height:100%}
 body{margin:0;background:var(--bg);color:var(--ink);
   font:15.5px/1.6 system-ui,-apple-system,'Segoe UI',sans-serif}
-.app{display:grid;grid-template-columns:256px 1fr;height:100%}
-@media(min-width:1200px){.app.wside{grid-template-columns:256px 1fr 320px}}
+.app{display:grid;grid-template-columns:304px 1fr;height:100%}
+@media(min-width:1200px){.app.wside{grid-template-columns:304px 1fr 340px}}
 
 /* ---- rail ---- */
 .rail{background:var(--card);border-right:1px solid var(--ring);display:flex;flex-direction:column;
-  padding:14px 12px 12px;min-height:0}
-.mark{display:flex;align-items:center;gap:8px;font-size:16.5px;font-weight:700;
+  padding:18px 14px 14px;min-height:0}
+.mark{display:flex;align-items:center;gap:9px;font-size:18px;font-weight:700;
   letter-spacing:-.01em;padding:2px 6px 12px}
 .mark i{width:9px;height:9px;border-radius:3px;display:inline-block}
 .mark i:nth-child(1){background:var(--hp)}.mark i:nth-child(2){background:var(--hy);margin-left:-4px}
 .mark i:nth-child(3){background:var(--hb);margin-left:-4px}
-.newq{font:inherit;font-weight:650;font-size:14.5px;border:1px solid var(--ring);background:var(--bg);
+.mark span{display:flex;flex-direction:column;line-height:1.15}
+.mark em{font-style:normal;font-weight:600;font-size:9.5px;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--mut)}
+.newq{font:inherit;font-weight:650;font-size:15.5px;border:1px solid var(--ring);background:var(--bg);
   color:var(--ink);border-radius:9px;padding:8px 12px;cursor:pointer;text-align:left;width:100%}
 .newq:hover{border-color:var(--acc)}
 .hist{flex:1;overflow-y:auto;margin-top:14px;scrollbar-width:thin;min-height:0}
-.hgrp{font-size:10.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--mut);
+.hgrp{font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:var(--mut);
   margin:10px 6px 4px}
-.hrow{display:block;width:100%;text-align:left;font:inherit;font-size:14px;color:var(--ink2);
-  background:none;border:0;border-radius:8px;padding:7px 8px;cursor:pointer;
+.hrow{display:block;width:100%;text-align:left;font:inherit;font-size:15px;color:var(--ink2);
+  background:none;border:0;border-radius:8px;padding:9px 10px;cursor:pointer;
   overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .hrow:hover{background:var(--bg)}
 .hrow.on{background:var(--bg);color:var(--ink);font-weight:600}
 .railfoot{border-top:1px solid var(--ring);padding-top:10px;margin-top:8px}
-.railfoot a{display:block;font-size:14px;color:var(--ink2);text-decoration:none;
+.railfoot a{display:block;font-size:15px;color:var(--ink2);text-decoration:none;
   border-radius:8px;padding:7px 8px}
 .railfoot a:hover{background:var(--bg)}
 @media(max-width:900px){.app{grid-template-columns:1fr}.rail{display:none}}
@@ -188,11 +191,10 @@ body{margin:0;background:var(--bg);color:var(--ink);
 </style></head><body>
 <div class="app">
   <nav class="rail">
-    <div class="mark"><i></i><i></i><i></i>Frontier</div>
+    <div class="mark"><i></i><i></i><i></i><span>Bellwether<em>AI research</em></span></div>
     <button class="newq" id="newq">새 질문</button>
     <div class="hist" id="hist"></div>
-    <div class="railfoot"><a href="/browse" id="browselink">Browse 29,605 papers →</a>
-      <a href="#" id="settingsbtn">⚙ Settings</a></div>
+    <div class="railfoot"><a href="#" id="settingsbtn">⚙ Settings</a></div>
   </nav>
   <div class="main" id="main"></div>
   <aside class="side" id="side"></aside>
@@ -222,7 +224,6 @@ const t=k=>STR[LANG][k];
 function applyLang(){
   document.documentElement.lang=LANG;
   $('#newq').textContent=t('newq');
-  $('#browselink').textContent=t('browse');
   $('#settingsbtn').textContent=t('settings');
   document.querySelectorAll('.lang button').forEach(b=>
     b.classList.toggle('on',b.dataset.l===LANG));
