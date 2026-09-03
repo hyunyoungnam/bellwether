@@ -42,14 +42,42 @@ class Verifier:
     def __init__(self, store: Store | None = None):
         self.store = store or Store()
         self._src: dict[int, str] = {}
+        self._fields: dict[int, list[tuple[str, str]]] = {}
 
-    def check(self, gid: int, quote: str) -> bool:
+    def _sources(self, gid: int) -> list[tuple[str, str]]:
+        """[(role, normalized text)] — roles are the card's own colours:
+        L(pink), K/n(yellow), R(blue), d(deep), a(abstract/title)."""
+        if gid not in self._fields:
+            out: list[tuple[str, str]] = []
+            try:
+                r = self.store.rec(gid)
+                sp = self.store.span_entry(gid)
+                if sp:
+                    n, L, K, R = sp[0] or [], sp[1], sp[2], sp[3]
+                    out.append(("L", norm(L or "")))
+                    out.append(("K", norm(" ".join([K or ""] + list(n)))))
+                    out.append(("R", norm(R or "")))
+                    if isinstance(sp[5], list):
+                        deep = " ".join(x for arr in sp[5] if isinstance(arr, list)
+                                        for x in arr if isinstance(x, str))
+                        out.append(("d", norm(deep)))
+                if r:
+                    out.append(("a", norm((r.get("title") or "") + " "
+                                          + (r.get("abstract") or ""))))
+            except Exception:  # noqa: BLE001 — a bad gid is just unverified
+                pass
+            self._fields[gid] = [(role, " " + t + " ") for role, t in out if t]
+        return self._fields[gid]
+
+    def role(self, gid: int, quote: str) -> str | None:
+        """The matched field's role, or None when the quote is not verbatim."""
         q = norm(quote)
         if len(q) < MIN_QUOTE:
-            return False
-        if gid not in self._src:
-            try:
-                self._src[gid] = source_text(self.store, gid)
-            except Exception:  # noqa: BLE001 — a bad gid is just unverified
-                self._src[gid] = ""
-        return (" " + q + " ") in self._src[gid]
+            return None
+        for role, src in self._sources(gid):
+            if (" " + q + " ") in src:
+                return role
+        return None
+
+    def check(self, gid: int, quote: str) -> bool:
+        return self.role(gid, quote) is not None

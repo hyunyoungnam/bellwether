@@ -58,6 +58,13 @@ class Handler(SimpleHTTPRequestHandler):
             self.path = "/chat.html"
         elif self.path.split("#")[0].split("?")[0] == "/browse":
             self.path = "/index.html"
+        elif self.path.startswith("/paper/"):
+            from . import chat
+            try:
+                self._json(200, chat.card(int(self.path[7:])))
+            except Exception as exc:  # noqa: BLE001
+                self._json(400, {"error": type(exc).__name__})
+            return
         elif self.path == "/chats" or self.path.startswith("/chats/"):
             from . import chat
             try:

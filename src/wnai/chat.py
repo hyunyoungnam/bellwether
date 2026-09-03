@@ -67,13 +67,14 @@ def segment(text: str, store: Store, ver: Verifier) -> tuple[list, int, int]:
         if m.start() > pos:
             segs.append({"t": "p", "s": text[pos:m.start()]})
         gid, quote = int(m.group(1)), m.group(2).strip()
-        ok = ver.check(gid, quote)
+        role = ver.role(gid, quote)
+        ok = role is not None
         checked += 1
         passed += ok
         r = store.rec(gid)
         key = store.where(gid)[0] if r else None
         venue, year = (key.rsplit("-", 1) if key else (None, None))
-        segs.append({"t": "c", "gid": gid, "q": quote, "v": ok,
+        segs.append({"t": "c", "gid": gid, "q": quote, "v": ok, "role": role,
                      "title": r["title"] if r else f"gid {gid}",
                      "venue": _VENUE.get(venue, venue), "year": year})
         pos = m.end()
@@ -106,6 +107,29 @@ def handle(body: dict) -> dict:
     segs, checked, passed = segment(r["text"], store, ver)
     return {"segs": segs, "sid": r["sid"],
             "verified": {"checked": checked, "passed": passed}}
+
+
+def card(gid: int) -> dict:
+    """GET /paper/<gid>: the highlight card's material, for inline display.
+
+    The same three-colour passage the browse cards carry — the paper's own
+    sentences (pink: why it was needed / yellow: what is new / blue: what it
+    achieved), never rewritten here or anywhere."""
+    store, _ = _env()
+    r = store.rec(gid)
+    if r is None:
+        return {"error": f"no record for gid {gid}"}
+    key, _eid = store.where(gid)
+    venue, year = key.rsplit("-", 1)
+    sp = store.span_entry(gid) or [None] * 8
+    n, L, K, R = sp[0] or [], sp[1], sp[2], sp[3]
+    return {"gid": gid, "title": r["title"],
+            "venue": _VENUE.get(venue, venue), "year": year,
+            "authors": (r.get("authors") or [])[:3],
+            "n_authors": r.get("n_authors"),
+            "L": L or None,
+            "K": K or (n[0] if n else None),
+            "R": R or None}
 
 
 # ------------------------------------------------------------- conversations
