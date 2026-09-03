@@ -91,6 +91,15 @@ class Store:
     def topics(self, key: str) -> dict:
         return self._json(PROCESSED / f"topics_{key}.json")
 
+    def terms(self, key: str, eid: int) -> dict:
+        """Aggregation names from the abstract pass: p(roposes) / b(uilds on)
+        / t(asks) / d(ata) / dom(ain). Empty when the file is absent."""
+        try:
+            return self._json(PROCESSED / "card_terms.json").get(key, {}) \
+                .get(str(eid), {})
+        except FileNotFoundError:
+            return {}
+
     @property
     def cites_out(self) -> dict:
         if "cout" not in self._c:
@@ -283,11 +292,16 @@ def _agent_card(gid: int) -> dict:
     sp = S.span_entry(gid) or [None] * 4
     n, L, K, R = sp[0] or [], sp[1], sp[2], sp[3]
     kc = K or (n[0] if n else None)
+    _, eid = S.where(gid)
+    t = S.terms(key, eid)
     return {"gid": gid, "title": r["title"] if r else None,
             "venue": _VENUE.get(venue, venue), "year": int(year),
             "limitation": L[:280] if L else None,
             "key_change": kc[:280] if kc else None,
-            "result_claim": R[:280] if R else None}
+            "result_claim": R[:280] if R else None,
+            # names, for counting across cards — the aggregation axis
+            "proposes": t.get("p"), "builds_on": t.get("b"),
+            "tasks": t.get("t"), "data": t.get("d"), "domain": t.get("dom")}
 
 
 def t_field_cards(a: dict) -> dict:

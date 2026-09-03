@@ -37,6 +37,7 @@ BUNDLE_GLOBS = [
     "reports/index.html", "reports/data",
     "data/meili/db",
     "data/processed/union.json", "data/processed/topics*.json",
+    "data/processed/card_terms.json",
     "data/processed/citations.json", "data/processed/neighbors_union.json",
     "data/processed/contacts.json", "data/processed/papers*.jsonl",
 ]
