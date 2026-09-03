@@ -76,6 +76,31 @@ def _meili_asset() -> str:
     raise SystemExit(f"unsupported platform: {sysname}/{arch}")
 
 
+def _download(url: str, dest: Path) -> None:
+    """urlretrieve, minus the Python 3.13+ trap: default contexts now set
+    VERIFY_X509_STRICT, which rejects certificates lacking an Authority Key
+    Identifier — common behind AV/proxy TLS re-signing (seen on real WSL).
+    curl and git accept those chains; so do we. Chain and hostname are still
+    verified — only the strict extension checks are relaxed."""
+    import ssl
+    ctx = ssl.create_default_context()
+    if hasattr(ssl, "VERIFY_X509_STRICT"):
+        ctx.verify_flags &= ~ssl.VERIFY_X509_STRICT
+    req = urllib.request.Request(url, headers={"User-Agent": "wnai"})
+    with urllib.request.urlopen(req, context=ctx, timeout=60) as r, \
+            open(dest, "wb") as fh:
+        total = int(r.headers.get("Content-Length") or 0)
+        got = 0
+        while True:
+            chunk = r.read(1 << 20)
+            if not chunk:
+                break
+            fh.write(chunk)
+            got += len(chunk)
+            if total > 100 << 20 and got % (50 << 20) < (1 << 20):
+                print(f"  {got / 1e6:,.0f} / {total / 1e6:,.0f} MB", flush=True)
+
+
 def _http(url: str, data: dict | None = None, key: str | None = None,
           timeout: int = 10) -> dict:
     req = urllib.request.Request(
@@ -156,7 +181,13 @@ def cmd_setup(args: argparse.Namespace) -> int:
         url = (f"https://github.com/meilisearch/meilisearch/releases/download/"
                f"{MEILI_VERSION}/{asset}")
         print(f"downloading {asset} {MEILI_VERSION} ...")
-        urllib.request.urlretrieve(url, _MEILI_BIN)
+        try:
+            _download(url, _MEILI_BIN)
+        except (urllib.error.URLError, OSError) as exc:
+            _MEILI_BIN.unlink(missing_ok=True)
+            print(f"download failed ({exc}) — check the network and re-run "
+                  "`wnai setup`", file=sys.stderr)
+            return 1
         if not _IS_WIN:
             _MEILI_BIN.chmod(0o755)
         print(f"  -> {_MEILI_BIN}")
@@ -238,7 +269,13 @@ def cmd_fetch(args: argparse.Namespace) -> int:
         dest.mkdir(exist_ok=True)
         src = dest / Path(args.url).name
         print(f"downloading {args.url} ...")
-        urllib.request.urlretrieve(args.url, src)
+        try:
+            _download(args.url, src)
+        except (urllib.error.URLError, OSError) as exc:
+            src.unlink(missing_ok=True)
+            print(f"download failed ({exc}) — check the network and re-run",
+                  file=sys.stderr)
+            return 1
     else:
         print("pass --file <bundle.tar.gz> or --url <https://...>", file=sys.stderr)
         return 1
