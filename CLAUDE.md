@@ -279,7 +279,10 @@ paper states plainly whenever it states it at all.
 
 These addresses are published in the papers themselves, but republishing them in
 bulk is a different act from printing them once — worth a deliberate decision
-before the page is made public rather than unlisted.
+before the page is made public rather than unlisted. **Decided 2026-09-03
+(owner): published as-is with the public release** — they are the papers' own
+printed facts and contacting authors is normal academic practice. Revisit on
+complaint.
 
 ### The three difference spans (added 2026-08-13)
 
