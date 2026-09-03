@@ -275,6 +275,101 @@ def t_topic_papers(a: dict) -> dict:
             "truncated": len(hits) > limit}
 
 
+def _agent_card(gid: int) -> dict:
+    """The compact agent-readable card: extracted verbatim fields, no prose."""
+    r = S.rec(gid)
+    key, _ = S.where(gid)
+    venue, year = key.rsplit("-", 1)
+    sp = S.span_entry(gid) or [None] * 4
+    n, L, K, R = sp[0] or [], sp[1], sp[2], sp[3]
+    kc = K or (n[0] if n else None)
+    return {"gid": gid, "title": r["title"] if r else None,
+            "venue": _VENUE.get(venue, venue), "year": int(year),
+            "limitation": L[:280] if L else None,
+            "key_change": kc[:280] if kc else None,
+            "result_claim": R[:280] if R else None}
+
+
+def t_field_cards(a: dict) -> dict:
+    """Bulk agent cards for a whole field — the raw material for derivation."""
+    limit = min(int(a.get("limit", 30)), 60)
+    gids: list[int] = []
+    if a.get("topic"):
+        r = t_topic_papers({"topic": a["topic"], "limit": 400})
+        if "error" in r:
+            return r
+        gids = [x["gid"] for x in r["results"]]
+        total, per = r["total"], r["by_corpus"]
+    elif a.get("query"):
+        r = S.meili("search", {"q": a["query"], "limit": limit})
+        if r is None:
+            return {"error": "search engine down — use topic instead"}
+        gids = [h["id"] for h in r.get("hits", [])]
+        total, per = r.get("estimatedTotalHits"), None
+    else:
+        return {"error": "pass topic or query"}
+    # newest editions first, so 'what is rising' reads the right material
+    gids.sort(key=lambda g: -int(S.where(g)[0].rsplit("-", 1)[1]))
+    return {"total_in_field": total, "by_corpus": per,
+            "cards": [_agent_card(g) for g in gids[:limit]],
+            "note": "card fields are the papers' own verbatim sentences; a "
+                    "missing field means the paper's text yielded no verified "
+                    "sentence, never invent one. Cards shown newest-edition "
+                    "first and capped — by_corpus has the full counts."}
+
+
+def _ztest(k1: int, n1: int, k2: int, n2: int) -> float:
+    import math
+    if not n1 or not n2:
+        return 0.0
+    p1, p2 = k1 / n1, k2 / n2
+    p = (k1 + k2) / (n1 + n2)
+    d = math.sqrt(max(p * (1 - p) * (1 / n1 + 1 / n2), 1e-12))
+    return (p1 - p2) / d
+
+
+def t_field_trend(a: dict) -> dict:
+    """A topic's share per edition — computed, guardrail-encoded numbers.
+
+    Shares are per 1,000 papers (editions differ ~2x in size; raw counts
+    reverse conclusions) and each venue's newest-vs-previous change carries a
+    two-proportion z — |z| >= 2.576 is the product's standing bar for 'real'."""
+    want = a["topic"].strip().lower()
+    rows = []
+    for key in S.union["corpora"]:
+        try:
+            tj = S.topics(key)
+        except FileNotFoundError:
+            continue
+        for t in tj["topics"]:
+            if t["label"].lower() == want:
+                n = t.get("n_explicit", 0) + t.get("n_via_child", 0)
+                size = tj.get("papers") or 1
+                venue, year = key.rsplit("-", 1)
+                rows.append({"venue": _VENUE.get(venue, venue),
+                             "year": int(year), "papers": n,
+                             "corpus_size": size,
+                             "per_1k": round(n / size * 1000, 1)})
+    if not rows:
+        return {"error": f"no topic labelled '{a['topic']}' — see list_topics"}
+    rows.sort(key=lambda r: (r["venue"], r["year"]))
+    changes = []
+    for i in range(1, len(rows)):
+        a2, b2 = rows[i - 1], rows[i]
+        if a2["venue"] == b2["venue"]:
+            z = _ztest(b2["papers"], b2["corpus_size"],
+                       a2["papers"], a2["corpus_size"])
+            changes.append({"venue": b2["venue"],
+                            "years": f"{a2['year']}->{b2['year']}",
+                            "per_1k": f"{a2['per_1k']}->{b2['per_1k']}",
+                            "z": round(z, 2),
+                            "significant_99": abs(z) >= 2.576})
+    return {"topic": want, "editions": rows, "changes": changes,
+            "note": "tag coverage is ~50% of papers, so shares understate "
+                    "fields that avoid the expected vocabulary; state figures "
+                    "as computed shares, never as paper quotes"}
+
+
 def t_citations(a: dict) -> dict:
     gid = int(a["gid"])
     return {"paper": S.brief(gid),
@@ -322,6 +417,25 @@ TOOLS = [
      "inputSchema": {"type": "object", "required": ["topic"], "properties": {
          "topic": {"type": "string", "description": "a label from list_topics"},
          "limit": {"type": "integer", "default": 50}}}},
+    {"name": "field_cards",
+     "description": "Bulk agent-readable cards for a whole field (by topic "
+                    "label or free query): each paper's verbatim limitation / "
+                    "key_change / result_claim in one call. THE tool for "
+                    "deriving what is rising, what recurs, and what is "
+                    "missing across a field — read many cards, then conclude.",
+     "fn": t_field_cards,
+     "inputSchema": {"type": "object", "properties": {
+         "topic": {"type": "string", "description": "a label from list_topics"},
+         "query": {"type": "string", "description": "free text when no label fits"},
+         "limit": {"type": "integer", "default": 30, "maximum": 60}}}},
+    {"name": "field_trend",
+     "description": "A topic's share per conference edition, computed with "
+                    "the product's statistical guardrails (per-1,000 shares, "
+                    "two-proportion z per venue pair). Use for 'is this field "
+                    "growing' — quote the returned figures as computed shares.",
+     "fn": t_field_trend,
+     "inputSchema": {"type": "object", "required": ["topic"], "properties": {
+         "topic": {"type": "string"}}}},
     {"name": "get_citations",
      "description": "Which of our corpus papers this paper cites, and which "
                     "cite it (edges within the six editions only).",
