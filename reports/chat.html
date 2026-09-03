@@ -77,6 +77,26 @@ body{margin:0;background:var(--bg);color:var(--ink);
 .cite.rR{background:color-mix(in srgb,var(--hb) 34%,var(--card))}
 .cite:hover{border-color:var(--acc)}
 .errmsg{color:var(--no);font-size:14px}
+.draft{white-space:pre-wrap;color:var(--ink2);margin:4px 0 6px}
+.draft::after{content:'▍';color:var(--acc);animation:pulse 1s infinite alternate}
+.hwrap{position:relative}
+.hact{position:absolute;right:4px;top:50%;transform:translateY(-50%);display:none;gap:2px}
+.hwrap:hover .hact{display:flex}
+.hact button{font:inherit;font-size:12px;border:0;background:var(--bg);color:var(--mut);
+  border-radius:6px;width:22px;height:22px;cursor:pointer}
+.hact button:hover{color:var(--ink)}
+.hwrap:hover .hrow{background:var(--bg)}
+.menubtn{display:none;position:fixed;top:10px;left:10px;z-index:30;font:inherit;font-size:17px;
+  width:38px;height:38px;border-radius:10px;border:1px solid var(--ring);background:var(--card);
+  color:var(--ink);cursor:pointer}
+@media(max-width:900px){
+  .menubtn{display:block}
+  .rail{display:none}
+  .rail.open{display:flex;position:fixed;top:0;bottom:0;left:0;width:min(320px,85vw);
+    z-index:25;box-shadow:0 0 40px rgba(0,0,0,.25)}
+  .tin{padding-top:58px}
+  .hero{padding-top:48px}
+}
 
 /* ---- inline highlight card, unfolded under the answer ---- */
 .pcard{background:var(--card);border:1px solid var(--ring);border-radius:12px;
@@ -199,6 +219,7 @@ body{margin:0;background:var(--bg);color:var(--ink);
   <div class="main" id="main"></div>
   <aside class="side" id="side"></aside>
 </div>
+<button class="menubtn" id="menubtn">☰</button>
 <div class="lang"><button data-l="ko">KO</button><button data-l="en">EN</button></div>
 <script>
 const $=s=>document.querySelector(s);
@@ -212,13 +233,15 @@ const STR={
      sAgents:'에이전트', sAgentD:'질문에 답하는 코딩 에이전트 — 이 컴퓨터에 로그인된 계정을 그대로 사용',
      sTheme:'테마', sLight:'라이트', sDark:'다크', sSystem:'시스템',
      sLang:'언어', sProgram:'프로그램', sIn:'연결됨', sOut:'미설치',
-     sDefault:'기본', sBeta:'베타', sCorpus:'코퍼스', sAddr:'주소'},
+     sDefault:'기본', sBeta:'베타', sCorpus:'코퍼스', sAddr:'주소',
+     delQ:'이 대화를 삭제할까요?', renQ:'대화 이름'},
  en:{newq:'New question', browse:'Browse 29,605 papers →', today:'Today', etal:' et al.',
      steps:n=>`${n} steps`, papers:'Papers', settings:'⚙ Settings', sTitle:'Settings',
      sAgents:'Agents', sAgentD:'The coding agent that answers — uses the account signed in on this machine',
      sTheme:'Theme', sLight:'Light', sDark:'Dark', sSystem:'System',
      sLang:'Language', sProgram:'Program', sIn:'connected', sOut:'not installed',
-     sDefault:'default', sBeta:'beta', sCorpus:'Corpus', sAddr:'Address'}};
+     sDefault:'default', sBeta:'beta', sCorpus:'Corpus', sAddr:'Address',
+     delQ:'Delete this conversation?', renQ:'Conversation name'}};
 let LANG=localStorage.getItem('wn_lang')||'ko';
 const t=k=>STR[LANG][k];
 function applyLang(){
@@ -465,8 +488,12 @@ async function send(text){
     `<div class="qmsg"><div>${esc(v)}</div></div><div id="pend"></div>`);
   const pend=$('#pend'), th=$('.thread'); th.scrollTop=th.scrollHeight;
   const trail=[], trees=[];
+  let draftRaw='';
   const line=msg=>{pend.insertAdjacentHTML('beforeend',
     `<div class="live"><i></i>${esc(msg)}</div>`); th.scrollTop=th.scrollHeight;};
+  const draftEl=()=>{ let d2=pend.querySelector('.draft');
+    if(!d2){ pend.insertAdjacentHTML('beforeend','<div class="draft"></div>'); d2=pend.querySelector('.draft'); }
+    return d2; };
   line('…');
   try{
     const r=await fetch('/chat/stream',{method:'POST',
@@ -485,6 +512,9 @@ async function send(text){
         const ev=JSON.parse(chunk.slice(6));
         if(ev.t==='tool'){ const s=ev.name+(ev.arg?'  '+ev.arg:''); trail.push(s); line(s);
           if(ev.name==='get_paper')addPaper(ev.arg); }
+        else if(ev.t==='d'){ draftRaw+=ev.s;
+          draftEl().textContent=draftRaw.replace(/⟦[^⟧]*⟧?/g,'');
+          th.scrollTop=th.scrollHeight; }
         else if(ev.t==='tree'){ trees.push(ev.tree);
           pend.insertAdjacentHTML('beforebegin',treeHTML(ev.tree));
           const el=pend.previousElementSibling; hydrateTree(el,ev.tree);
@@ -518,13 +548,32 @@ async function loadHist(){
     for(const r of rows){
       const g=day(r.ts)===today?t('today'):day(r.ts);
       if(g!==grp){ h+=`<div class="hgrp">${esc(g)}</div>`; grp=g; }
-      h+=`<button class="hrow" data-id="${esc(r.id)}">${esc(r.title)}</button>`;
+      h+=`<div class="hwrap"><button class="hrow" data-id="${esc(r.id)}">${esc(r.title)}</button>
+        <span class="hact"><button data-rn="${esc(r.id)}" title="rename">✎</button>
+        <button data-del="${esc(r.id)}" title="delete">✕</button></span></div>`;
     }
     $('#hist').innerHTML=h;
     document.querySelectorAll('.hrow').forEach(el=>el.onclick=async()=>{
       if(BUSY)return;
       const d=await (await fetch('/chats/'+el.dataset.id)).json();
       CHAT=d.id; showThread(d.turns);
+      document.querySelector('.rail').classList.remove('open');
+    });
+    document.querySelectorAll('[data-del]').forEach(el=>el.onclick=async e=>{
+      e.stopPropagation();
+      if(BUSY||!confirm(t('delQ')))return;
+      await fetch('/chats/'+el.dataset.del,{method:'DELETE'});
+      if(CHAT===el.dataset.del)showEmpty();
+      loadHist();
+    });
+    document.querySelectorAll('[data-rn]').forEach(el=>el.onclick=async e=>{
+      e.stopPropagation();
+      const cur=el.closest('.hwrap').querySelector('.hrow').textContent;
+      const v=prompt(t('renQ'),cur);
+      if(v===null||!v.trim())return;
+      await fetch('/chats/'+el.dataset.rn,{method:'POST',
+        headers:{'Content-Type':'application/json'},body:JSON.stringify({title:v.trim()})});
+      loadHist();
     });
     markHist();
   }catch(e){}
@@ -536,6 +585,8 @@ document.addEventListener('click',e=>{
 });
 $('#newq').onclick=()=>{ if(!BUSY)showEmpty(); };
 document.querySelectorAll('.lang button').forEach(b=>b.onclick=()=>setLang(b.dataset.l));
-$('#settingsbtn').onclick=e=>{ e.preventDefault(); if(!BUSY)showSettings(); };
+$('#settingsbtn').onclick=e=>{ e.preventDefault(); if(!BUSY)showSettings();
+  document.querySelector('.rail').classList.remove('open'); };
+$('#menubtn').onclick=()=>document.querySelector('.rail').classList.toggle('open');
 applyTheme(); applyLang(); showEmpty(); loadHist();
 </script></body></html>

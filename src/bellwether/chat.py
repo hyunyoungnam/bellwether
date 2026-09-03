@@ -218,6 +218,19 @@ def _doc_path(cid: str) -> Path:
     return CHAT_DIR / f"{cid}.json"
 
 
+def delete_chat(cid: str) -> dict:
+    _doc_path(cid).unlink()
+    return {"ok": True}
+
+
+def rename_chat(cid: str, title: str) -> dict:
+    p2 = _doc_path(cid)
+    d = json.loads(p2.read_text())
+    d["title"] = (title or "").strip()[:80] or d["title"]
+    p2.write_text(json.dumps(d, ensure_ascii=False))
+    return {"ok": True, "title": d["title"]}
+
+
 def list_chats() -> list[dict]:
     out = []
     if CHAT_DIR.exists():
@@ -273,6 +286,7 @@ def stream(body: dict, emit) -> None:
         cmd.append(SYSTEM + "\n\nUSER QUESTION:\n" + q)
     else:
         cmd = ["claude", "-p", q, "--output-format", "stream-json", "--verbose",
+               "--include-partial-messages",
                "--max-turns", "12",
                "--mcp-config", str(ROOT / ".mcp.json"), "--strict-mcp-config",
                "--allowedTools", "mcp__bellwether",
@@ -328,7 +342,13 @@ def stream(body: dict, emit) -> None:
                         elif ity == "agent_message" and ty == "item.completed":
                             result_text = it.get("text") or result_text
                 else:
-                    if ev.get("type") == "assistant":
+                    if ev.get("type") == "stream_event":
+                        e2 = ev.get("event") or {}
+                        if e2.get("type") == "content_block_delta":
+                            d2 = e2.get("delta") or {}
+                            if d2.get("type") == "text_delta" and d2.get("text"):
+                                emit({"t": "d", "s": d2["text"]})
+                    elif ev.get("type") == "assistant":
                         for c in (ev.get("message") or {}).get("content", []):
                             # only corpus tools make the visible trail —
                             # harness plumbing is noise to the reader

@@ -97,7 +97,32 @@ class Handler(SimpleHTTPRequestHandler):
             return
         super().do_GET()
 
+    def do_DELETE(self):
+        if self.path.startswith("/chats/"):
+            from . import chat
+            try:
+                self._json(200, chat.delete_chat(self.path[7:]))
+            except FileNotFoundError:
+                self._json(404, {"error": "no such chat"})
+            except Exception as exc:  # noqa: BLE001
+                self._json(400, {"error": type(exc).__name__})
+            return
+        self.send_error(404)
+
     def do_POST(self):
+        if self.path.startswith("/chats/"):
+            from . import chat
+            try:
+                body = json.loads(
+                    self.rfile.read(int(self.headers.get("Content-Length", 0)))
+                    or b"{}")
+                self._json(200, chat.rename_chat(self.path[7:],
+                                                 body.get("title") or ""))
+            except FileNotFoundError:
+                self._json(404, {"error": "no such chat"})
+            except Exception as exc:  # noqa: BLE001
+                self._json(400, {"error": type(exc).__name__})
+            return
         if self.path == "/chat/stream":
             try:
                 body = json.loads(
