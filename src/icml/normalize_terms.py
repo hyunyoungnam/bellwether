@@ -123,7 +123,13 @@ def main() -> int:
     if not FACTS_ABSTRACT.exists():
         raise SystemExit("no facts_abstract.jsonl — run `icml.extract_facts --source abstract`")
 
-    rows = [r for r in read_jsonl(FACTS_ABSTRACT) if r.get("ok")]
+    # 2026-09-03: learn from EVERY corpus's abstract pass, not just the focus
+    # year — an acronym pair that only NeurIPS or ICLR papers write was
+    # invisible to the table and split one concept into two counted names.
+    srcs = sorted(p for p in INTERIM.glob("facts_abstract*.jsonl")
+                  if "_v1" not in p.name)
+    rows = [r for p in srcs for r in read_jsonl(p) if r.get("ok")]
+    print(f"learning from {len(srcs)} corpora, {len(rows):,} rows")
 
     method_counts: Counter = Counter()
     task_counts: Counter = Counter()
