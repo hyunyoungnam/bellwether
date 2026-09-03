@@ -3,7 +3,11 @@
 <title>Frontier</title>
 <style>
 :root{--bg:#f2f3f5;--card:#fff;--ink:#1c1e21;--ink2:#43474d;--mut:#9096a0;--ring:#e4e6ea;
-  --acc:#2f6fe4;--ok:#2e7d32;--no:#b3452c;--hp:#f2b8c6;--hy:#f2d478;--hb:#a8cdf0}
+  --acc:#2f6fe4;--ok:#2e7d32;--no:#b3452c;--hp:#f2b8c6;--hy:#f2d478;--hb:#a8cdf0;
+  --bub:#1c1e21;--bubfg:#fff}
+html[data-theme="dark"]{--bg:#17181b;--card:#212327;--ink:#e9eaee;--ink2:#c3c7cf;--mut:#82878f;
+  --ring:#33363c;--acc:#5b8ff0;--ok:#6fbf73;--no:#e08a72;--hp:#7a4553;--hy:#7a6a33;--hb:#3d5a75;
+  --bub:#e9eaee;--bubfg:#17181b}
 *{box-sizing:border-box}
 html,body{height:100%}
 body{margin:0;background:var(--bg);color:var(--ink);
@@ -41,7 +45,7 @@ body{margin:0;background:var(--bg);color:var(--ink);
 .thread{flex:1;overflow-y:auto;min-height:0}
 .tin{max-width:740px;margin:0 auto;padding:28px 20px 24px}
 .qmsg{display:flex;justify-content:flex-end;margin:26px 0 14px}
-.qmsg>div{background:var(--ink);color:#fff;border-radius:14px 14px 4px 14px;
+.qmsg>div{background:var(--bub);color:var(--bubfg);border-radius:14px 14px 4px 14px;
   padding:9px 15px;max-width:80%;white-space:pre-wrap}
 .amsg{margin:0 0 6px;white-space:pre-wrap}
 .afoot{display:flex;align-items:center;gap:10px;font-size:11.5px;color:var(--mut);margin:8px 0 0}
@@ -97,7 +101,7 @@ body{margin:0;background:var(--bg);color:var(--ink);
 .ptab{font:inherit;font-size:11px;color:var(--ink2);background:var(--bg);border:1px solid var(--ring);
   border-radius:6px;padding:2px 8px;cursor:pointer;max-width:130px;overflow:hidden;
   text-overflow:ellipsis;white-space:nowrap}
-.ptab.on{background:var(--ink);border-color:var(--ink);color:#fff}
+.ptab.on{background:var(--bub);border-color:var(--bub);color:var(--bubfg)}
 .scard{flex:1;overflow-y:auto;padding:14px 16px;scrollbar-width:thin;min-height:0}
 .scard .st{font-size:13.5px;font-weight:700;letter-spacing:-.01em}
 .scard .st a{color:inherit;text-decoration:none}
@@ -115,12 +119,29 @@ body{margin:0;background:var(--bg);color:var(--ink);
   letter-spacing:.08em;text-transform:uppercase;color:var(--mut)}
 .scard details p{font-size:12.5px;line-height:1.55;color:var(--ink2);margin:4px 0 0}
 
+/* ---- settings ---- */
+.set{max-width:640px;margin:0 auto;padding:34px 20px}
+.set h1{font-size:21px;letter-spacing:-.01em;margin:0 0 20px}
+.sgrp{background:var(--card);border:1px solid var(--ring);border-radius:12px;padding:4px 16px;margin:0 0 16px}
+.srow{display:flex;align-items:center;justify-content:space-between;gap:14px;
+  padding:13px 0;border-bottom:1px solid var(--ring)}
+.srow:last-child{border-bottom:0}
+.srow .sl b{display:block;font-size:13.5px;font-weight:650}
+.srow .sl span{font-size:12px;color:var(--mut)}
+.seg{display:flex;background:var(--bg);border:1px solid var(--ring);border-radius:9px;overflow:hidden;flex:none}
+.seg button{font:inherit;font-size:12px;font-weight:600;border:0;background:none;color:var(--mut);
+  padding:5px 12px;cursor:pointer;white-space:nowrap}
+.seg button.on{background:var(--bub);color:var(--bubfg)}
+.astat{font-size:12px;color:var(--mut);text-align:right}
+.astat i{font-style:normal;color:var(--ok);font-weight:700;margin-right:5px}
+.astat.off i{color:var(--mut)}
+
 /* ---- language toggle, top right ---- */
 .lang{position:fixed;top:10px;right:12px;z-index:5;display:flex;background:var(--card);
   border:1px solid var(--ring);border-radius:8px;overflow:hidden}
 .lang button{font:inherit;font-size:11px;font-weight:650;letter-spacing:.03em;border:0;
   background:none;color:var(--mut);padding:4px 9px;cursor:pointer}
-.lang button.on{background:var(--ink);color:#fff}
+.lang button.on{background:var(--bub);color:var(--bubfg)}
 
 /* ---- composer ---- */
 .dock{padding:10px 20px 18px}
@@ -130,7 +151,7 @@ body{margin:0;background:var(--bg);color:var(--ink);
   box-shadow:0 1px 4px rgba(20,24,30,.05)}
 #q:focus{border-color:var(--acc)}
 #go{position:absolute;right:7px;top:50%;transform:translateY(-50%);width:34px;height:34px;
-  border-radius:10px;border:0;background:var(--ink);color:#fff;cursor:pointer;font-size:15px}
+  border-radius:10px;border:0;background:var(--bub);color:var(--bubfg);cursor:pointer;font-size:15px}
 #go[disabled]{opacity:.35;cursor:default}
 
 /* ---- empty state: the composer holds the middle of the screen ---- */
@@ -149,7 +170,8 @@ body{margin:0;background:var(--bg);color:var(--ink);
     <div class="mark"><i></i><i></i><i></i>Frontier</div>
     <button class="newq" id="newq">새 질문</button>
     <div class="hist" id="hist"></div>
-    <div class="railfoot"><a href="/browse">Browse 29,605 papers →</a></div>
+    <div class="railfoot"><a href="/browse" id="browselink">Browse 29,605 papers →</a>
+      <a href="#" id="settingsbtn">⚙ Settings</a></div>
   </nav>
   <div class="main" id="main"></div>
   <aside class="side" id="side"></aside>
@@ -163,23 +185,86 @@ let CHAT=null, BUSY=false;
 // ---- UI language: paper content stays in its own words; only chrome flips
 const STR={
  ko:{newq:'새 질문', browse:'29,605편 둘러보기 →', today:'오늘', etal:' 외',
-     steps:n=>`${n} steps`, papers:'Papers',
-     ex:['KV cache 압축에서 올해 달라진 건 뭐야?',
-         '올해 처음 등장한 벤치마크는 뭐가 있어?',
-         '자율주행 연구는 요즘 어떤 한계와 싸우고 있어?']},
+     steps:n=>`${n} steps`, papers:'Papers', settings:'⚙ 설정', sTitle:'설정',
+     sAgents:'에이전트', sAgentD:'질문에 답하는 코딩 에이전트 — 이 컴퓨터에 로그인된 계정을 그대로 사용',
+     sTheme:'테마', sLight:'라이트', sDark:'다크', sSystem:'시스템',
+     sLang:'언어', sProgram:'프로그램', sIn:'연결됨', sOut:'미설치',
+     sDefault:'기본', sBeta:'베타', sCorpus:'코퍼스', sAddr:'주소'},
  en:{newq:'New question', browse:'Browse 29,605 papers →', today:'Today', etal:' et al.',
-     steps:n=>`${n} steps`, papers:'Papers',
-     ex:['What changed in KV cache compression this year?',
-         'Which benchmarks appeared this year for the first time?',
-         'What limitations is autonomous-driving research fighting now?']}};
+     steps:n=>`${n} steps`, papers:'Papers', settings:'⚙ Settings', sTitle:'Settings',
+     sAgents:'Agents', sAgentD:'The coding agent that answers — uses the account signed in on this machine',
+     sTheme:'Theme', sLight:'Light', sDark:'Dark', sSystem:'System',
+     sLang:'Language', sProgram:'Program', sIn:'connected', sOut:'not installed',
+     sDefault:'default', sBeta:'beta', sCorpus:'Corpus', sAddr:'Address'}};
 let LANG=localStorage.getItem('wn_lang')||'ko';
 const t=k=>STR[LANG][k];
 function applyLang(){
   document.documentElement.lang=LANG;
   $('#newq').textContent=t('newq');
-  document.querySelector('.railfoot a').textContent=t('browse');
+  $('#browselink').textContent=t('browse');
+  $('#settingsbtn').textContent=t('settings');
   document.querySelectorAll('.lang button').forEach(b=>
     b.classList.toggle('on',b.dataset.l===LANG));
+}
+
+// ---- theme: light / dark / system, orx-style, persisted
+let THEME=localStorage.getItem('wn_theme')||'system';
+const mq=window.matchMedia('(prefers-color-scheme: dark)');
+function applyTheme(){
+  const dark=THEME==='dark'||(THEME==='system'&&mq.matches);
+  document.documentElement.setAttribute('data-theme',dark?'dark':'light');
+}
+mq.addEventListener('change',applyTheme);
+
+// ---- agent choice: which signed-in CLI answers
+let AGENT=localStorage.getItem('wn_agent')||'claude';
+let AGENTS=null;
+async function loadAgents(){
+  try{ AGENTS=await (await fetch('/agents')).json(); }catch(e){ AGENTS={}; }
+  if($('.set'))showSettings();
+}
+
+// ---- settings view (replaces the thread; New question leaves it)
+function showSettings(){
+  if(AGENTS===null){ loadAgents(); }
+  const A=AGENTS||{};
+  const arow=(k,label,beta)=>{
+    const a=A[k]||{};
+    const st=a.installed
+      ?`<span class="astat"><i>✓</i>${esc(a.account||t('sIn'))}</span>`
+      :`<span class="astat off"><i>·</i>${t('sOut')}</span>`;
+    return `<div class="srow"><div class="sl"><b>${label}${beta?` <span style="color:var(--mut);font-weight:500">(${t('sBeta')})</span>`:''}</b>${st}</div>
+      <div class="seg"><button data-ag="${k}" class="${AGENT===k?'on':''}" ${a.installed?'':'disabled'}>${t('sDefault')}</button></div></div>`;
+  };
+  $('#main').innerHTML=`<div class="thread"><div class="set">
+    <h1>${t('sTitle')}</h1>
+    <div class="sgrp">
+      <div class="srow"><div class="sl"><b>${t('sAgents')}</b><span>${t('sAgentD')}</span></div></div>
+      ${arow('claude','Claude Code',false)}
+      ${arow('codex','Codex',true)}
+    </div>
+    <div class="sgrp">
+      <div class="srow"><div class="sl"><b>${t('sTheme')}</b></div>
+        <div class="seg">${['light','dark','system'].map(x=>
+          `<button data-th="${x}" class="${THEME===x?'on':''}">${t('s'+x[0].toUpperCase()+x.slice(1))}</button>`).join('')}</div></div>
+      <div class="srow"><div class="sl"><b>${t('sLang')}</b></div>
+        <div class="seg"><button data-lg="ko" class="${LANG==='ko'?'on':''}">한국어</button>
+          <button data-lg="en" class="${LANG==='en'?'on':''}">English</button></div></div>
+    </div>
+    <div class="sgrp">
+      <div class="srow"><div class="sl"><b>${t('sCorpus')}</b><span>ICML 2025/26 · NeurIPS 2024/25 · ICLR 2025/26</span></div>
+        <span class="astat">29,605 papers</span></div>
+      <div class="srow"><div class="sl"><b>${t('sAddr')}</b></div>
+        <span class="astat">${esc(location.origin)}</span></div>
+    </div>
+  </div></div>`;
+  markHist();
+  $('#main').querySelectorAll('[data-ag]').forEach(b=>b.onclick=()=>{
+    AGENT=b.dataset.ag; localStorage.setItem('wn_agent',AGENT); showSettings(); });
+  $('#main').querySelectorAll('[data-th]').forEach(b=>b.onclick=()=>{
+    THEME=b.dataset.th; localStorage.setItem('wn_theme',THEME); applyTheme(); showSettings(); });
+  $('#main').querySelectorAll('[data-lg]').forEach(b=>b.onclick=()=>{
+    if(b.dataset.lg!==LANG){ LANG=b.dataset.lg; localStorage.setItem('wn_lang',LANG); applyLang(); loadHist(); showSettings(); } });
 }
 function setLang(l){
   if(BUSY||l===LANG)return;
@@ -198,7 +283,6 @@ function heroHTML(){
   return `<div class="hero">
     <h1><em>Frontier</em></h1>
     ${composerHTML()}
-    <div class="ex">${t('ex').map(e=>`<button data-ex="${esc(e)}">${esc(e)}</button>`).join('')}</div>
   </div>`;
 }
 function threadHTML(){
@@ -289,7 +373,6 @@ function wireComposer(){
   if(!q)return;
   q.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.isComposing)send(q.value);});
   go.onclick=()=>send(q.value);
-  document.querySelectorAll('[data-ex]').forEach(b=>b.onclick=()=>send(b.dataset.ex));
   q.focus();
 }
 
@@ -324,7 +407,7 @@ async function send(text){
   try{
     const r=await fetch('/chat/stream',{method:'POST',
       headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({q:v,chat:CHAT})});
+      body:JSON.stringify({q:v,chat:CHAT,agent:AGENT})});
     const rd=r.body.getReader(), dec=new TextDecoder();
     let buf='';
     while(true){
@@ -385,5 +468,6 @@ document.addEventListener('click',e=>{
 });
 $('#newq').onclick=()=>{ if(!BUSY)showEmpty(); };
 document.querySelectorAll('.lang button').forEach(b=>b.onclick=()=>setLang(b.dataset.l));
-applyLang(); showEmpty(); loadHist();
+$('#settingsbtn').onclick=e=>{ e.preventDefault(); if(!BUSY)showSettings(); };
+applyTheme(); applyLang(); showEmpty(); loadHist();
 </script></body></html>

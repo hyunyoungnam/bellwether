@@ -115,6 +115,59 @@ def handle(body: dict) -> dict:
             "verified": {"checked": checked, "passed": passed}}
 
 
+# ------------------------------------------------------------- agents
+# Like orx: the machine's installed, signed-in agent CLIs are what "connect".
+
+def _claude_account() -> str | None:
+    try:
+        d = json.loads((Path.home() / ".claude.json").read_text())
+        return (d.get("oauthAccount") or {}).get("emailAddress")
+    except Exception:  # noqa: BLE001
+        return None
+
+
+def _codex_account() -> str | None:
+    """The email inside the id_token JWT — best-effort, display only."""
+    try:
+        import base64
+        d = json.loads((Path.home() / ".codex" / "auth.json").read_text())
+        tok = (d.get("tokens") or {}).get("id_token") or ""
+        pay = tok.split(".")[1]
+        pay += "=" * (-len(pay) % 4)
+        return json.loads(base64.urlsafe_b64decode(pay)).get("email")
+    except Exception:  # noqa: BLE001
+        return None
+
+
+def agents() -> dict:
+    import shutil
+    out = {}
+    for name, binname, acct in (("claude", "claude", _claude_account),
+                                ("codex", "codex", _codex_account)):
+        path = shutil.which(binname) or (
+            str(Path.home() / ".local/bin" / binname)
+            if (Path.home() / ".local/bin" / binname).exists() else None)
+        out[name] = {"installed": bool(path),
+                     "account": acct() if path else None}
+    return out
+
+
+_CODEX_MCP = """
+[mcp_servers.wnai]
+command = "python3"
+args = ["-m", "wnai", "mcp"]
+env = { PYTHONPATH = "%s" }
+"""
+
+
+def _ensure_codex_mcp() -> None:
+    cfg = Path.home() / ".codex" / "config.toml"
+    cfg.parent.mkdir(exist_ok=True)
+    text = cfg.read_text() if cfg.exists() else ""
+    if "mcp_servers.wnai" not in text:
+        cfg.write_text(text + _CODEX_MCP % (ROOT / "src"))
+
+
 def card(gid: int) -> dict:
     """GET /paper/<gid>: the highlight card's material, for inline display.
 
@@ -196,17 +249,32 @@ def stream(body: dict, emit) -> None:
         emit({"t": "error", "error": "empty question"})
         return
     cid = body.get("chat") or secrets.token_hex(6)
+    agent = body.get("agent") or "claude"
     doc = None
     if _doc_path(cid).exists():
         doc = json.loads(_doc_path(cid).read_text())
-    cmd = ["claude", "-p", q, "--output-format", "stream-json", "--verbose",
-           "--max-turns", "12",
-           "--mcp-config", str(ROOT / ".mcp.json"), "--strict-mcp-config",
-           "--allowedTools", "mcp__wnai",
-           "--append-system-prompt", SYSTEM]
-    if doc and doc.get("sid"):
-        cmd += ["--resume", doc["sid"]]
-    result = None
+    sid = doc.get("sid") if doc else None
+    # a conversation stays on the agent it started with — sessions don't port
+    if doc and doc.get("agent") and doc["agent"] != agent:
+        agent = doc["agent"]
+
+    if agent == "codex":
+        _ensure_codex_mcp()
+        cmd = ["codex", "exec", "--json", "--skip-git-repo-check"]
+        if sid:
+            cmd = ["codex", "exec", "resume", sid, "--json",
+                   "--skip-git-repo-check"]
+        cmd.append(SYSTEM + "\n\nUSER QUESTION:\n" + q)
+    else:
+        cmd = ["claude", "-p", q, "--output-format", "stream-json", "--verbose",
+               "--max-turns", "12",
+               "--mcp-config", str(ROOT / ".mcp.json"), "--strict-mcp-config",
+               "--allowedTools", "mcp__wnai",
+               "--append-system-prompt", SYSTEM]
+        if sid:
+            cmd += ["--resume", sid]
+
+    result_text, new_sid, failed = None, None, None
     try:
         with subprocess.Popen(cmd, cwd=ROOT, stdout=subprocess.PIPE,
                               stderr=subprocess.PIPE, text=True,
@@ -216,30 +284,57 @@ def stream(body: dict, emit) -> None:
                     ev = json.loads(line)
                 except json.JSONDecodeError:
                     continue
-                if ev.get("type") == "assistant":
-                    for c in (ev.get("message") or {}).get("content", []):
-                        # only corpus tools make the visible trail — harness
-                        # plumbing (ToolSearch etc.) is noise to the reader
-                        if c.get("type") == "tool_use" \
-                                and c["name"].startswith("mcp__wnai__"):
+                if agent == "codex":
+                    # measured event shape (codex 0.153): thread.started
+                    # carries thread_id; item.completed carries typed items.
+                    # An 'error' item is a WARNING (the run continues) — only
+                    # turn.failed is fatal.
+                    ty = ev.get("type") or ""
+                    if ty == "thread.started":
+                        new_sid = ev.get("thread_id") or new_sid
+                    elif ty == "turn.failed":
+                        failed = str(ev.get("error") or "codex turn failed")[:300]
+                    elif ty in ("item.started", "item.completed"):
+                        it = ev.get("item") or {}
+                        ity = it.get("type") or ""
+                        if "mcp" in ity and ty == "item.started":
                             emit({"t": "tool",
-                                  "name": c["name"].split("__")[-1],
-                                  "arg": _summ(c.get("input"))})
-                elif ev.get("type") == "result":
-                    result = ev
+                                  "name": (it.get("tool") or it.get("name")
+                                           or "tool").split("__")[-1],
+                                  "arg": _summ(it.get("arguments")
+                                               if isinstance(it.get("arguments"), dict)
+                                               else {})})
+                        elif ity == "agent_message" and ty == "item.completed":
+                            result_text = it.get("text") or result_text
+                else:
+                    if ev.get("type") == "assistant":
+                        for c in (ev.get("message") or {}).get("content", []):
+                            # only corpus tools make the visible trail —
+                            # harness plumbing is noise to the reader
+                            if c.get("type") == "tool_use" \
+                                    and c["name"].startswith("mcp__wnai__"):
+                                emit({"t": "tool",
+                                      "name": c["name"].split("__")[-1],
+                                      "arg": _summ(c.get("input"))})
+                    elif ev.get("type") == "result":
+                        result_text = ev.get("result") or ""
+                        new_sid = ev.get("session_id")
+                        if ev.get("is_error"):
+                            failed = (result_text or "agent failed")[:300]
     except Exception as exc:  # noqa: BLE001
         emit({"t": "error", "error": f"{type(exc).__name__}: {exc}"[:300]})
         return
-    if not result or result.get("is_error"):
-        emit({"t": "error", "error": (result or {}).get("result", "agent failed")[:300]})
+    if failed or result_text is None:
+        emit({"t": "error", "error": failed or "the agent returned nothing"})
         return
-    segs, checked, passed = segment(result.get("result") or "", store, ver)
+    segs, checked, passed = segment(result_text, store, ver)
     turn = {"q": q, "segs": segs,
             "verified": {"checked": checked, "passed": passed}}
     CHAT_DIR.mkdir(parents=True, exist_ok=True)
     if doc is None:
-        doc = {"id": cid, "title": q[:80], "ts": int(time.time()), "turns": []}
-    doc["sid"] = result.get("session_id")
+        doc = {"id": cid, "title": q[:80], "ts": int(time.time()),
+               "agent": agent, "turns": []}
+    doc["sid"] = new_sid or sid
     doc["ts"] = int(time.time())
     doc["turns"].append(turn)
     _doc_path(cid).write_text(json.dumps(doc, ensure_ascii=False))
