@@ -23,9 +23,9 @@ body{margin:0;background:var(--bg);color:var(--ink);
 .mark i{width:9px;height:9px;border-radius:3px;display:inline-block}
 .mark i:nth-child(1){background:var(--hp)}.mark i:nth-child(2){background:var(--hy);margin-left:-4px}
 .mark i:nth-child(3){background:var(--hb);margin-left:-4px}
-.mark span{display:flex;flex-direction:column;line-height:1.15}
-.mark em{font-style:normal;font-weight:600;font-size:9.5px;letter-spacing:.14em;
-  text-transform:uppercase;color:var(--mut)}
+.mark{background:none;border:0;color:var(--ink);cursor:pointer;font:inherit;
+  font-size:18px;font-weight:700;letter-spacing:-.01em;text-align:left}
+.mark:hover{color:var(--acc)}
 .newq{font:inherit;font-weight:650;font-size:15.5px;border:1px solid var(--ring);background:var(--bg);
   color:var(--ink);border-radius:9px;padding:8px 12px;cursor:pointer;text-align:left;width:100%}
 .newq:hover{border-color:var(--acc)}
@@ -218,7 +218,7 @@ body{margin:0;background:var(--bg);color:var(--ink);
 </style></head><body>
 <div class="app">
   <nav class="rail">
-    <div class="mark"><i></i><i></i><i></i><span>Bellwether<em>AI research</em></span></div>
+    <button class="mark" id="homebtn"><i></i><i></i><i></i>Bellwether</button>
     <button class="newq" id="newq">새 질문</button>
     <div class="hist" id="hist"></div>
     <div class="railfoot"><a href="#" id="settingsbtn">⚙ Settings</a></div>
@@ -614,5 +614,7 @@ document.querySelectorAll('.lang button').forEach(b=>b.onclick=()=>setLang(b.dat
 $('#settingsbtn').onclick=e=>{ e.preventDefault(); if(!BUSY)showSettings();
   document.querySelector('.rail').classList.remove('open'); };
 $('#menubtn').onclick=()=>document.querySelector('.rail').classList.toggle('open');
+$('#homebtn').onclick=()=>{ if(!BUSY)showEmpty();
+  document.querySelector('.rail').classList.remove('open'); };
 applyTheme(); applyLang(); showEmpty(); loadHist();
 </script></body></html>
