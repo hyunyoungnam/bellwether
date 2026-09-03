@@ -37,14 +37,13 @@ data included, stays inspectable), puts the `wnai` command on PATH via its
 own venv, and fetches the search-engine binary and keys. Then:
 
 ```bash
-wnai fetch-data --file <bundle>       # the data bundle (site + search index, ~450 MB)
+# the data bundle: site + search index for six editions, ~450 MB
+wnai fetch-data --url https://github.com/hyunyoungnam/whatsnewai/releases/download/data-20260902/wnai-data-20260902.tar.gz
 wnai serve
 ```
 
-(While this repo is private the one-liner needs an authenticated clone —
-`git clone` it yourself and run `bash install.sh`; the curl form works from
-the first public release. Set `WNAI_BUNDLE=<file-or-url>` before the
-installer to fold `fetch-data` in.)
+(Set `WNAI_BUNDLE=<file-or-url>` before running the installer to fold the
+`fetch-data` step in.)
 
 `wnai serve` starts everything on one port and prints both addresses:
 
@@ -54,9 +53,8 @@ installer to fold `fetch-data` in.)
 ```
 
 Ctrl+C stops everything. `wnai status` shows what is running and what data
-exists. The data bundle is produced by `wnai bundle` on a build machine; a
-downloadable release URL (for `wnai fetch-data --url`) will accompany the
-first public release.
+exists. The data bundle is produced by `wnai bundle` on a build machine and
+published as a GitHub release.
 
 ### Connect a coding agent (no API key)
 
