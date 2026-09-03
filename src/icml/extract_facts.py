@@ -511,10 +511,19 @@ def main() -> int:
     fulltext_path = FULLTEXT
     resolved_path = RESOLVED
     if args.source == "deep":
-        # highlight enrichment: per-corpus output for every venue, focus included
+        # per-corpus output for every venue, focus included. Originally the
+        # highlight pass; 2026-09-03 it became the corpus-wide agent-card
+        # pass, so each corpus reads its RICHEST full-text file.
         if venue != "ICML":
             fulltext_path = INTERIM / f"fulltext_{corpus.key.replace('-', '_')}.jsonl"
             resolved_path = RESOLVED.with_name(f"resolved_{corpus.key}.jsonl")
+        elif corpus.is_focus and not args.year:
+            html = INTERIM / "fulltext_html_icml_2026.jsonl"
+            if html.exists():          # the HTML re-extraction beats the PDF pass
+                fulltext_path = html
+        else:
+            # earlier ICML years: PMLR camera-ready, rows carry event_id
+            fulltext_path = INTERIM / f"fulltext_pmlr_{args.year}.jsonl"
         out_path = INTERIM / f"facts_deep_{corpus.key}.jsonl"
     elif corpus.is_focus and not args.year:
         out_path = OUT_BY_SOURCE[args.source]
