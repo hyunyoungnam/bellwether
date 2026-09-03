@@ -38,7 +38,7 @@ own venv, and fetches the search-engine binary and keys. Then:
 
 ```bash
 # the data bundle: site + search index for six editions, ~450 MB
-bellwether fetch-data --url https://github.com/hyunyoungnam/bellwether/releases/download/data-20260902/bellwether-data-20260902.tar.gz
+bellwether fetch-data --url https://github.com/hyunyoungnam/bellwether/releases/download/data-20260903/bellwether-data-20260903.tar.gz
 bellwether serve
 ```
 
