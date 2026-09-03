@@ -67,6 +67,18 @@ class Handler(SimpleHTTPRequestHandler):
         super().do_GET()
 
     def do_POST(self):
+        if self.path == "/chat":
+            # the conversational loop: spawns the user's own logged-in coding
+            # agent (no API key), verifies every quoted anchor before replying
+            try:
+                body = json.loads(
+                    self.rfile.read(int(self.headers.get("Content-Length", 0)))
+                    or b"{}")
+                from . import chat
+                self._json(200, chat.handle(body))
+            except Exception as exc:  # noqa: BLE001
+                self._json(502, {"error": f"{type(exc).__name__}: {exc}"[:300]})
+            return
         meili = ROUTES.get(self.path)
         key = search_key()
         if meili is None or key is None:

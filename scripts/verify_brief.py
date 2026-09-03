@@ -15,7 +15,6 @@ Stdlib only; run with PYTHONPATH=src from the repo root.
 from __future__ import annotations
 
 import json
-import re
 import sys
 import time
 from pathlib import Path
@@ -23,29 +22,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "src"))
 
-from wnai.mcp import Store  # noqa: E402  (read-only corpus access)
-
-_NORM = re.compile(r"[^a-z0-9]+")
-
-
-def norm(s: str) -> str:
-    return _NORM.sub(" ", (s or "").lower()).strip()
-
-
-def source_text(store: Store, gid: int) -> str:
-    parts = []
-    r = store.rec(gid)
-    if r:
-        parts += [r.get("title") or "", r.get("abstract") or ""]
-    sp = store.span_entry(gid)
-    if sp:
-        n, L, K, R = sp[0] or [], sp[1], sp[2], sp[3]
-        parts += list(n) + [L or "", K or "", R or ""]
-        if isinstance(sp[5], list):          # deep-pass sentences, when present
-            for arr in sp[5]:
-                if isinstance(arr, list):
-                    parts += [x for x in arr if isinstance(x, str)]
-    return " " + norm(" ".join(parts)) + " "
+from wnai.verify import Verifier  # noqa: E402  (the one shared implementation)
 
 
 def main() -> int:
@@ -54,21 +31,13 @@ def main() -> int:
         return 2
     path = Path(sys.argv[1])
     brief = json.loads(path.read_text())
-    store = Store()
+    ver = Verifier()
 
     checked = passed = 0
-    src_cache: dict[int, str] = {}
     for block in brief.get("answer", []):
         for cite in block.get("cites", []):
             checked += 1
-            gid = int(cite["gid"])
-            q = norm(cite.get("quote") or "")
-            if gid not in src_cache:
-                try:
-                    src_cache[gid] = source_text(store, gid)
-                except Exception:  # noqa: BLE001 — bad gid is just unverified
-                    src_cache[gid] = ""
-            ok = bool(q) and len(q) >= 20 and (" " + q + " ") in src_cache[gid]
+            ok = ver.check(int(cite["gid"]), cite.get("quote") or "")
             cite["v"] = ok
             passed += ok
 
