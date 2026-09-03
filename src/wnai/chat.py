@@ -12,13 +12,16 @@ from __future__ import annotations
 
 import json
 import re
+import secrets
 import subprocess
+import time
 from pathlib import Path
 
 from .mcp import Store, _VENUE
 from .verify import Verifier
 
 ROOT = Path(__file__).resolve().parents[2]
+CHAT_DIR = ROOT / "data" / "chats"
 
 SYSTEM = (
     "You are the research assistant of a local literature engine holding six "
@@ -83,18 +86,122 @@ _STORE: Store | None = None
 _VER: Verifier | None = None
 
 
-def handle(body: dict) -> dict:
-    """POST /chat entry point. {q, sid?} -> {segs, sid, verified}."""
+def _env():
     global _STORE, _VER
     if _STORE is None:
         _STORE = Store()
         _VER = Verifier(_STORE)
+    return _STORE, _VER
+
+
+def handle(body: dict) -> dict:
+    """POST /chat entry point. {q, sid?} -> {segs, sid, verified}."""
+    store, ver = _env()
     q = (body.get("q") or "").strip()
     if not q:
         return {"error": "empty question"}
     r = ask(q, body.get("sid") or None)
     if "error" in r:
         return r
-    segs, checked, passed = segment(r["text"], _STORE, _VER)
+    segs, checked, passed = segment(r["text"], store, ver)
     return {"segs": segs, "sid": r["sid"],
             "verified": {"checked": checked, "passed": passed}}
+
+
+# ------------------------------------------------------------- conversations
+# A conversation is OURS, keyed by a stable chat id; the agent CLI issues a
+# NEW session id on every resume, so the latest one is stored inside the doc
+# and never shown to the client.
+
+def _doc_path(cid: str) -> Path:
+    if not re.fullmatch(r"[0-9a-f]{12}", cid):
+        raise ValueError("bad chat id")
+    return CHAT_DIR / f"{cid}.json"
+
+
+def list_chats() -> list[dict]:
+    out = []
+    if CHAT_DIR.exists():
+        for f in CHAT_DIR.glob("*.json"):
+            try:
+                d = json.loads(f.read_text())
+                out.append({"id": d["id"], "title": d["title"], "ts": d["ts"]})
+            except (OSError, KeyError, json.JSONDecodeError):
+                continue
+    out.sort(key=lambda e: e["ts"], reverse=True)
+    return out
+
+
+def get_chat(cid: str) -> dict:
+    d = json.loads(_doc_path(cid).read_text())
+    d.pop("sid", None)                      # internal
+    return d
+
+
+def _summ(tool_input: dict) -> str:
+    for k in ("query", "topic", "gid"):
+        if k in (tool_input or {}):
+            return str(tool_input[k])[:60]
+    return ""
+
+
+def stream(body: dict, emit) -> None:
+    """POST /chat/stream: emit({'t':'tool'|'done'|'error', ...}) as SSE.
+
+    Tool calls surface live — the reader watches the agent walk the corpus —
+    and the final text arrives verified, exactly like handle()."""
+    store, ver = _env()
+    q = (body.get("q") or "").strip()
+    if not q:
+        emit({"t": "error", "error": "empty question"})
+        return
+    cid = body.get("chat") or secrets.token_hex(6)
+    doc = None
+    if _doc_path(cid).exists():
+        doc = json.loads(_doc_path(cid).read_text())
+    cmd = ["claude", "-p", q, "--output-format", "stream-json", "--verbose",
+           "--max-turns", "12",
+           "--mcp-config", str(ROOT / ".mcp.json"), "--strict-mcp-config",
+           "--allowedTools", "mcp__wnai",
+           "--append-system-prompt", SYSTEM]
+    if doc and doc.get("sid"):
+        cmd += ["--resume", doc["sid"]]
+    result = None
+    try:
+        with subprocess.Popen(cmd, cwd=ROOT, stdout=subprocess.PIPE,
+                              stderr=subprocess.PIPE, text=True,
+                              stdin=subprocess.DEVNULL) as p:
+            for line in p.stdout:
+                try:
+                    ev = json.loads(line)
+                except json.JSONDecodeError:
+                    continue
+                if ev.get("type") == "assistant":
+                    for c in (ev.get("message") or {}).get("content", []):
+                        # only corpus tools make the visible trail — harness
+                        # plumbing (ToolSearch etc.) is noise to the reader
+                        if c.get("type") == "tool_use" \
+                                and c["name"].startswith("mcp__wnai__"):
+                            emit({"t": "tool",
+                                  "name": c["name"].split("__")[-1],
+                                  "arg": _summ(c.get("input"))})
+                elif ev.get("type") == "result":
+                    result = ev
+    except Exception as exc:  # noqa: BLE001
+        emit({"t": "error", "error": f"{type(exc).__name__}: {exc}"[:300]})
+        return
+    if not result or result.get("is_error"):
+        emit({"t": "error", "error": (result or {}).get("result", "agent failed")[:300]})
+        return
+    segs, checked, passed = segment(result.get("result") or "", store, ver)
+    turn = {"q": q, "segs": segs,
+            "verified": {"checked": checked, "passed": passed}}
+    CHAT_DIR.mkdir(parents=True, exist_ok=True)
+    if doc is None:
+        doc = {"id": cid, "title": q[:80], "ts": int(time.time()), "turns": []}
+    doc["sid"] = result.get("session_id")
+    doc["ts"] = int(time.time())
+    doc["turns"].append(turn)
+    _doc_path(cid).write_text(json.dumps(doc, ensure_ascii=False))
+    emit({"t": "done", "chat": cid, "segs": segs,
+          "verified": turn["verified"]})

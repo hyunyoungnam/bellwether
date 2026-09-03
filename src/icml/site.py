@@ -3921,6 +3921,10 @@ $('#ttl').onclick=()=>{ if(st.corp!==null)go(null); };
 // the affordance follows the behaviour: a link-look only off the landing
 st.corp=corpFromHash();
 render();
+// deep link from the chat's cite chips: /browse#p<gid> opens that paper's
+// card on the ALL screen, selected and unfolded
+{ const pm=location.hash.match(/^#p(\d+)$/);
+  if(pm)openPaper(+pm[1]); }
 // prefetch the on-demand parts once the first paint is done — a reader on the
 // landing costs nothing extra, a reader who searches never notices the split
 setTimeout(()=>{ ensureSearch(); ensureEmb();

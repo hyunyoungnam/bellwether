@@ -52,6 +52,23 @@ class Handler(SimpleHTTPRequestHandler):
         super().end_headers()
 
     def do_GET(self):
+        # the conversation is the front door; the built corpus view lives on
+        # at /browse as the evidence surface its cite chips open
+        if self.path in ("/", "/index.htm"):
+            self.path = "/chat.html"
+        elif self.path.split("#")[0].split("?")[0] == "/browse":
+            self.path = "/index.html"
+        elif self.path == "/chats" or self.path.startswith("/chats/"):
+            from . import chat
+            try:
+                cid = self.path[7:]
+                out = chat.get_chat(cid) if cid else chat.list_chats()
+                self._json(200, out)
+            except FileNotFoundError:
+                self._json(404, {"error": "no such chat"})
+            except Exception as exc:  # noqa: BLE001
+                self._json(400, {"error": type(exc).__name__})
+            return
         # test hook: a resource that finishes late, so headless screenshots
         # taken "after load" happen after the page's async work too
         if self.path.startswith("/slow"):
@@ -67,6 +84,32 @@ class Handler(SimpleHTTPRequestHandler):
         super().do_GET()
 
     def do_POST(self):
+        if self.path == "/chat/stream":
+            try:
+                body = json.loads(
+                    self.rfile.read(int(self.headers.get("Content-Length", 0)))
+                    or b"{}")
+                from . import chat
+                self.send_response(200)
+                self.send_header("Content-Type", "text/event-stream")
+                self.send_header("X-Accel-Buffering", "no")
+                self.end_headers()
+
+                def emit(ev: dict) -> None:
+                    self.wfile.write(
+                        b"data: " + json.dumps(ev, ensure_ascii=False).encode()
+                        + b"\n\n")
+                    self.wfile.flush()
+
+                chat.stream(body, emit)
+            except (BrokenPipeError, ConnectionResetError):
+                pass                        # reader left mid-generation
+            except Exception as exc:  # noqa: BLE001
+                try:
+                    self._json(502, {"error": f"{type(exc).__name__}: {exc}"[:300]})
+                except OSError:
+                    pass
+            return
         if self.path == "/chat":
             # the conversational loop: spawns the user's own logged-in coding
             # agent (no API key), verifies every quoted anchor before replying

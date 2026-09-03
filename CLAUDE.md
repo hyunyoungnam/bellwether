@@ -761,6 +761,17 @@ Still weak:
 
 ## Interface principles
 
+- **The conversation is the front door (2026-09-03, owner — supersedes the
+  briefs-landing earlier the same day).** `/` serves the chat shell
+  (`reports/chat.html`, shown name: **Frontier**, provisional): the reader's
+  question spawns their own logged-in coding agent (Claude CLI headless, no
+  API key) armed with only the wnai MCP tools; every anchor `⟦gid|quote⟧` is
+  verified server-side BEFORE display (`wnai/verify.py`), tool calls stream
+  live as the trail, conversations persist in `data/chats/`. The built corpus
+  view moved to `/browse` and remains the evidence surface — cite chips open
+  `/browse#p<gid>`, that paper's card selected and unfolded. Guardrails
+  transfer: the agent's prose may be wrong and is never dressed as the
+  paper's words; a green check means the quote provably exists in the paper.
 - **The landing is a research workspace, not an analytics page (2026-09-03,
   owner decision — supersedes the "analysis first" landing of 2026-08-24).**
   The landing shows: search, the RESEARCH BRIEFS list, venue cards, and the
@@ -775,6 +786,13 @@ Still weak:
   Briefs cite by **gid**; the page's `P` is row-indexed with the gid in `.i`
   — `rowOfGid()` is the only legal bridge (the gid trap, again).
 
+- **No self-describing blurbs (2026-09-03, owner).** The interface never
+  explains its own mechanism or virtues in copy — no "answers with your
+  agent's account", no "every quote verified before display", no legend
+  sentences decoding ✓/✗. Affordances teach by use (a tooltip on the mark, an
+  example chip); a caption may state a unit or coverage figure, nothing more.
+  If a screen seems to need such a sentence, that is the redesign signal
+  below, not a licence to write it.
 - **If a view needs a sentence to be understood, redesign the view.** This is the
   stated goal of the interface: intuitively readable without auxiliary
   explanation. Captions may state a unit or a coverage figure; they must never
