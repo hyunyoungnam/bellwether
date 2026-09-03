@@ -85,6 +85,10 @@ cd ~/whatsnewai
 python3 scripts/status.py          # what exists, what's stale, what to run next
 ```
 
+**Running work state lives in `todo.md`, not here** (owner, 2026-09-03): this
+file holds principles, data facts, and traps; in-progress status, pending
+items, and day-to-day updates go to todo.md.
+
 Stdlib-only stages run on system `python3` with `PYTHONPATH=src`. Anything using
 embeddings or a local LLM runs on `.venv/bin/python` (see *Environment*).
 
