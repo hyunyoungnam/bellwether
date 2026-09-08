@@ -78,6 +78,8 @@ body{margin:0;background:var(--bg);color:var(--ink);
 .cite{-webkit-box-decoration-break:clone;box-decoration-break:clone}
 .bcites .cite{display:inline-block;margin:2px 3px 2px 0;max-width:100%;
   overflow:hidden;text-overflow:ellipsis;white-space:nowrap;vertical-align:top}
+.cite.mini{padding:1px 6px}
+.cite.mini b{margin:0}
 .cite b{font-weight:700;margin-right:5px}
 .cite.ok b{color:var(--ok)}
 .cite.no{outline:1px solid #e0b4a6}.cite.no b{color:var(--no)}
@@ -380,10 +382,15 @@ function threadHTML(){
     <div class="dock">${composerHTML(false)}</div>`;
 }
 
-function citeHTML(s){
+// the first citation of a paper names it; later ones in the same answer are a
+// marker — an answer about one paper was printing its title eight times
+function citeHTML(s,seen){
   const role=s.v&&('LKR'.includes(s.role))?' r'+s.role:'';
-  return `<button class="cite ${s.v?'ok':'no'}${role}" data-pg="${s.gid}"
-    title="${esc(s.q)}"><b>${s.v?'✓':'✗'}</b>${esc((s.venue||'')+' '+(s.year||''))} · ${esc(s.title)}</button>`;
+  const name=(s.venue||'')+' '+(s.year||'')+' · '+s.title;
+  const again=seen&&seen.has(s.gid);
+  if(seen)seen.add(s.gid);
+  return `<button class="cite ${s.v?'ok':'no'}${role}${again?' mini':''}" data-pg="${s.gid}"
+    title="${esc(name+'\n\n'+s.q)}"><b>${s.v?'✓':'✗'}</b>${again?'':esc(name)}</button>`;
 }
 // ---- right panel: every paper the agent touched, as the structured record
 // it actually read (get_paper's fields), one tab per paper
@@ -486,7 +493,8 @@ async function hydrateTree(el,tr){
   });
 }
 function aHTML(t){
-  const body=t.segs.map(s=>s.t==='p'?md(s.s):citeHTML(s)).join('');
+  const seen=new Set();
+  const body=t.segs.map(s=>s.t==='p'?md(s.s):citeHTML(s,seen)).join('');
   const v=t.verified||{checked:0,passed:0};
   const badge=v.checked?`<span class="${v.passed===v.checked?'vok':'vno'}"
     title="${esc(STR[LANG].vTip(v.passed,v.checked))}">${v.passed===v.checked?'✓':'✗'} ${v.passed}/${v.checked}</span>`:'';
@@ -698,7 +706,10 @@ function answerText(am){
   am.childNodes.forEach(n=>{
     if(n.nodeType===3){ out+=n.nodeValue; }
     else if(n.classList&&n.classList.contains('cite')){
-      out+=' ['+n.textContent.replace(/^[✓✗]\s*/,'').trim()+']';
+      // a marker chip carries the paper only in its tooltip's first line
+      const lab=n.classList.contains('mini')?(n.title||'').split('\n')[0]
+        :n.textContent.replace(/^[✓✗]\s*/,'').trim();
+      out+=' ['+lab+']';
     } else { out+=n.textContent; }
   });
   return out.replace(/[ \t]+\n/g,'\n').trim();
