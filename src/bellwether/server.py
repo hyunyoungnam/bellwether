@@ -87,7 +87,13 @@ class Handler(SimpleHTTPRequestHandler):
         # taken "after load" happen after the page's async work too
         if self.path.startswith("/slow"):
             import time as _t
-            _t.sleep(4)
+            secs = 4.0
+            if "s=" in self.path:
+                try:
+                    secs = min(60.0, float(self.path.split("s=")[1].split("&")[0]))
+                except ValueError:
+                    pass
+            _t.sleep(secs)
             body = b"ok"
             self.send_response(200)
             self.send_header("Content-Type", "text/plain")

@@ -563,6 +563,11 @@ def t_gap_scan(a: dict) -> dict:
     branches.sort(key=lambda b: (b["attacked_by"] > 0, -b["named_by"]))
     return {"field": a["topic"], "papers_in_field": len(gids),
             "with_limitation": n_mem, "branches": branches,
+            # what the READER sees under the tree: a coverage caveat, no
+            # reading instructions — the note below is written for the agent
+            "caption": "failure terms taken from the papers' own limitation "
+                       "sentences; matching is lexical, so a field that "
+                       "phrases its failures differently is undercounted",
             "note": "branches are failure terms from the papers' own "
                     "limitation sentences (register words and the field's own "
                     "name filtered); attacked_by counts papers whose "

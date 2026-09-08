@@ -53,6 +53,10 @@ body{margin:0;background:var(--bg);color:var(--ink);
   padding:9px 15px;max-width:80%;white-space:pre-wrap}
 .amsg{margin:0 0 6px;white-space:pre-wrap}
 .afoot{display:flex;align-items:center;gap:10px;font-size:12.5px;color:var(--mut);margin:8px 0 0}
+.afoot .cpy{font:inherit;font-size:12.5px;color:var(--mut);background:none;border:0;
+  padding:0;cursor:pointer;opacity:0;transition:opacity .12s}
+.amsg:hover+.afoot .cpy,.afoot:hover .cpy,.afoot .cpy:focus{opacity:1}
+.afoot .cpy:hover{color:var(--ink2)}
 .vok{color:var(--ok);font-weight:650}
 .vno{color:var(--no);font-weight:650}
 .trail{margin:6px 0 0}
@@ -62,16 +66,21 @@ body{margin:0;background:var(--bg);color:var(--ink);
 .trail[open] summary::before{content:'▾ '}
 .trail div{font:12.5px ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--mut);padding:2px 0 0 14px}
 .live{font:13px ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--mut);padding:2px 0}
+.live .el{opacity:.7;margin-left:8px}
 .live i{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--acc);
   margin-right:8px;animation:pulse 1s infinite alternate}
 @keyframes pulse{to{opacity:.2}}
 @media(prefers-reduced-motion:reduce){.live i{animation:none}}
-.cite{display:inline-block;font:inherit;font-size:12.5px;background:var(--card);border:1px solid var(--ring);
-  border-radius:7px;padding:1.5px 8px;margin:1px 2px;vertical-align:1px;max-width:330px;
-  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:pointer;color:var(--ink2)}
+/* a citation is a footnote inside a sentence, not a card in the flow: no
+   border, the role wash alone carries it */
+.cite{display:inline;font:inherit;font-size:12.5px;background:var(--bg);border:0;
+  border-radius:6px;padding:1px 7px;margin:0 2px;cursor:pointer;color:var(--ink2)}
+.cite{-webkit-box-decoration-break:clone;box-decoration-break:clone}
+.bcites .cite{display:inline-block;margin:2px 3px 2px 0;max-width:100%;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;vertical-align:top}
 .cite b{font-weight:700;margin-right:5px}
 .cite.ok b{color:var(--ok)}
-.cite.no{border-color:#e0b4a6}.cite.no b{color:var(--no)}
+.cite.no{outline:1px solid #e0b4a6}.cite.no b{color:var(--no)}
 /* the quote's role wears the card's own colour */
 .cite.rL{background:color-mix(in srgb,var(--hp) 32%,var(--card))}
 .cite.rK{background:color-mix(in srgb,var(--hy) 36%,var(--card))}
@@ -165,6 +174,12 @@ body{margin:0;background:var(--bg);color:var(--ink);
   padding:1px 3px;border-radius:3px;-webkit-box-decoration-break:clone;box-decoration-break:clone}
 .gset{font-size:10px;letter-spacing:.07em;text-transform:uppercase;color:var(--mut);margin:6px 0 3px}
 .gnote{font-size:12px;color:var(--mut);margin-top:9px;border-top:1px solid var(--ring);padding-top:7px}
+/* on a phone the counts row cannot sit beside the bar without overflowing */
+@media(max-width:620px){
+  .gbr summary{flex-wrap:wrap}
+  .gbr .gbar{order:3;flex-basis:100%;min-width:0}
+  .gbr .gnum{white-space:normal}
+}
 
 /* ---- settings ---- */
 .set{max-width:640px;margin:0 auto;padding:34px 20px}
@@ -253,7 +268,9 @@ const STR={
      delQ:'이 대화를 삭제할까요?', renQ:'대화 이름', pubHd:'예시 대화',
      ph:'자율주행 연구는 지금 어떤 한계와 싸우고 있나요?', ph2:'이어서 질문하기',
      stop:'생성 중단', stopped:'중단했습니다', retry:'다시 시도',
-     failed:'답변을 받지 못했습니다.'},
+     failed:'답변을 받지 못했습니다.', copy:'복사', copied:'복사됨',
+     vTip:(p,c)=>`인용 ${c}개 중 ${p}개가 논문 원문에서 그대로 확인됨`,
+     pubGrp:'발행'},
  en:{newq:'New question', browse:'Browse 29,605 papers →', today:'Today', etal:' et al.',
      steps:n=>`${n} steps`, papers:'Papers', settings:'⚙ Settings', sTitle:'Settings',
      sAgents:'Agents', sAgentD:'The coding agent that answers — uses the account signed in on this machine',
@@ -263,7 +280,9 @@ const STR={
      delQ:'Delete this conversation?', renQ:'Conversation name', pubHd:'Examples',
      ph:'What limitations is autonomous-driving research fighting right now?',
      ph2:'Ask a follow-up', stop:'Stop generating', stopped:'Stopped',
-     retry:'Retry', failed:'No answer came back.'}};
+     retry:'Retry', failed:'No answer came back.', copy:'Copy', copied:'Copied',
+     vTip:(p,c)=>`${p} of ${c} quotes found verbatim in the papers`,
+     pubGrp:'Published'}};
 let LANG=localStorage.getItem('wn_lang')||'ko';
 const t=k=>STR[LANG][k];
 function applyLang(){
@@ -338,8 +357,7 @@ function setLang(l){
   LANG=l; localStorage.setItem('wn_lang',l);
   applyLang(); loadHist();
   if(!$('#tin'))showEmpty();
-  else if(CHAT)fetch('/chats/'+CHAT).then(r=>r.json())
-    .then(d=>{CHAT=d.id;showThread(d.turns);}).catch(()=>{});
+  else if(CHAT)openChat(CHAT);
 }
 
 // the empty screen has no copy explaining itself — the placeholder is the
@@ -454,7 +472,7 @@ function treeHTML(tr){
   }).join('');
   return `<div class="gt"><div class="gth">${esc(tr.field)}
       <em>${tr.papers_in_field} papers · ${tr.with_limitation} state a limitation</em></div>
-    ${rows}<div class="gnote">${esc(tr.note)}</div></div>`;
+    ${rows}<div class="gnote">${esc(tr.caption||tr.note)}</div></div>`;
 }
 async function hydrateTree(el,tr){
   const gids=new Set();
@@ -470,8 +488,10 @@ async function hydrateTree(el,tr){
 function aHTML(t){
   const body=t.segs.map(s=>s.t==='p'?md(s.s):citeHTML(s)).join('');
   const v=t.verified||{checked:0,passed:0};
-  const foot=v.checked?`<div class="afoot"><span class="${v.passed===v.checked?'vok':'vno'}">
-    ${v.passed===v.checked?'✓':'✗'} ${v.passed}/${v.checked}</span></div>`:'';
+  const badge=v.checked?`<span class="${v.passed===v.checked?'vok':'vno'}"
+    title="${esc(STR[LANG].vTip(v.passed,v.checked))}">${v.passed===v.checked?'✓':'✗'} ${v.passed}/${v.checked}</span>`:'';
+  const foot=`<div class="afoot">${badge}
+    <button class="cpy">${esc(STR[LANG].copy)}</button></div>`;
   const trail=(t.trail&&t.trail.length)?`<details class="trail"><summary>${STR[LANG].steps(t.trail.length)}</summary>
     ${t.trail.map(x=>`<div>${esc(x)}</div>`).join('')}</details>`:'';
   const trees=(t.trees||[]).map(treeHTML).join('');
@@ -515,15 +535,22 @@ function failHTML(detail,q){
     <button data-retry="${esc(q)}">${esc(t('retry'))}</button></div>`;
 }
 
+// a conversation has an address: #c<id>. It survives a reload, it can be sent
+// to someone on the same network, and it is how a published example opens.
+async function openChat(id){
+  if(BUSY)return;
+  try{
+    const d=await (await fetch('/chats/'+id)).json();
+    if(d.error)return;
+    CHAT=d.id; history.replaceState(null,'','#c'+d.id); showThread(d.turns);
+  }catch(e){}
+}
 function showEmpty(){
   CHAT=null; clearSide();
+  if(location.hash)history.replaceState(null,'',location.pathname);
   $('#main').innerHTML=heroHTML();
   wireComposer(); markHist();
-  document.querySelectorAll('.pubrow').forEach(el=>el.onclick=async()=>{
-    if(BUSY)return;
-    const d=await (await fetch('/chats/'+el.dataset.id)).json();
-    CHAT=d.id; showThread(d.turns);
-  });
+  document.querySelectorAll('.pubrow').forEach(el=>el.onclick=()=>openChat(el.dataset.id));
 }
 function showThread(turns){
   clearSide();
@@ -549,8 +576,18 @@ async function send(text){
   const pend=$('#pend'), th=$('.thread'); th.scrollTop=th.scrollHeight;
   const trail=[], trees=[];
   let draftRaw='';
-  const line=msg=>{pend.insertAdjacentHTML('beforeend',
-    `<div class="live"><i></i>${esc(msg)}</div>`); th.scrollTop=th.scrollHeight;};
+  // the gaps between tool calls run to tens of seconds; a counter on the last
+  // step is the difference between "working" and "stuck"
+  const t0=Date.now();
+  const tick=setInterval(()=>{
+    const ls=pend.querySelectorAll('.live .el'); if(!ls.length)return;
+    ls[ls.length-1].textContent=secs();
+  },1000);
+  const secs=()=>Math.round((Date.now()-t0)/1000)+'s';
+  const line=msg=>{pend.querySelectorAll('.live .el').forEach(e2=>e2.remove());
+    pend.insertAdjacentHTML('beforeend',
+    `<div class="live"><i></i>${esc(msg)}<span class="el">${secs()}</span></div>`);
+    th.scrollTop=th.scrollHeight;};
   const draftEl=()=>{ let d2=pend.querySelector('.draft');
     if(!d2){ pend.insertAdjacentHTML('beforeend','<div class="draft"></div>'); d2=pend.querySelector('.draft'); }
     return d2; };
@@ -590,6 +627,7 @@ async function send(text){
       }
     }
   }catch(e){ const p=$('#pend'); if(p)p.outerHTML=failHTML(String(e),v); }
+  clearInterval(tick);
   RUN=null; setBusy(false);
   const q2=$('#q'); if(q2)q2.focus();
   th.scrollTop=th.scrollHeight;
@@ -604,22 +642,26 @@ async function loadHist(){
     const rows=await (await fetch('/chats')).json();
     const day=ts=>new Date(ts*1000).toLocaleDateString();
     const today=day(Date.now()/1000);
-    let h='',grp=null;
-    for(const r of rows){
-      const g=day(r.ts)===today?t('today'):day(r.ts);
-      if(g!==grp){ h+=`<div class="hgrp">${esc(g)}</div>`; grp=g; }
-      h+=`<div class="hwrap"><button class="hrow ${r.pub?'pub':''}" data-id="${esc(r.id)}">${r.pub?'★ ':''}${esc(r.title)}</button>
+    const rowHTML=r=>`<div class="hwrap"><button class="hrow ${r.pub?'pub':''}" data-id="${esc(r.id)}">${r.pub?'★ ':''}${esc(r.title)}</button>
         <span class="hact"><button data-pub="${esc(r.id)}" data-v="${r.pub?0:1}" title="publish">${r.pub?'★':'☆'}</button>
         <button data-rn="${esc(r.id)}" title="rename">✎</button>
         <button data-del="${esc(r.id)}" title="delete">✕</button></span></div>`;
+    // published conversations are the ones on the front screen; they leave the
+    // dated stream and stand at the top, where they can be found again
+    const pub=rows.filter(r=>r.pub);
+    let h=pub.length?`<div class="hgrp">${esc(t('pubGrp'))}</div>`+pub.map(rowHTML).join(''):'';
+    let grp=null;
+    for(const r of rows){
+      if(r.pub)continue;
+      const g=day(r.ts)===today?t('today'):day(r.ts);
+      if(g!==grp){ h+=`<div class="hgrp">${esc(g)}</div>`; grp=g; }
+      h+=rowHTML(r);
     }
     $('#hist').innerHTML=h;
     const hadPubs=PUBS.length; PUBS=rows.filter(r=>r.pub);
     if(!$('#tin')&&PUBS.length!==hadPubs)showEmpty();
     document.querySelectorAll('.hrow').forEach(el=>el.onclick=async()=>{
-      if(BUSY)return;
-      const d=await (await fetch('/chats/'+el.dataset.id)).json();
-      CHAT=d.id; showThread(d.turns);
+      await openChat(el.dataset.id);
       document.querySelector('.rail').classList.remove('open');
     });
     document.querySelectorAll('[data-pub]').forEach(el=>el.onclick=async e=>{
@@ -649,7 +691,30 @@ async function loadHist(){
   }catch(e){}
 }
 
+// what leaves the page is the answer with its citations spelled out — a chip
+// reads as "✓ ICML 2026 · Title" on screen and as "[ICML 2026 · Title]" in a note
+function answerText(am){
+  let out='';
+  am.childNodes.forEach(n=>{
+    if(n.nodeType===3){ out+=n.nodeValue; }
+    else if(n.classList&&n.classList.contains('cite')){
+      out+=' ['+n.textContent.replace(/^[✓✗]\s*/,'').trim()+']';
+    } else { out+=n.textContent; }
+  });
+  return out.replace(/[ \t]+\n/g,'\n').trim();
+}
 document.addEventListener('click',e=>{
+  const c=e.target.closest('.cpy');
+  if(c){
+    let el=c.closest('.afoot');
+    while(el&&!(el.classList&&el.classList.contains('amsg')))el=el.previousElementSibling;
+    if(!el)return;
+    navigator.clipboard.writeText(answerText(el)).then(()=>{
+      c.textContent=STR[LANG].copied;
+      setTimeout(()=>{c.textContent=STR[LANG].copy;},1500);
+    }).catch(()=>{});
+    return;
+  }
   const b=e.target.closest('.cite[data-pg]');
   if(b)return toggleCard(b);
   const r=e.target.closest('[data-retry]');
@@ -665,5 +730,8 @@ $('#settingsbtn').onclick=e=>{ e.preventDefault(); if(!BUSY)showSettings();
 $('#menubtn').onclick=()=>document.querySelector('.rail').classList.toggle('open');
 $('#homebtn').onclick=()=>{ if(!BUSY)showEmpty();
   document.querySelector('.rail').classList.remove('open'); };
-applyTheme(); applyLang(); showEmpty(); loadHist();
+applyTheme(); applyLang();
+{ const m=location.hash.match(/^#c([0-9a-f]{12})$/);
+  if(m){ $('#main').innerHTML=threadHTML(); openChat(m[1]); } else showEmpty(); }
+loadHist();
 </script></body></html>
