@@ -122,6 +122,16 @@ class Handler(SimpleHTTPRequestHandler):
             except Exception as exc:  # noqa: BLE001
                 self._json(400, {"error": type(exc).__name__})
             return
+        if self.path == "/chat/stop":
+            from . import chat
+            try:
+                body = json.loads(
+                    self.rfile.read(int(self.headers.get("Content-Length", 0)))
+                    or b"{}")
+                self._json(200, chat.stop_run(str(body.get("run") or "")))
+            except Exception as exc:  # noqa: BLE001
+                self._json(400, {"error": type(exc).__name__})
+            return
         if self.path == "/chat/stream":
             try:
                 body = json.loads(

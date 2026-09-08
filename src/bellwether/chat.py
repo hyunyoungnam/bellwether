@@ -11,8 +11,10 @@ exists in the paper. Prose can be wrong; a green check cannot.
 from __future__ import annotations
 
 import json
+import os
 import re
 import secrets
+import signal
 import subprocess
 import time
 from pathlib import Path
@@ -256,6 +258,26 @@ def get_chat(cid: str) -> dict:
     return d
 
 
+# A generation the reader can call off. The agent CLI spawns children (the MCP
+# server among them), so the run gets its own process group and the whole group
+# is signalled — terminating the parent alone leaves the tools running.
+_RUNS: dict[str, dict] = {}
+
+
+def stop_run(run: str) -> dict:
+    e = _RUNS.get(run)
+    if e is None:
+        return {"ok": False}
+    e["stopped"] = True
+    p = e.get("proc")
+    if p is not None and p.poll() is None:
+        try:
+            os.killpg(os.getpgid(p.pid), signal.SIGTERM)
+        except (ProcessLookupError, PermissionError, OSError):
+            p.terminate()
+    return {"ok": True}
+
+
 def _summ(tool_input: dict) -> str:
     for k in ("query", "topic", "gid"):
         if k in (tool_input or {}):
@@ -302,6 +324,8 @@ def stream(body: dict, emit) -> None:
 
     result_text, new_sid, failed = None, None, None
     trees: list[dict] = []
+    run = str(body.get("run") or secrets.token_hex(6))
+    entry = _RUNS[run] = {"stopped": False, "proc": None}
 
     def _tool_event(name: str, arg_map: dict) -> None:
         emit({"t": "tool", "name": name, "arg": _summ(arg_map)})
@@ -320,7 +344,9 @@ def stream(body: dict, emit) -> None:
     try:
         with subprocess.Popen(cmd, cwd=ROOT, stdout=subprocess.PIPE,
                               stderr=subprocess.PIPE, text=True,
-                              stdin=subprocess.DEVNULL) as p:
+                              stdin=subprocess.DEVNULL,
+                              start_new_session=True) as p:
+            entry["proc"] = p
             for line in p.stdout:
                 try:
                     ev = json.loads(line)
@@ -369,6 +395,13 @@ def stream(body: dict, emit) -> None:
                             failed = (result_text or "agent failed")[:300]
     except Exception as exc:  # noqa: BLE001
         emit({"t": "error", "error": f"{type(exc).__name__}: {exc}"[:300]})
+        return
+    finally:
+        _RUNS.pop(run, None)
+    if entry["stopped"]:
+        # a half-finished answer has unverified anchors — it is not saved and
+        # not shown as the paper's words
+        emit({"t": "stopped"})
         return
     if failed or result_text is None:
         emit({"t": "error", "error": failed or "the agent returned nothing"})

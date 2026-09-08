@@ -1344,6 +1344,7 @@ HTML = r"""<!doctype html>
      but not one search engines index. Remove when it should be public. -->
 <meta name="robots" content="noindex,nofollow">
 <title>What's new in AI research</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='1' y='10' width='13' height='13' rx='4' fill='%23e88fa4'/%3E%3Crect x='9.5' y='10' width='13' height='13' rx='4' fill='%23e6b83f'/%3E%3Crect x='18' y='10' width='13' height='13' rx='4' fill='%236aa5e0'/%3E%3C/svg%3E">
 <style>
 :root{--bg:#eceef0;--card:#fff;--ink:#141414;--ink2:#454545;--mut:#7c7c78;
 --line:#e2e4e6;--ring:#d2d5d8;--acc:#2a6fd0;--warm:#d2551f;--dim:#c6c8ca;--hi:#fff3c4;
@@ -1368,6 +1369,16 @@ white-space:nowrap}
 /* the highlighter IS the identity: the title wears it always, everywhere */
 #ttlx{background:linear-gradient(transparent 60%, var(--hi) 60%, var(--hi) 96%, transparent 96%);
 border-radius:4px}
+/* the way back to the conversation: this page is reached from a cite chip,
+   often in a new tab, and had no door out of it */
+.home{position:fixed;top:12px;left:14px;z-index:6;font-size:13px;color:var(--mut);
+text-decoration:none;background:var(--card);border:1px solid var(--line);
+border-radius:8px;padding:4px 11px}
+.home:hover{color:var(--acc);border-color:var(--acc)}
+.home i{width:8px;height:8px;border-radius:3px;display:inline-block;vertical-align:0}
+.home i:nth-of-type(1){background:#e88fa4}
+.home i:nth-of-type(2){background:#e6b83f;margin-left:-3px}
+.home i:nth-of-type(3){background:#6aa5e0;margin-left:-3px;margin-right:5px}
 #ttl.golink{cursor:pointer}
 #ttl.golink:hover #ttlx{filter:brightness(.97)}
 .tslot{display:inline-block;font:inherit;border:0;cursor:pointer;padding:0 8px;margin:0 1px;
@@ -1909,7 +1920,9 @@ background:none;cursor:pointer;color:var(--ink2)}
    wrap, so the compare area yields exactly the intruded width and no more */
 body.haspanel #cmp{margin-right:max(0px,calc(352px - (100vw - 1266px)/2))}
 @media(max-width:1500px){body.haspanel #cmp{margin-right:0}}
-</style></head><body><div class="wrap">
+</style></head><body>
+<a class="home" id="homelink" href="/" hidden><i></i><i></i><i></i>Bellwether</a>
+<div class="wrap">
 <header><h1 id="ttl"><span id="ttlx">What's new in AI research</span></h1></header>
 
 <div id="landing" hidden></div>
@@ -3829,6 +3842,9 @@ render();
 // card on the ALL screen, selected and unfolded
 { const pm=location.hash.match(/^#p(\d+)$/);
   if(pm)openPaper(+pm[1]); }
+// the link home only exists where home exists — a dist upload serves this
+// page AT the root and would link to itself
+if(location.pathname.replace(/\/$/,'').endsWith('/browse'))$('#homelink').hidden=false;
 // prefetch the on-demand parts once the first paint is done — a reader on the
 // landing costs nothing extra, a reader who searches never notices the split
 setTimeout(()=>{ ensureSearch(); ensureEmb();

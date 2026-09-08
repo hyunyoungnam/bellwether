@@ -1,6 +1,7 @@
 <!doctype html><html lang="ko"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Bellwether</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='1' y='10' width='13' height='13' rx='4' fill='%23e88fa4'/%3E%3Crect x='9.5' y='10' width='13' height='13' rx='4' fill='%23e6b83f'/%3E%3Crect x='18' y='10' width='13' height='13' rx='4' fill='%236aa5e0'/%3E%3C/svg%3E">
 <style>
 :root{--bg:#f2f3f5;--card:#fff;--ink:#1c1e21;--ink2:#43474d;--mut:#9096a0;--ring:#e4e6ea;
   --acc:#2f6fe4;--ok:#2e7d32;--no:#b3452c;--hp:#f2b8c6;--hy:#f2d478;--hb:#a8cdf0;
@@ -199,6 +200,14 @@ body{margin:0;background:var(--bg);color:var(--ink);
 #go{position:absolute;right:8px;top:50%;transform:translateY(-50%);width:38px;height:38px;
   border-radius:10px;border:0;background:var(--bub);color:var(--bubfg);cursor:pointer;font-size:15px}
 #go[disabled]{opacity:.35;cursor:default}
+#go.stop{background:var(--card);border:1px solid var(--ring);color:var(--ink2);font-size:11px}
+#go.stop:hover{border-color:var(--no);color:var(--no)}
+.errmsg{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:4px 0 6px;
+  color:var(--no);font-size:14px}
+.errmsg button{font:inherit;font-size:13px;color:var(--ink2);background:var(--card);
+  border:1px solid var(--ring);border-radius:8px;padding:4px 12px;cursor:pointer}
+.errmsg button:hover{border-color:var(--acc);color:var(--acc)}
+.stopped{font-size:13.5px;color:var(--mut);margin:4px 0 6px}
 
 /* ---- empty state: the composer holds the middle of the screen ---- */
 .hero{flex:1;display:flex;flex-direction:column;justify-content:center;align-items:center;
@@ -241,14 +250,20 @@ const STR={
      sTheme:'테마', sLight:'라이트', sDark:'다크', sSystem:'시스템',
      sLang:'언어', sProgram:'프로그램', sIn:'연결됨', sOut:'미설치',
      sDefault:'기본', sBeta:'베타', sCorpus:'코퍼스', sAddr:'주소',
-     delQ:'이 대화를 삭제할까요?', renQ:'대화 이름', pubHd:'예시 대화'},
+     delQ:'이 대화를 삭제할까요?', renQ:'대화 이름', pubHd:'예시 대화',
+     ph:'자율주행 연구는 지금 어떤 한계와 싸우고 있나요?', ph2:'이어서 질문하기',
+     stop:'생성 중단', stopped:'중단했습니다', retry:'다시 시도',
+     failed:'답변을 받지 못했습니다.'},
  en:{newq:'New question', browse:'Browse 29,605 papers →', today:'Today', etal:' et al.',
      steps:n=>`${n} steps`, papers:'Papers', settings:'⚙ Settings', sTitle:'Settings',
      sAgents:'Agents', sAgentD:'The coding agent that answers — uses the account signed in on this machine',
      sTheme:'Theme', sLight:'Light', sDark:'Dark', sSystem:'System',
      sLang:'Language', sProgram:'Program', sIn:'connected', sOut:'not installed',
      sDefault:'default', sBeta:'beta', sCorpus:'Corpus', sAddr:'Address',
-     delQ:'Delete this conversation?', renQ:'Conversation name', pubHd:'Examples'}};
+     delQ:'Delete this conversation?', renQ:'Conversation name', pubHd:'Examples',
+     ph:'What limitations is autonomous-driving research fighting right now?',
+     ph2:'Ask a follow-up', stop:'Stop generating', stopped:'Stopped',
+     retry:'Retry', failed:'No answer came back.'}};
 let LANG=localStorage.getItem('wn_lang')||'ko';
 const t=k=>STR[LANG][k];
 function applyLang(){
@@ -327,8 +342,10 @@ function setLang(l){
     .then(d=>{CHAT=d.id;showThread(d.turns);}).catch(()=>{});
 }
 
-function composerHTML(){return `<div class="cin">
-  <input id="q" autocomplete="off">
+// the empty screen has no copy explaining itself — the placeholder is the
+// only hint, and it is an example of the thing rather than a description of it
+function composerHTML(hero){return `<div class="cin">
+  <input id="q" autocomplete="off" placeholder="${esc(t(hero?'ph':'ph2'))}">
   <button id="go" aria-label="ask">↑</button></div>`;}
 
 let PUBS=[];
@@ -337,12 +354,12 @@ function heroHTML(){
     ${PUBS.slice(0,4).map(r=>`<button class="pubrow" data-id="${esc(r.id)}">${esc(r.title)}</button>`).join('')}
   </div>`:'';
   return `<div class="hero">
-    ${composerHTML()}${ex}
+    ${composerHTML(true)}${ex}
   </div>`;
 }
 function threadHTML(){
   return `<div class="thread"><div class="tin" id="tin"></div></div>
-    <div class="dock">${composerHTML()}</div>`;
+    <div class="dock">${composerHTML(false)}</div>`;
 }
 
 function citeHTML(s){
@@ -468,8 +485,34 @@ function wireComposer(){
   const q=$('#q'), go=$('#go');
   if(!q)return;
   q.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.isComposing)send(q.value);});
-  go.onclick=()=>send(q.value);
+  go.onclick=()=>{ if(BUSY)stopGen(); else send(q.value); };
+  setBusy(BUSY);
   q.focus();
+}
+// while the agent works the same button calls it off — a question asked by
+// mistake costs a click, not the whole generation
+function setBusy(b){
+  BUSY=b;
+  const go=$('#go'); if(!go)return;
+  go.disabled=false;
+  go.classList.toggle('stop',b);
+  go.textContent=b?'■':'↑';
+  go.setAttribute('aria-label',b?t('stop'):'ask');
+  go.title=b?t('stop'):'';
+}
+let RUN=null;
+async function stopGen(){
+  if(!RUN)return;
+  const r=RUN; RUN=null;
+  try{ await fetch('/chat/stop',{method:'POST',
+    headers:{'Content-Type':'application/json'},body:JSON.stringify({run:r})}); }
+  catch(e){}
+}
+// the technical string stays reachable on hover; the line the reader sees is
+// a sentence, and the way out of it is a button
+function failHTML(detail,q){
+  return `<div class="errmsg" title="${esc(detail||'')}"><span>${esc(t('failed'))}</span>
+    <button data-retry="${esc(q)}">${esc(t('retry'))}</button></div>`;
 }
 
 function showEmpty(){
@@ -496,9 +539,10 @@ function showThread(turns){
 async function send(text){
   const v=(text||'').trim();
   if(!v||BUSY)return;
-  BUSY=true;
   if(!$('#tin')){ $('#main').innerHTML=threadHTML(); wireComposer(); }
-  const q=$('#q'), go=$('#go'); q.value=''; go.disabled=true;
+  const q=$('#q'); q.value='';
+  RUN=Math.random().toString(16).slice(2,14);
+  setBusy(true);
   const tin=$('#tin');
   tin.insertAdjacentHTML('beforeend',
     `<div class="qmsg"><div>${esc(v)}</div></div><div id="pend"></div>`);
@@ -514,7 +558,7 @@ async function send(text){
   try{
     const r=await fetch('/chat/stream',{method:'POST',
       headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({q:v,chat:CHAT,agent:AGENT})});
+      body:JSON.stringify({q:v,chat:CHAT,agent:AGENT,run:RUN})});
     const rd=r.body.getReader(), dec=new TextDecoder();
     let buf='';
     while(true){
@@ -535,7 +579,8 @@ async function send(text){
           pend.insertAdjacentHTML('beforebegin',treeHTML(ev.tree));
           const el=pend.previousElementSibling; hydrateTree(el,ev.tree);
           th.scrollTop=th.scrollHeight; }
-        else if(ev.t==='error'){ pend.outerHTML=`<div class="errmsg">${esc(ev.error)}</div>`; }
+        else if(ev.t==='error'){ pend.outerHTML=failHTML(ev.error,v); }
+        else if(ev.t==='stopped'){ pend.outerHTML=`<div class="stopped">${esc(t('stopped'))}</div>`; }
         else if(ev.t==='done'){
           CHAT=ev.chat;
           pend.outerHTML=aHTML({segs:ev.segs,verified:ev.verified,trail});
@@ -544,9 +589,8 @@ async function send(text){
         }
       }
     }
-  }catch(e){ const p=$('#pend'); if(p)p.outerHTML=`<div class="errmsg">${esc(String(e))}</div>`; }
-  BUSY=false;
-  const go2=$('#go'); if(go2)go2.disabled=false;
+  }catch(e){ const p=$('#pend'); if(p)p.outerHTML=failHTML(String(e),v); }
+  RUN=null; setBusy(false);
   const q2=$('#q'); if(q2)q2.focus();
   th.scrollTop=th.scrollHeight;
 }
@@ -607,7 +651,12 @@ async function loadHist(){
 
 document.addEventListener('click',e=>{
   const b=e.target.closest('.cite[data-pg]');
-  if(b)toggleCard(b);
+  if(b)return toggleCard(b);
+  const r=e.target.closest('[data-retry]');
+  if(r&&!BUSY){ const q=r.dataset.retry, box=r.closest('.errmsg');
+    const prev=box.previousElementSibling;               // the question bubble
+    if(prev&&prev.classList.contains('qmsg'))prev.remove();
+    box.remove(); send(q); }
 });
 $('#newq').onclick=()=>{ if(!BUSY)showEmpty(); };
 document.querySelectorAll('.lang button').forEach(b=>b.onclick=()=>setLang(b.dataset.l));
