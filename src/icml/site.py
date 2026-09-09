@@ -2803,12 +2803,22 @@ function landingHTML(){
   return `<div class="venues">${cards}</div>`+allFieldsHTML();
 }
 
+// P is ROW-INDEXED and carries the gid in .i — the two numbers look alike and
+// are not interchangeable (the gid trap). This map is the only bridge, built
+// once on first use.
+let GIDROW=null;
+function rowOfGid(g){
+  if(GIDROW===null){ GIDROW=new Map(); P.forEach((p,i)=>GIDROW.set(p.i,i)); }
+  return GIDROW.get(+g);
+}
 // a citation opens the ALL screen with that paper's card selected and unfolded
-function openPaper(g){
+function openPaper(g,back){
   const ix=rowOfGid(g);
   if(ix===undefined)return;
   st.corp=-1; st.sel=ix; st.grouped=false; EXP.add(ix);
-  history.pushState(null,'','#all'); render();
+  // arriving by the back button must not rewrite the entry it just returned to
+  if(!back)history.pushState(null,'','#all');
+  render();
   requestAnimationFrame(()=>$(`.p[data-i="${ix}"]`)?.scrollIntoView({block:'center'}));
 }
 // Which hue is which conference — pinned under the cards, where the eye goes
@@ -2847,7 +2857,12 @@ function go(j){
                              :'#'+(j===-1?'all':CY[j].k));
   render();
 }
-window.addEventListener('popstate',()=>{ st.corp=corpFromHash(); clearPicks(); render(); });  // …and so does the back button
+window.addEventListener('popstate',()=>{   // …and so does the back button
+  // except when the entry being returned to is a paper link from the chat:
+  // that address names one paper, so honour it instead of going home
+  const pm=location.hash.match(/^#p(\d+)$/);
+  if(pm){ clearPicks(); openPaper(+pm[1],true); return; }
+  st.corp=corpFromHash(); clearPicks(); render(); });
 
 function digestHTML(){
   if(!DG.pair)return '';
@@ -3203,6 +3218,9 @@ function railSetCard(res,vset){
   const tiers='';
   const V2=slotState();
   const fch=[];
+  // the query is part of the selection like every other pick — it had a
+  // remove handler but never a chip to click
+  if(st.qraw)fch.push(['q','“'+st.qraw+'”']);
   if(V2.k)fch.push(['k',V2.k]);
   if(V2.d)fch.push(['d','for '+V2.d]);
   if(V2.u)fch.push(['u','built on '+V2.u]);

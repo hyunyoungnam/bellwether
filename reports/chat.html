@@ -261,8 +261,11 @@ let CHAT=null, BUSY=false;
 
 // ---- UI language: paper content stays in its own words; only chrome flips
 const STR={
- ko:{newq:'새 질문', browse:'29,605편 둘러보기 →', today:'오늘', etal:' 외',
-     steps:n=>`${n} steps`, papers:'Papers', settings:'⚙ 설정', sTitle:'설정',
+ ko:{newq:'새 질문', today:'오늘', etal:' 외', ask:'질문',
+     steps:n=>`${n}단계`, papers:'논문', settings:'⚙ 설정', sTitle:'설정',
+     gAtk:'공략한 논문', gNam:'지적만 한 논문', gGap:'공백?',
+     gHd:(n,m)=>`${n}편 · 한계를 서술한 논문 ${m}편`,
+     gNum:(n,a)=>`지적 ${n} · 공략 ${a}`,
      sAgents:'에이전트', sAgentD:'질문에 답하는 코딩 에이전트 — 이 컴퓨터에 로그인된 계정을 그대로 사용',
      sTheme:'테마', sLight:'라이트', sDark:'다크', sSystem:'시스템',
      sLang:'언어', sProgram:'프로그램', sIn:'연결됨', sOut:'미설치',
@@ -273,8 +276,11 @@ const STR={
      failed:'답변을 받지 못했습니다.', copy:'복사', copied:'복사됨',
      vTip:(p,c)=>`인용 ${c}개 중 ${p}개가 논문 원문에서 그대로 확인됨`,
      pubGrp:'발행'},
- en:{newq:'New question', browse:'Browse 29,605 papers →', today:'Today', etal:' et al.',
+ en:{newq:'New question', today:'Today', etal:' et al.', ask:'ask',
      steps:n=>`${n} steps`, papers:'Papers', settings:'⚙ Settings', sTitle:'Settings',
+     gAtk:'attacked by', gNam:'named, not attacked', gGap:'GAP?',
+     gHd:(n,m)=>`${n} papers · ${m} state a limitation`,
+     gNum:(n,a)=>`${n} named · ${a} attacked`,
      sAgents:'Agents', sAgentD:'The coding agent that answers — uses the account signed in on this machine',
      sTheme:'Theme', sLight:'Light', sDark:'Dark', sSystem:'System',
      sLang:'Language', sProgram:'Program', sIn:'connected', sOut:'not installed',
@@ -291,6 +297,12 @@ function applyLang(){
   document.documentElement.lang=LANG;
   $('#newq').textContent=t('newq');
   $('#settingsbtn').textContent=t('settings');
+  // the composer survives a language switch without being rebuilt, so its
+  // placeholder and button label are set in place
+  const qi=$('#q');
+  if(qi)qi.placeholder=t($('.hero')?'ph':'ph2');
+  const go=$('#go');
+  if(go&&!BUSY)go.setAttribute('aria-label',t('ask'));
   document.querySelectorAll('.lang button').forEach(b=>
     b.classList.toggle('on',b.dataset.l===LANG));
 }
@@ -351,15 +363,20 @@ function showSettings(){
     AGENT=b.dataset.ag; localStorage.setItem('wn_agent',AGENT); showSettings(); });
   $('#main').querySelectorAll('[data-th]').forEach(b=>b.onclick=()=>{
     THEME=b.dataset.th; localStorage.setItem('wn_theme',THEME); applyTheme(); showSettings(); });
-  $('#main').querySelectorAll('[data-lg]').forEach(b=>b.onclick=()=>{
-    if(b.dataset.lg!==LANG){ LANG=b.dataset.lg; localStorage.setItem('wn_lang',LANG); applyLang(); loadHist(); showSettings(); } });
+  $('#main').querySelectorAll('[data-lg]').forEach(b=>b.onclick=()=>setLang(b.dataset.lg));
 }
+// A language switch is chrome, not a generation: it must work mid-answer.
+// Only the re-render of an existing thread waits — that would tear out the
+// live stream — and applyLang has already relabelled everything standing.
 function setLang(l){
-  if(BUSY||l===LANG)return;
+  if(l===LANG||!STR[l])return;
   LANG=l; localStorage.setItem('wn_lang',l);
   applyLang(); loadHist();
+  if(BUSY)return;
+  if($('.set'))return showSettings();   // stay where the reader is standing
   if(!$('#tin'))showEmpty();
   else if(CHAT)openChat(CHAT);
+  else if($('#tin').children.length===0)showEmpty();
 }
 
 // the empty screen has no copy explaining itself — the placeholder is the
@@ -469,16 +486,16 @@ function treeHTML(tr){
     return `<details class="gbr ${gap?'gap0':''}">
       <summary><span class="gterm">${esc(b.term)}</span>
         <span class="gbar"><i style="width:${(b.named_by/mx*100).toFixed(0)}%"></i></span>
-        <span class="gnum">${b.named_by} named · ${b.attacked_by} attacked · ${esc(yrs)}</span>
-        ${gap?`<span class="gcap">GAP?</span>`:''}</summary>
+        <span class="gnum">${esc(STR[LANG].gNum(b.named_by,b.attacked_by))} · ${esc(yrs)}</span>
+        ${gap?`<span class="gcap">${esc(STR[LANG].gGap)}</span>`:''}</summary>
       <div class="gbody">
         <div class="grep"><i>${esc(b.rep.sentence)}</i></div>
-        ${atk?`<div class="gset">attacked by</div><div class="bcites">${atk}</div>`:''}
-        ${nam?`<div class="gset">named, not attacked</div><div class="bcites">${nam}</div>`:''}
+        ${atk?`<div class="gset">${esc(STR[LANG].gAtk)}</div><div class="bcites">${atk}</div>`:''}
+        ${nam?`<div class="gset">${esc(STR[LANG].gNam)}</div><div class="bcites">${nam}</div>`:''}
       </div></details>`;
   }).join('');
   return `<div class="gt"><div class="gth">${esc(tr.field)}
-      <em>${tr.papers_in_field} papers · ${tr.with_limitation} state a limitation</em></div>
+      <em>${esc(STR[LANG].gHd(tr.papers_in_field,tr.with_limitation))}</em></div>
     ${rows}<div class="gnote">${esc(tr.caption||tr.note)}</div></div>`;
 }
 async function hydrateTree(el,tr){
@@ -549,7 +566,8 @@ async function openChat(id){
   if(BUSY)return;
   try{
     const d=await (await fetch('/chats/'+id)).json();
-    if(d.error)return;
+    // gone (deleted in another tab): don't leave its address in the bar
+    if(d.error){ showEmpty(); loadHist(); return; }
     CHAT=d.id; history.replaceState(null,'','#c'+d.id); showThread(d.turns);
   }catch(e){}
 }
@@ -603,7 +621,7 @@ async function send(text){
   try{
     const r=await fetch('/chat/stream',{method:'POST',
       headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({q:v,chat:CHAT,agent:AGENT,run:RUN})});
+      body:JSON.stringify({q:v,chat:CHAT,agent:AGENT,run:RUN,lang:LANG})});
     const rd=r.body.getReader(), dec=new TextDecoder();
     let buf='';
     while(true){
@@ -628,6 +646,9 @@ async function send(text){
         else if(ev.t==='stopped'){ pend.outerHTML=`<div class="stopped">${esc(t('stopped'))}</div>`; }
         else if(ev.t==='done'){
           CHAT=ev.chat;
+          // a new conversation gets its address the moment it exists, so a
+          // reload after the first answer does not lose it
+          if(location.hash!=='#c'+CHAT)history.replaceState(null,'','#c'+CHAT);
           pend.outerHTML=aHTML({segs:ev.segs,verified:ev.verified,trail});
           for(const s of ev.segs)if(s.t==='c')addPaper(s.gid);
           loadHist();
@@ -650,7 +671,8 @@ async function loadHist(){
     const rows=await (await fetch('/chats')).json();
     const day=ts=>new Date(ts*1000).toLocaleDateString();
     const today=day(Date.now()/1000);
-    const rowHTML=r=>`<div class="hwrap"><button class="hrow ${r.pub?'pub':''}" data-id="${esc(r.id)}">${r.pub?'★ ':''}${esc(r.title)}</button>
+    const rowHTML=r=>`<div class="hwrap"><button class="hrow ${r.pub?'pub':''}" data-id="${esc(r.id)}"
+        data-title="${esc(r.title)}">${r.pub?'★ ':''}${esc(r.title)}</button>
         <span class="hact"><button data-pub="${esc(r.id)}" data-v="${r.pub?0:1}" title="publish">${r.pub?'★':'☆'}</button>
         <button data-rn="${esc(r.id)}" title="rename">✎</button>
         <button data-del="${esc(r.id)}" title="delete">✕</button></span></div>`;
@@ -688,7 +710,9 @@ async function loadHist(){
     });
     document.querySelectorAll('[data-rn]').forEach(el=>el.onclick=async e=>{
       e.stopPropagation();
-      const cur=el.closest('.hwrap').querySelector('.hrow').textContent;
+      // the row's text carries the ★ for a published chat — rename the title,
+      // not what the row happens to display
+      const cur=el.closest('.hwrap').querySelector('.hrow').dataset.title;
       const v=prompt(t('renQ'),cur);
       if(v===null||!v.trim())return;
       await fetch('/chats/'+el.dataset.rn,{method:'POST',
@@ -741,8 +765,20 @@ $('#settingsbtn').onclick=e=>{ e.preventDefault(); if(!BUSY)showSettings();
 $('#menubtn').onclick=()=>document.querySelector('.rail').classList.toggle('open');
 $('#homebtn').onclick=()=>{ if(!BUSY)showEmpty();
   document.querySelector('.rail').classList.remove('open'); };
-applyTheme(); applyLang();
-{ const m=location.hash.match(/^#c([0-9a-f]{12})$/);
-  if(m){ $('#main').innerHTML=threadHTML(); openChat(m[1]); } else showEmpty(); }
-loadHist();
+// module state, readable from run/audit/ui_audit.html — `let` bindings are not
+// window properties, so the audit harness has no other way to assert on them
+window.BW={STR,get lang(){return LANG},get chat(){return CHAT},
+  get papers(){return PAPERS},get run(){return RUN},
+  get busy(){return BUSY},set busy(v){setBusy(v);}};
+// the address bar is a control too: pasting #c<id>, or the back button
+// walking to it, opens that conversation without a reload
+function routeHash(boot){
+  const m=location.hash.match(/^#c([0-9a-f]{12})$/);
+  if(m){ if(m[1]===CHAT)return;
+    if(boot)$('#main').innerHTML=threadHTML();
+    openChat(m[1]); return; }
+  if(boot||CHAT)showEmpty();
+}
+window.addEventListener('hashchange',()=>{ if(!BUSY)routeHash(false); });
+applyTheme(); applyLang(); routeHash(true); loadHist();
 </script></body></html>

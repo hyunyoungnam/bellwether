@@ -87,6 +87,14 @@ class Handler(SimpleHTTPRequestHandler):
         # taken "after load" happen after the page's async work too
         if self.path.startswith("/slow"):
             import time as _t
+            # the audit harnesses run inside the page, where their result would
+            # otherwise only exist as pixels; this prints it to the server log
+            if "report=" in self.path:
+                import urllib.parse
+                print("[audit] " + urllib.parse.unquote_plus(
+                    self.path.split("report=")[1].split("&")[0]), flush=True)
+                self._json(200, {"ok": True})
+                return
             secs = 4.0
             if "s=" in self.path:
                 try:

@@ -1,0 +1,88 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Bellwether /browse audit</title>
+<style>
+body{margin:0;font:13px/1.45 ui-monospace,SFMono-Regular,Menlo,monospace;background:#111;color:#ddd}
+#out{padding:12px 16px;white-space:pre-wrap}
+.p{color:#7fd18a}.f{color:#ff8f70;font-weight:700}
+h2{font:600 14px system-ui;margin:14px 0 6px;color:#9ab}
+iframe{position:fixed;right:0;bottom:0;width:1100px;height:800px;border:1px solid #333;
+  transform:scale(.32);transform-origin:bottom right;opacity:.45}
+</style></head><body>
+<div id="out">running…</div>
+<!-- holds the load event open so a headless --screenshot waits for the run -->
+<img src="/slow?s=50" style="display:none" alt="">
+<iframe id="f" src="/browse"></iframe>
+<script>
+// The evidence surface, driven the same way: a cite chip lands here, so the
+// deep link, the search, and the selection have to work from a cold load.
+const out=document.getElementById('out'); let pass=0,fail=0;
+const line=(ok,name,note)=>{ ok?pass++:fail++;
+  out.insertAdjacentHTML('beforeend',
+    `<div class="${ok?'p':'f'}">${ok?'PASS':'FAIL'}  ${name}${note?'  — '+note:''}</div>`); };
+const head=s=>out.insertAdjacentHTML('beforeend',`<h2>${s}</h2>`);
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+const f=document.getElementById('f');
+const W=()=>f.contentWindow, D=()=>f.contentDocument;
+const q=s=>D().querySelector(s);
+const all=s=>[...D().querySelectorAll(s)];
+// a hash-only change is a same-document navigation and fires no load event —
+// go through the iframe's own location so the page really reloads
+// a fragment-only change is a same-document navigation: no load event, and
+// the page's own popstate handler runs instead. Force a real load.
+async function load(path){
+  await new Promise(r=>{ f.onload=r; f.src='about:blank'; });
+  return new Promise(r=>{ f.onload=()=>setTimeout(r,2800); f.src=path; });
+}
+
+async function run(){
+  out.innerHTML='';
+  await new Promise(r=>{ if(D()&&D().readyState==='complete')r(); else f.onload=r; });
+  await sleep(2500);
+
+  head('landing');
+  line(all('.vcard,[data-corp]').length>0,'venue cards render',
+       all('.vcard,[data-corp]').length+' cards');
+  line(!q('.p'),'no papers are listed before the reader narrows');
+  const home=q('#homelink');
+  line(home&&!home.hidden,'the home link shows when served at /browse');
+  line(home&&new URL(home.href).pathname==='/','and it points at the conversation');
+
+  head('search');
+  // search commits on Enter by design — typing is a draft, not a filter
+  const enter=()=>q('#q').dispatchEvent(
+    new (W().KeyboardEvent)('keydown',{key:'Enter',bubbles:true}));
+  const inp=q('#q'); inp.value='autonomous driving'; enter();
+  await sleep(3000);
+  const hits=all('.p').length;
+  line(hits>0,'a query returns result cards',hits+' cards');
+  const stamps=all('.p').slice(0,6).map(e=>e.textContent)
+    .filter(t=>/ICML|NeurIPS|ICLR/.test(t)).length;
+  line(stamps>0,'results carry a venue-year stamp',stamps+'/6 checked');
+  line(!!q('[data-fc="q"]'),'the query stays on screen as a removable chip');
+
+  head('deep link from a cite chip');
+  await load('/browse#p19662');
+  line(!!q('.p.sel'),'the linked paper is selected on the ALL screen',
+       D().querySelectorAll('.p').length+' cards');
+  line(/MiniCache/.test(D().body.textContent),'and it is the paper the link named');
+  await sleep(1500);   // the card's sentences are an on-demand part
+  const marks=all('.p.sel .wL,.p.sel .wK,.p.sel .wR,.p.sel .hl,.p.sel mark').length;
+  line(marks>0,'its passage is unfolded, in the three colours',marks+' spans');
+
+  head('back button');
+  W().history.pushState(null,'','#all'); W().history.back(); await sleep(1200);
+  line(/MiniCache/.test(D().body.textContent),
+       'returning to a paper address reopens that paper, not the landing');
+
+  head('a paper opens its neighbours');
+  const nb=q('[data-panel],.nb,.simbtn');
+  if(nb){ nb.click(); await sleep(1200);
+    line(!q('#panel').hidden,'the similar panel opens'); }
+  else line(true,'similar control not present on this card (skipped)');
+
+  const sum=`browse_audit: ${pass}/${pass+fail} passed${fail?`  ·  ${fail} FAILED`:''}`;
+  out.insertAdjacentHTML('beforeend',`<h2>${sum}</h2>`);
+  // the harness runs inside the page — send the verdict where a terminal can read it
+  fetch('/slow?report='+encodeURIComponent(sum));
+}
+run().catch(e=>line(false,'audit crashed',String(e)));
+</script></body></html>

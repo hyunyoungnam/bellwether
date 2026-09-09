@@ -1,0 +1,83 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Bellwether live audit</title>
+<style>
+body{margin:0;font:13px/1.45 ui-monospace,SFMono-Regular,Menlo,monospace;background:#111;color:#ddd}
+#out{padding:12px 16px;white-space:pre-wrap}
+.p{color:#7fd18a}.f{color:#ff8f70;font-weight:700}
+h2{font:600 14px system-ui;margin:14px 0 6px;color:#9ab}
+iframe{position:fixed;right:0;bottom:0;width:900px;height:700px;border:1px solid #333;
+  transform:scale(.42);transform-origin:bottom right;opacity:.5}
+</style></head><body>
+<div id="out">running…</div>
+<!-- two real agent runs happen here; hold the load event open for both -->
+<img src="/slow?s=170" style="display:none" alt="">
+<iframe id="f" src="/"></iframe>
+<script>
+// The generation path, for real: one answer end to end, one answer stopped.
+// Everything it creates is deleted at the end.
+const out=document.getElementById('out'); let pass=0,fail=0;
+const line=(ok,name,note)=>{ ok?pass++:fail++;
+  out.insertAdjacentHTML('beforeend',
+    `<div class="${ok?'p':'f'}">${ok?'PASS':'FAIL'}  ${name}${note?'  — '+note:''}</div>`); };
+const head=s=>out.insertAdjacentHTML('beforeend',`<h2>${s}</h2>`);
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+const f=document.getElementById('f');
+const W=()=>f.contentWindow, D=()=>f.contentDocument;
+const q=s=>D().querySelector(s);
+const idsBefore=async()=>new Set((await (await fetch('/chats')).json()).map(r=>r.id));
+
+async function run(){
+  out.innerHTML='';
+  await new Promise(r=>{ if(D()&&D().readyState==='complete')r(); else f.onload=r; });
+  await sleep(800);
+  const w=W();
+  const before=await idsBefore();
+
+  head('one answer, end to end');
+  w.send('Reply in one short sentence: what corpus do you hold? No tools needed.');
+  await sleep(1200);
+  line(w.BW.busy,'the composer goes into stop mode while it works');
+  line(q('#go').textContent==='■','the ask button becomes a stop button');
+  line(!!q('.live'),'the trail starts immediately');
+  await sleep(2500);
+  line(/\d+s/.test((q('.live .el')||{}).textContent||''),'the trail counts elapsed seconds',
+       (q('.live .el')||{}).textContent);
+  for(let i=0;i<50&&w.BW.busy;i++)await sleep(2000);
+  line(!w.BW.busy,'the run finishes');
+  line(!!q('.amsg'),'an answer is rendered');
+  line(q('#go').textContent==='↑','the button goes back to ask');
+  line(!!q('.afoot'),'the answer carries its footer');
+  const after=await (await fetch('/chats')).json();
+  const fresh=after.filter(r=>!before.has(r.id));
+  line(fresh.length===1,'the conversation is saved once',fresh.length+' new');
+  line(!!q('.hrow.on'),'and appears in the rail, marked as open');
+  line(w.location.hash==='#c'+w.BW.chat,'with its own address',w.location.hash);
+
+  head('a run the reader calls off');
+  const before2=new Set(after.map(r=>r.id));
+  q('#newq').click(); await sleep(300);
+  w.send('자율주행 분야의 블루오션을 갭 스캔으로 찾아줘.');
+  await sleep(6000);
+  line(w.BW.busy,'the second run is under way');
+  q('#go').click();                       // the stop button
+  for(let i=0;i<20&&w.BW.busy;i++)await sleep(1000);
+  line(!w.BW.busy,'stopping ends the run');
+  line(!!q('.stopped'),'and says so where the answer would have been',
+       (q('.stopped')||{}).textContent);
+  const after2=await (await fetch('/chats')).json();
+  const fresh2=after2.filter(r=>!before2.has(r.id));
+  line(fresh2.length===0,'a stopped run saves nothing',fresh2.length+' new');
+
+  head('cleanup');
+  for(const r of fresh)await fetch('/chats/'+r.id,{method:'DELETE'});
+  for(const r of fresh2)await fetch('/chats/'+r.id,{method:'DELETE'});
+  const end=await (await fetch('/chats')).json();
+  line(end.length===before.size,'the audit leaves no conversations behind',
+       end.length+' vs '+before.size);
+
+  const sum=`live_audit: ${pass}/${pass+fail} passed${fail?`  ·  ${fail} FAILED`:''}`;
+  out.insertAdjacentHTML('beforeend',`<h2>${sum}</h2>`);
+  // the harness runs inside the page — send the verdict where a terminal can read it
+  fetch('/slow?report='+encodeURIComponent(sum));
+}
+run().catch(e=>line(false,'audit crashed',String(e)));
+</script></body></html>

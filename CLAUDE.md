@@ -691,6 +691,14 @@ then `setsid nohup python3 scripts/serve.py &`.
   (`is_spotlight`); at ICLR 2026 the decision string itself is `Accept (Oral)`
   and the badge is Oral. `hl_field` in site.py derives this per corpus and
   `corpora[].hw` carries the word; results order highlight-first.
+- **Deleting a feature can take a shared helper with it, silently.** Removing
+  the briefs block from `site.py` (2026-09-03) deleted `rowOfGid()`, which
+  `openPaper()` still called — so every cite chip's `/browse#p<gid>` deep link
+  threw a ReferenceError inside a click handler and showed the landing
+  instead. Nothing logged, nothing crashed visibly, and it survived five days.
+  A helper the removed code DEFINED but other code CALLS is the hazard; grep
+  the whole file for each name a deletion removes, and let the audit suite
+  cover the path end to end.
 - **Institutions are free text** — `config/institution_aliases.json` merges known
   variants; extend conservatively.
 - **A rate-limited batch must never be recorded as a result.** Writing
@@ -931,6 +939,14 @@ Still weak:
 - Charts follow the project dataviz standard; **load the `dataviz` skill before
   touching one.** A scatter is an all-pairs form and caps at three categorical
   hues — research areas are never eight colors; use emphasis instead.
+- **Run the audit suite before calling an interface change done** (added
+  2026-09-08): `scripts/audit/run.sh` — routes + MCP tools + verifier
+  (`api_audit.py`), then three same-origin harnesses that drive the real pages
+  in an iframe and assert on what a reader would see (chat shell, `/browse`,
+  and two live agent runs including a stopped one). Each harness holds the
+  load event open with `/slow?s=N`, so `firefox --screenshot` captures the
+  finished report. Module state is reachable only through `window.BW` —
+  `let` bindings are not window properties.
 - **Look at what you built** before calling it done:
   ```bash
   firefox --headless --window-size=1400,1200 \

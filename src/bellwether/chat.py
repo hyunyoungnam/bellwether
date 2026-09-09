@@ -52,6 +52,19 @@ SYSTEM = (
     "compact — a few sentences with anchors beat an essay."
 )
 
+# The reader also sets a language for the interface. The question's own
+# language still wins — asking in English gets an English answer — but a
+# question that names nothing but a paper title has no language to mirror,
+# and this is the tie-breaker for that case.
+_UI_LANG = {"ko": " The reader's interface is set to Korean: when the "
+                  "question's own language is ambiguous, answer in Korean.",
+            "en": " The reader's interface is set to English: when the "
+                  "question's own language is ambiguous, answer in English."}
+
+
+def system_for(lang: str | None) -> str:
+    return SYSTEM + _UI_LANG.get(lang or "", "")
+
 _ANCHOR = re.compile(r"⟦\s*(\d+)\s*\|([^⟧]+)⟧")
 
 
@@ -305,20 +318,21 @@ def stream(body: dict, emit) -> None:
     if doc and doc.get("agent") and doc["agent"] != agent:
         agent = doc["agent"]
 
+    system = system_for(body.get("lang"))
     if agent == "codex":
         _ensure_codex_mcp()
         cmd = ["codex", "exec", "--json", "--skip-git-repo-check"]
         if sid:
             cmd = ["codex", "exec", "resume", sid, "--json",
                    "--skip-git-repo-check"]
-        cmd.append(SYSTEM + "\n\nUSER QUESTION:\n" + q)
+        cmd.append(system + "\n\nUSER QUESTION:\n" + q)
     else:
         cmd = ["claude", "-p", q, "--output-format", "stream-json", "--verbose",
                "--include-partial-messages",
                "--max-turns", "12",
                "--mcp-config", str(ROOT / ".mcp.json"), "--strict-mcp-config",
                "--allowedTools", "mcp__bellwether",
-               "--append-system-prompt", SYSTEM]
+               "--append-system-prompt", system]
         if sid:
             cmd += ["--resume", sid]
 

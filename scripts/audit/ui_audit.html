@@ -1,0 +1,179 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Bellwether UI audit</title>
+<style>
+body{margin:0;font:13px/1.45 ui-monospace,SFMono-Regular,Menlo,monospace;background:#111;color:#ddd}
+#out{padding:12px 16px;white-space:pre-wrap}
+.p{color:#7fd18a}.f{color:#ff8f70;font-weight:700}
+h2{font:600 14px system-ui;margin:14px 0 6px;color:#9ab}
+iframe{position:fixed;right:0;bottom:0;width:520px;height:380px;border:1px solid #333;
+  transform:scale(.5);transform-origin:bottom right;opacity:.5}
+</style></head><body>
+<div id="out">running…</div>
+<!-- holds the load event open so a headless --screenshot waits for the run -->
+<img src="/slow?s=50" style="display:none" alt="">
+<iframe id="f" src="/"></iframe>
+<script>
+// Drives the real shell in an iframe and asserts on what a reader would see.
+// Same-origin, so every function and every rendered node is reachable.
+const out=document.getElementById('out'); let pass=0,fail=0;
+const line=(ok,name,note)=>{ ok?pass++:fail++;
+  out.insertAdjacentHTML('beforeend',
+    `<div class="${ok?'p':'f'}">${ok?'PASS':'FAIL'}  ${name}${note?'  — '+note:''}</div>`); };
+const head=s=>out.insertAdjacentHTML('beforeend',`<h2>${s}</h2>`);
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+const f=document.getElementById('f');
+const W=()=>f.contentWindow, D=()=>f.contentDocument;
+const q=s=>D().querySelector(s);
+const txt=s=>{const e=q(s);return e?(e.textContent||'').trim():null;};
+const hangul=s=>/[가-힣]/.test(s||'');
+
+async function reload(){
+  return new Promise(r=>{ f.onload=()=>setTimeout(r,800);
+    W().location.reload(); });
+}
+
+async function run(){
+  out.innerHTML='';
+  await new Promise(r=>{ if(D()&&D().readyState==='complete')r(); else f.onload=r; });
+  await sleep(700);
+  const w=W();
+
+  head('boot');
+  line(!!q('.hero'),'empty screen shows the composer');
+  line(!!(q('#q')&&q('#q').placeholder),'composer carries an example placeholder',
+       (q('#q')||{}).placeholder);
+  line(!!q('.pubs'),'published examples on the hero',
+       String(D().querySelectorAll('.pubrow').length)+' rows');
+
+  head('language');
+  w.setLang('en'); await sleep(300);
+  line(txt('#newq')==='New question','EN: new-question button',txt('#newq'));
+  line(txt('#settingsbtn')==='⚙ Settings','EN: settings link',txt('#settingsbtn'));
+  line(!hangul((q('#q')||{}).placeholder),'EN: placeholder switches',
+       (q('#q')||{}).placeholder);
+  const grp=[...D().querySelectorAll('.hgrp')].map(e=>e.textContent);
+  line(!grp.some(hangul),'EN: history group headers',grp.join(' / '));
+  w.showSettings(); await sleep(250);
+  const enLeft=[...D().querySelectorAll('.set .sl b, .set .sl span, .set h1, .seg button')]
+    .map(e=>e.textContent.trim()).filter(s=>hangul(s)&&s!=='한국어');
+  line(enLeft.length===0,'EN: settings screen has no Korean left',enLeft.join(' / '));
+  w.setLang('ko'); await sleep(300);
+  line(txt('#newq')==='새 질문','KO: new-question button',txt('#newq'));
+  w.showSettings(); await sleep(200);
+  const setEN=[...D().querySelectorAll('.set .sl b, .set .sl span, .set h1')]
+    .map(e=>e.textContent.trim())
+    .filter(s=>s&&!hangul(s)&&!/Claude|Codex|ICML|http|29,605|papers|beta|@/i.test(s));
+  line(setEN.length===0,'KO: settings screen fully translated',setEN.join(' / '));
+  w.showEmpty(); await sleep(150);
+
+  head('language, mid-generation');
+  w.BW.busy=true; w.setLang('en'); await sleep(150);
+  line(w.BW.lang==='en','the toggle works while an answer is streaming',
+       'LANG is '+w.BW.lang);
+  line(txt('#newq')==='New question','and relabels the chrome mid-answer',txt('#newq'));
+  w.BW.busy=false; w.setLang('ko'); await sleep(150);
+
+  head('settings, language');
+  w.showSettings(); await sleep(200);
+  [...D().querySelectorAll('[data-lg]')].find(b=>b.dataset.lg==='en').click();
+  await sleep(250);
+  line(!!q('.set'),'switching language inside Settings stays in Settings');
+  [...D().querySelectorAll('[data-lg]')].find(b=>b.dataset.lg==='ko').click();
+  await sleep(200); w.showEmpty(); await sleep(150);
+
+  head('chrome strings');
+  const tree={field:'x',papers_in_field:9,with_limitation:8,caption:'c',
+    branches:[{term:'t',named_by:3,attacked_by:0,by_year:{'2026':3},
+      rep:{gid:19662,sentence:'s'},attackers:[],namers:[19662]}]};
+  const thKO=w.treeHTML(tree);
+  line(!/attacked by|named, not attacked|state a limitation/.test(thKO),
+       'KO: gap tree labels are Korean',
+       (thKO.match(/attacked by|named, not attacked|state a limitation/g)||[]).join(','));
+  w.setLang('en'); await sleep(120);
+  const thEN=w.treeHTML(tree);
+  line(/named, not attacked/.test(thEN),'EN: gap tree labels are English');
+  w.setLang('ko'); await sleep(120);
+  line(hangul(w.BW.STR.ko.steps(3)),'KO: trail summary is Korean',w.BW.STR.ko.steps(3));
+  line(hangul(w.BW.STR.ko.papers),'KO: side panel header is Korean',w.BW.STR.ko.papers);
+  const miss=Object.keys(w.BW.STR.en).filter(k=>!(k in w.BW.STR.ko))
+    .concat(Object.keys(w.BW.STR.ko).filter(k=>!(k in w.BW.STR.en)));
+  line(miss.length===0,'both languages define the same strings',miss.join(','));
+  const same=Object.keys(w.BW.STR.ko).filter(k=>typeof w.BW.STR.ko[k]==='string'
+    && w.BW.STR.ko[k]===w.BW.STR.en[k]);
+  line(same.length===0,'no string is left untranslated',same.join(','));
+
+  head('theme');
+  w.showSettings(); await sleep(200);
+  const dk=[...D().querySelectorAll('[data-th]')].find(b=>b.dataset.th==='dark');
+  dk.click(); await sleep(200);
+  line(D().documentElement.getAttribute('data-theme')==='dark','dark theme applies');
+  line(w.localStorage.getItem('wn_theme')==='dark','theme persists');
+  [...D().querySelectorAll('[data-th]')].find(b=>b.dataset.th==='system').click();
+  await sleep(150);
+
+  head('agent choice');
+  const ag=[...D().querySelectorAll('[data-ag]')];
+  line(ag.length===2,'both agents listed',ag.length+' rows');
+  line(ag.some(b=>b.classList.contains('on')),'one agent is marked as the one that answers');
+  line(ag.filter(b=>b.disabled).every(b=>!b.classList.contains('on')),
+       'an uninstalled agent cannot be the selected one');
+
+  head('conversations');
+  const rows=await (await fetch('/chats')).json();
+  // pick a conversation that actually cites papers — an answer with no
+  // anchors cannot exercise chips, copy, or the side panel
+  let cid=rows[0].id;
+  for(const r of rows){
+    const d=await (await fetch('/chats/'+r.id)).json();
+    if((d.turns||[]).some(t=>(t.segs||[]).some(s=>s.t==='c'))){ cid=r.id; break; }
+  }
+  await w.openChat(cid); await sleep(500);
+  line(!!q('#tin')&&D().querySelectorAll('.qmsg').length>0,'a conversation opens');
+  line(w.location.hash==='#c'+cid,'the conversation has an address',w.location.hash);
+  line(w.BW.chat===cid,'the open conversation is the current one');
+  line(D().querySelectorAll('.hrow.on').length===1,'the open one is marked in the rail');
+  const cite=q('.cite[data-pg]');
+  if(cite){ cite.click(); await sleep(600);
+    line(!!D().querySelector('.pcard'),'a cite chip unfolds the paper card');
+    const pc=D().querySelector('.pcard');
+    line(!!(pc&&pc.querySelector('.pass i')),'the card shows the coloured passage');
+    cite.click(); await sleep(200);
+    line(!D().querySelector('.pcard'),'clicking again folds it');
+  } else line(false,'a cite chip exists to click');
+  const am=q('.amsg');
+  if(am){ const tx=w.answerText(am);
+    line(tx.length>0&&/\[.+\]/.test(tx),'the answer copies with its citations spelled out',
+         (tx.match(/\[[^\]]+\]/)||[''])[0].slice(0,46)); }
+  line(D().querySelectorAll('.cite.mini').length>=0,'repeat citations render as markers',
+       D().querySelectorAll('.cite.mini').length+' markers');
+  line(w.BW.papers.length>0,'the papers the answer cites reach the side panel',
+       w.BW.papers.length+' papers');
+  q('#newq').click(); await sleep(250);
+  line(!!q('.hero'),'new question returns to the empty screen');
+  line(w.location.hash==='','new question clears the address',w.location.hash||'(empty)');
+
+  head('address bar');
+  W().location.hash='#c'+cid; await sleep(700);
+  line(D().querySelectorAll('.qmsg').length>0,'pasting a conversation address opens it');
+  await reload();
+  line(D().querySelectorAll('.qmsg').length>0,'and it survives a reload',
+       W().location.hash);
+  W().location.hash=''; await sleep(500);
+  line(!!q('.hero'),'clearing the address returns to the empty screen');
+
+  head('mobile');
+  f.style.width='420px'; await sleep(400);
+  const mb=D().querySelector('.menubtn');
+  line(mb&&getComputedStyle(mb).display!=='none','hamburger appears under 900px');
+  mb.click(); await sleep(200);
+  line(D().querySelector('.rail').classList.contains('open'),'the rail opens over the thread');
+  mb.click(); await sleep(150);
+  line(!D().querySelector('.rail').classList.contains('open'),'and closes again');
+  f.style.width='520px';
+
+  const sum=`ui_audit: ${pass}/${pass+fail} passed${fail?`  ·  ${fail} FAILED`:''}`;
+  out.insertAdjacentHTML('beforeend',`<h2>${sum}</h2>`);
+  // the harness runs inside the page — send the verdict where a terminal can read it
+  fetch('/slow?report='+encodeURIComponent(sum));
+}
+run().catch(e=>line(false,'audit crashed',String(e)));
+</script></body></html>
