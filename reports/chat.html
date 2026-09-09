@@ -356,7 +356,9 @@ function showSettings(){
       ?`<span class="astat"><i>✓</i>${esc(a.account||t('sIn'))}</span>`
       :`<span class="astat off"><i>·</i>${t('sOut')}</span>`;
     return `<div class="srow"><div class="sl"><b>${label}${beta?` <span style="color:var(--mut);font-weight:500">(${t('sBeta')})</span>`:''}</b>${st}</div>
-      <div class="seg"><button data-ag="${k}" class="${AGENT===k?'on':''}" ${a.installed?'':'disabled'}>${t('sDefault')}</button></div></div>`;
+      <div class="seg" role="radiogroup"><button data-ag="${k}" role="radio"
+        aria-checked="${AGENT===k}" class="${AGENT===k?'on':''}"
+        ${a.installed?'':'disabled'}>${AGENT===k?'✓ ':''}${t('sDefault')}</button></div></div>`;
   };
   $('#main').innerHTML=`<div class="thread"><div class="set">
     <h1>${t('sTitle')}</h1>
@@ -367,11 +369,14 @@ function showSettings(){
     </div>
     <div class="sgrp">
       <div class="srow"><div class="sl"><b>${t('sTheme')}</b></div>
-        <div class="seg">${['light','dark','system'].map(x=>
-          `<button data-th="${x}" class="${THEME===x?'on':''}">${t('s'+x[0].toUpperCase()+x.slice(1))}</button>`).join('')}</div></div>
+        <div class="seg" role="radiogroup">${['light','dark','system'].map(x=>
+          `<button data-th="${x}" role="radio" aria-checked="${THEME===x}"
+            class="${THEME===x?'on':''}">${t('s'+x[0].toUpperCase()+x.slice(1))}</button>`).join('')}</div></div>
       <div class="srow"><div class="sl"><b>${t('sLang')}</b></div>
-        <div class="seg"><button data-lg="ko" class="${LANG==='ko'?'on':''}">한국어</button>
-          <button data-lg="en" class="${LANG==='en'?'on':''}">English</button></div></div>
+        <div class="seg" role="radiogroup"><button data-lg="ko" role="radio"
+            aria-checked="${LANG==='ko'}" class="${LANG==='ko'?'on':''}">한국어</button>
+          <button data-lg="en" role="radio" aria-checked="${LANG==='en'}"
+            class="${LANG==='en'?'on':''}">English</button></div></div>
     </div>
     <div class="sgrp">
       <div class="srow"><div class="sl"><b>${t('sCorpus')}</b><span>ICML 2025/26 · NeurIPS 2024/25 · ICLR 2025/26</span></div>

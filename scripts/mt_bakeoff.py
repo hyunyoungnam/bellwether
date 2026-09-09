@@ -86,7 +86,8 @@ GLOSSARY = (
     "쓰지 말 것 — '10가지'는 열 종류로 읽힌다); named=지적; attacked=공략; "
     "gap=공백; share=점유율; per 1k=1,000편당 (편은 논문이며 페이지가 아니다); "
     "paper count=논문 수; corpus=코퍼스; limitation=한계; spotlight=스포트라이트; "
-    "card=카드; edition=에디션.")
+    "card=카드; edition=에디션; bar(임계값)=기준선 ('바'라고 쓰지 말 것); "
+    "roughly=대략; branches=가지들; attack rate=공략률.")
 
 
 def mask(text: str) -> tuple[str, list[str]]:
