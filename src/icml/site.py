@@ -1783,6 +1783,15 @@ color:inherit;cursor:pointer;padding:0;display:-webkit-box;-webkit-line-clamp:3;
 .tbl td.tt button:hover{color:var(--acc)}
 .tbl td.tt .cyst{font-size:11px;font-weight:600;margin-right:6px}
 .tbcov{font-size:11px;color:var(--mut);margin:7px 2px 0}
+/* the map: the reader's own set, placed by its own vectors */
+.mapw{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:6px}
+.mapw svg{display:block;width:100%;height:auto;touch-action:none;cursor:crosshair}
+.dot{cursor:pointer;stroke:var(--card);stroke-width:1.2}
+.dot:hover{stroke:var(--ink);stroke-width:2}
+.dot.sel{stroke:var(--acc);stroke-width:2.5}
+.dot.mx{opacity:.3}
+.dot.mr{stroke:var(--sh);stroke-width:2}
+#mapbox{fill:color-mix(in srgb,var(--acc) 12%,transparent);stroke:var(--acc);stroke-dasharray:3 3}
 .expw{display:flex;gap:6px;margin-top:8px}
 .expw button{flex:1;font:inherit;font-size:11px;padding:4px 0;border-radius:7px;
 border:1px solid var(--ring);background:var(--card);color:var(--mut);cursor:pointer}
@@ -2158,7 +2167,7 @@ function papersWithWord(w){
 // Papers are shown only once the reader has asked for some. Listing all 6,637 on
 // arrival is the problem this product exists to remove, not a neutral default.
 const MAX_SHOWN=80, NEIGHBOURS_SHOWN=5;
-const st={corp:null,q:[],qraw:'',anc:null,pick:null,topics:new Set(),fams:new Set(),sel:null,panel:null,ds:null,meth:null,mfam:null,view:'cards',tsort:null,hidex:false,lim:null};
+const st={corp:null,q:[],qraw:'',anc:null,pick:null,topics:new Set(),fams:new Set(),sel:null,panel:null,ds:null,meth:null,mfam:null,view:'cards',tsort:null,hidex:false,box:null,lim:null};
 // The claim the reader clicked to get here — the door's face, carried to the
 // destination so "why am I looking at this set?" never needs remembering.
 let STORY=null;
@@ -2324,6 +2333,7 @@ function match(i,hits,corp){
   // fight each other.
   if(!facetPass(p,false)||!facetPass(p,true))return false;
   if(st.lim!==null&&!limSet().has(i))return false;
+  if(st.box&&!st.box.has(P[i].i))return false;      // drawn on the map
   if(hits&&!hits.has(i))return false;
   return true;
 }
@@ -2972,7 +2982,7 @@ function allFieldsHTML(){
 let AF_OPEN=false;
 function enterWith(mut){
   st.q=[]; st.qraw=''; const q=$('#q'); if(q)q.value='';
-  st.sel=null; st.view='cards'; st.tsort=null;
+  st.sel=null; st.view='cards'; st.tsort=null; st.box=null;
   st.topics.clear(); st.fams.clear(); st.meth=null; st.mfam=null; st.ds=null;
   st.lim=null;
   mut();
@@ -3281,6 +3291,7 @@ function railSetCard(res,vset){
   // the query is part of the selection like every other pick — it had a
   // remove handler but never a chip to click
   if(st.qraw)fch.push(['q','“'+st.qraw+'”']);
+  if(st.box)fch.push(['z','picked on the map: '+st.box.size]);
   if(V2.k)fch.push(['k',V2.k]);
   if(V2.d)fch.push(['d','for '+V2.d]);
   if(V2.u)fch.push(['u','built on '+V2.u]);
@@ -3303,7 +3314,7 @@ function railSetCard(res,vset){
     // Three ways to look at the same set: one card each, one ROW each (the
     // extracted fields side by side, which is how a set is compared), or the
     // subgroups the embeddings support. Never a fourth ordering by merit.
-    `<div class="vsw">`+[['cards','papers'],['table','table'],['groups','subgroups']]
+    `<div class="vsw">`+[['cards','papers'],['table','table'],['map','map'],['groups','subgroups']]
       .map(([v,l])=>`<button data-vw="${v}" class="${st.view===v?'on':''}">${l}</button>`).join('')+
     `</div>`+markBarHTML(res)+
     // A selection that cannot leave is a dead end: .bib for the reference
@@ -3385,6 +3396,7 @@ function wireRtr(rt){
     else if(ax==='a')st.anc=null;
     else if(ax==='p')st.pick=null;
     else if(ax==='q'){ st.q=[]; st.qraw=''; const q2=$('#q'); if(q2)q2.value=''; }
+    else if(ax==='z')st.box=null;
     else clearSlot(ax);
     render();});
   rt.querySelectorAll('[data-ck]').forEach(el=>el.onclick=()=>{
@@ -3570,6 +3582,7 @@ function render(){
         +extraShown.map(i9=>card(i9)).join('') : ''))
     ||'<div class="empty">No papers match all of these. Remove one.</div>';
   if(st.view==='groups'){ renderGrouped(res); return; }
+  if(st.view==='map'){ renderMap(res); return; }
   $('#results').querySelectorAll('[data-mail]').forEach(el=>el.onclick=async ev=>{
     ev.stopPropagation();
     const addr=el.dataset.mail, was=el.textContent;
@@ -3995,6 +4008,125 @@ function renderTable(res,show){
   const cols=`<colgroup>`+[0,1,2,3,4,5].map(n=>`<col class="c${n}">`).join('')+`</colgroup>`;
   return `<div class="tblwrap"><table class="tbl">${cols}<thead>${head}</thead><tbody>${body}</tbody></table></div>`+
     `<div class="tbcov">${show.length} rows · ${cov}</div>`;
+}
+
+// ---- the set as a map ------------------------------------------------------
+// The picture is of the READER'S SET, never of the conference: 6,637 dots
+// answer a question nobody asked. Coordinates are computed here, from the
+// selection's own vectors, so a focused field fills the frame instead of
+// collapsing into one corner of a corpus layout (the trap this file records).
+// Two axes = the two directions this set actually varies in; they carry no
+// meaning of their own and are never labelled.
+function project(rows){
+  const D2=EMB.dims, n=rows.length;
+  const X=new Float32Array(n*D2), mu=new Float32Array(D2);
+  for(let i=0;i<n;i++)for(let d=0;d<D2;d++)mu[d]+=EMB.v[rows[i]*D2+d]/n;
+  for(let i=0;i<n;i++)for(let d=0;d<D2;d++)X[i*D2+d]=EMB.v[rows[i]*D2+d]-mu[d];
+  const comp=[];
+  for(let c=0;c<2;c++){
+    let w=new Float32Array(D2);
+    for(let d=0;d<D2;d++)w[d]=Math.sin((d+1)*(c+1)*1.7);   // fixed seed, no RNG
+    for(let it=0;it<40;it++){
+      const nw=new Float32Array(D2);
+      for(let i=0;i<n;i++){
+        let dot=0;
+        for(let d=0;d<D2;d++)dot+=X[i*D2+d]*w[d];
+        for(let d=0;d<D2;d++)nw[d]+=dot*X[i*D2+d];
+      }
+      for(const prev of comp){                     // deflate: stay orthogonal
+        let dot=0; for(let d=0;d<D2;d++)dot+=nw[d]*prev[d];
+        for(let d=0;d<D2;d++)nw[d]-=dot*prev[d];
+      }
+      let norm=0; for(let d=0;d<D2;d++)norm+=nw[d]*nw[d];
+      norm=Math.sqrt(norm)||1;
+      for(let d=0;d<D2;d++)nw[d]/=norm;
+      w=nw;
+    }
+    comp.push(w);
+  }
+  const pts=[];
+  for(let i=0;i<n;i++){
+    let a=0,b=0;
+    for(let d=0;d<D2;d++){ a+=X[i*D2+d]*comp[0][d]; b+=X[i*D2+d]*comp[1][d]; }
+    pts.push([a,b]);
+  }
+  return pts;
+}
+// Percentile bounds, not min/max: one distant paper owns the whole box and
+// squeezes everything else into a corner. 1st-99th rather than 5th-95th —
+// clipping a tenth of each axis builds fake clusters along the edges, which is
+// a worse lie than a slightly roomier frame. What still falls outside is SAID.
+function frame(vals){
+  const s2=[...vals].sort((a,b)=>a-b);
+  const lo=s2[Math.floor(s2.length*0.01)], hi=s2[Math.ceil(s2.length*0.99)-1];
+  return [lo,hi>lo?hi:lo+1e-6];
+}
+function renderMap(res){
+  if(!EMB){
+    ensureEmb().then(render);
+    $('#results').innerHTML='<div class="capped">loading the embedding vectors…</div>';
+    return;
+  }
+  const idx=[],rows=[];
+  for(const i of res.slice(0,600)){ const g=P[i].i; if(hasVec(g)){idx.push(i);rows.push(g);} }
+  const missing=Math.min(res.length,600)-idx.length;
+  if(idx.length<6){
+    $('#results').innerHTML='<div class="capped">Too few papers with a vector to place. '+
+      'Pick a wider set.</div>';
+    return;
+  }
+  const pts=project(rows);
+  const fx=frame(pts.map(p2=>p2[0])), fy=frame(pts.map(p2=>p2[1]));
+  const W=980,H=Math.min(560,Math.max(320,Math.round(idx.length*1.6)+240)),PAD=26;
+  let out=0;
+  const dots=idx.map((i,k)=>{
+    const p=P[i];
+    let x=(pts[k][0]-fx[0])/(fx[1]-fx[0]), y=(pts[k][1]-fy[0])/(fy[1]-fy[0]);
+    if(x<0||x>1||y<0||y>1)out++;
+    x=Math.max(0,Math.min(1,x)); y=Math.max(0,Math.min(1,y));
+    const m=markOf(i);
+    return `<circle cx="${(PAD+x*(W-2*PAD)).toFixed(1)}" cy="${(PAD+(1-y)*(H-2*PAD)).toFixed(1)}"
+      r="${p.o===2?5:4}" class="dot ${m?'m'+m:''} ${st.sel===i?'sel':''}"
+      fill="var(--v${vhue(p.cy)})" data-d="${i}"><title>${esc(P[i].t)}</title></circle>`;
+  }).join('');
+  const note=[res.length>600?`the first 600 of ${res.length.toLocaleString()} placed`
+                            :`${idx.length} placed`,
+              out?`${out} outside the frame, pinned to its edge`:'',
+              missing?`${missing} without a vector, not placed`:''
+             ].filter(Boolean).join(' · ');   // a caption states coverage, never
+                                              // how to use the view (crosshair
+                                              // cursor + the box teach the drag)
+  $('#results').innerHTML=
+    `<div class="mapw"><svg id="mapsvg" viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet">
+       <rect id="mapbox" x="0" y="0" width="0" height="0"></rect>${dots}</svg></div>`+
+    `<div class="tbcov">${note}</div>`+venueLegendHTML();
+  const svg=$('#mapsvg');
+  svg.querySelectorAll('.dot').forEach(el=>el.onclick=()=>{
+    const i=+el.dataset.d;
+    st.view='cards'; st.sel=i; EXP.add(i); render();
+    requestAnimationFrame(()=>$(`.p[data-i="${i}"]`)?.scrollIntoView({block:'center'}));});
+  // drag a box: the shape of the field IS the control — what is inside becomes
+  // the set, as a removable chip like every other pick
+  let a=null;
+  const pt=ev=>{ const r=svg.getBoundingClientRect();
+    return [(ev.clientX-r.left)/r.width*W,(ev.clientY-r.top)/r.height*H]; };
+  const box=$('#mapbox');
+  svg.onpointerdown=ev=>{ a=pt(ev); svg.setPointerCapture(ev.pointerId); };
+  svg.onpointermove=ev=>{ if(!a)return; const b=pt(ev);
+    box.setAttribute('x',Math.min(a[0],b[0])); box.setAttribute('y',Math.min(a[1],b[1]));
+    box.setAttribute('width',Math.abs(b[0]-a[0])); box.setAttribute('height',Math.abs(b[1]-a[1])); };
+  svg.onpointerup=ev=>{
+    if(!a)return;
+    const b=pt(ev), x0=Math.min(a[0],b[0]), x1=Math.max(a[0],b[0]);
+    const y0=Math.min(a[1],b[1]), y1=Math.max(a[1],b[1]);
+    a=null; box.setAttribute('width',0); box.setAttribute('height',0);
+    if(x1-x0<8||y1-y0<8)return;                    // a click, not a drag
+    const inside=[...svg.querySelectorAll('.dot')].filter(el=>{
+      const cx=+el.getAttribute('cx'), cy=+el.getAttribute('cy');
+      return cx>=x0&&cx<=x1&&cy>=y0&&cy<=y1;}).map(el=>+el.dataset.d);
+    if(!inside.length)return;
+    st.box=new Set(inside.map(i=>P[i].i));
+    render();};
 }
 
 function renderGrouped(res){

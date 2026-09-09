@@ -61,7 +61,8 @@ async function run(){
 
   head('the set as a table');
   const vw=v=>[...D().querySelectorAll('[data-vw]')].find(b=>b.dataset.vw===v);
-  line(!!vw('table'),'the set offers three views');
+  line(all('[data-vw]').length===4,'the set offers four views',
+       all('[data-vw]').map(b=>b.textContent).join('/'));
   vw('table').click(); await sleep(900);
   const rows=all('.tbl tbody tr');
   line(rows.length>0,'the table renders one row per paper',rows.length+' rows');
@@ -98,6 +99,33 @@ async function run(){
   W().localStorage.removeItem('bw_marks');
   vw('cards').click(); await sleep(600);
   line(!!q('.p'),'the switch goes back to cards');
+
+  head('the set as a map');
+  vw('map').click(); await sleep(2500);
+  const dots=all('.dot');
+  line(dots.length>0,'the selection is placed by its own vectors',dots.length+' dots');
+  line(!!q('.tbcov'),'and says how many it could place',(q('.tbcov')||{}).textContent);
+  line(!/drag|click|hover/i.test((q('.tbcov')||{}).textContent||''),
+       'the caption states coverage, not instructions');
+  line(new Set(dots.slice(0,40).map(d=>d.getAttribute('fill'))).size<=3,
+       'venue is the only hue, three at most');
+  // a box over the left half must narrow the set to what is inside it
+  const svg=q('#mapsvg'), r=svg.getBoundingClientRect();
+  const PE=W().PointerEvent;
+  const at=(ty,x,y)=>new PE(ty,{clientX:x,clientY:y,bubbles:true,pointerId:1});
+  const down=at('pointerdown',r.left+8,r.top+8);
+  const move=at('pointermove',r.left+r.width*0.5,r.top+r.height*0.9);
+  const up=at('pointerup',r.left+r.width*0.5,r.top+r.height*0.9);
+  const before2=W().BW.set.length;
+  svg.dispatchEvent(down); svg.dispatchEvent(move); svg.dispatchEvent(up);
+  await sleep(1500);
+  line(W().BW.set.length<before2,'a box drawn on the map narrows the set',
+       before2+' -> '+W().BW.set.length);
+  line(!!q('[data-fc="z"]'),'and the box is a removable chip like every other pick');
+  q('[data-fc="z"]').click(); await sleep(1200);
+  line(W().BW.set.length===before2,'removing it restores the set',
+       W().BW.set.length+'');
+  vw('table').click(); await sleep(700);
 
   head('the way out');
   line(all('[data-ex]').length===2,'the set can leave as .bib or .csv');

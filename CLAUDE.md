@@ -400,6 +400,29 @@ Material already available for this: `landscape.json` coordinates (6,592 of
 uncounted, not dropped silently), `neighbors.json`, the extracted method/dataset
 /task vocabulary, topic tags, and the oral/spotlight flags.
 
+**Built 2026-09-09 — the selected set now has four views** (`st.view` in
+site.py), and each carries a rule that keeps it on the right side of
+guardrail 1:
+
+| View | What it is | The rule it keeps |
+|---|---|---|
+| papers | one card each, as before | — |
+| **table** | one ROW each: proposes / builds on / data / tasks side by side, which is how a set is compared | sorting is alphabetical and puts named values before empty ones; there is no sort by merit, and coverage per column is printed under it |
+| **map** | the selection placed by ITS OWN vectors — a 2-component projection computed in the browser over the picked papers, never corpus coordinates | frame is the 1st–99th percentile (5th–95th built visible fake clusters along the edges); what is pinned, what has no vector, and the 600-dot cap are all stated. Dragging a box keeps what is inside it, as a removable chip like every other pick |
+| subgroups | the existing embedding split | unchanged — `groupsFor` still refuses to invent a split |
+
+**The reading queue rides on top of all four** (ASReview's rule, kept intact:
+the model ranks nothing, the reader decides). Each paper takes read / later /
+not mine in `localStorage`; the marks never reorder anything, they show
+progress through the set, and hiding the excluded ones leaves the set COUNT
+unchanged — the list narrows, the number still says how big the field is.
+
+**The set can leave**: `.bib` and `.csv` from the rail, built server-side
+(`bellwether/export.py`) because BibTeX needs the full author list, which the
+page payload does not carry. A conversation exports the same way, as markdown
+or a JSON bundle with every quote, its verdict, and the corpus it was answered
+against.
+
 ---
 
 ## Guardrails
@@ -941,7 +964,10 @@ Still weak:
   hues — research areas are never eight colors; use emphasis instead.
 - **Run the audit suite before calling an interface change done** (added
   2026-09-08): `scripts/audit/run.sh` — routes + MCP tools + verifier
-  (`api_audit.py`), then three same-origin harnesses that drive the real pages
+  (`api_audit.py`), the verifier benchmark (`verify_bench.py`: the papers' own
+  sentences must verify, the same sentences edited must not — 200/200 and
+  418/418 on 2026-09-09, and it FAILS the run if the matcher is relaxed), then
+  three same-origin harnesses that drive the real pages
   in an iframe and assert on what a reader would see (chat shell, `/browse`,
   and two live agent runs including a stopped one). Each harness holds the
   load event open with `/slow?s=N`, so `firefox --screenshot` captures the
