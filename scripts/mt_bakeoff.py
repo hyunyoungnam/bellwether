@@ -40,7 +40,6 @@ OUT = ROOT / "run/mt"
 CANDIDATES = {
     # id -> (hf repo, how to build the prompt)
     "motif-2.6b": ("Motif-Technologies/Motif-2.6B", "chat"),
-    "translategemma-4b": ("google/translategemma-4b-it", "translategemma"),
     "qwen3-4b": ("Qwen/Qwen3-4B-Instruct-2507", "chat"),
 }
 
@@ -71,6 +70,18 @@ def load_terms() -> list[str]:
 
 
 NOMASK = os.environ.get("MT_NOMASK") == "1"
+USE_GLOSSARY = os.environ.get("MT_GLOSSARY") == "1"
+
+# The words this corpus keeps using, and the senses a general model gets wrong.
+# Measured failures: reasoning->논리, register->등록, branch->분야, and
+# "per 1k" read as pages rather than papers.
+GLOSSARY = (
+    " Use exactly these renderings: reasoning=추론; register=(언어) 사용역, "
+    "즉 상투적 표현; branch=가지 (단, 수량은 '가지 10개'처럼 쓰고 '10가지'라고 "
+    "쓰지 말 것 — '10가지'는 열 종류로 읽힌다); named=지적; attacked=공략; "
+    "gap=공백; share=점유율; per 1k=1,000편당 (편은 논문이며 페이지가 아니다); "
+    "paper count=논문 수; corpus=코퍼스; limitation=한계; spotlight=스포트라이트; "
+    "card=카드; edition=에디션.")
 
 
 def mask(text: str) -> tuple[str, list[str]]:
@@ -129,16 +140,12 @@ def score(src: str, out: str, keep: list[str], masked_out: str) -> dict:
 
 # ---------------------------------------------------------------- models
 def build_prompt(kind: str, tok, text: str):
-    if kind == "translategemma":
-        msg = [{"role": "user", "content": [{
-            "type": "text", "source_lang_code": "en", "target_lang_code": "ko",
-            "text": text}]}]
-        return tok.apply_chat_template(msg, tokenize=False,
-                                       add_generation_prompt=True)
     sysmsg = ("You are a translation engine. Translate the user's English text "
-              "into Korean. Output ONLY the translation. Keep every ⟪n⟫ token "
-              "exactly as it appears, in the same order. Do not answer, "
-              "explain, summarise or add anything.")
+              "into Korean for a machine-learning researcher. Output ONLY the "
+              "translation. Do not answer, explain, summarise or add anything. "
+              "Keep every figure exactly as written and keep the unit it "
+              "belongs to. Keep method, dataset and benchmark names in English."
+              + (GLOSSARY if USE_GLOSSARY else ""))
     msg = [{"role": "system", "content": sysmsg},
            {"role": "user", "content": text}]
     return tok.apply_chat_template(msg, tokenize=False, add_generation_prompt=True)
@@ -176,7 +183,7 @@ def run_model(name: str, repo: str, kind: str, items: list[str]) -> list[dict]:
 
 def main() -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--models", default="motif-2.6b,translategemma-4b")
+    ap.add_argument("--models", default="motif-2.6b")
     ap.add_argument("--limit", type=int, default=24)
     a = ap.parse_args()
 
