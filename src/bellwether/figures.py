@@ -34,7 +34,14 @@ RECOMPUTABLE = {"field_trend": "topic", "gap_scan": "topic",
 SKIP_KEYS = {"gid", "gids", "attackers", "namers", "results", "cards",
              "citing", "cited_by", "cites", "neighbors", "id"}
 
-_NUM = re.compile(r"-?\d+(?:\.\d+)?")
+# 3,324 is one number. The comma-group form must be tried first, or the scan
+# reports "324" as an unexplained figure — measured on a real answer.
+_NUM = re.compile(r"-?\d{1,3}(?:,\d{3})+(?:\.\d+)?|-?\d+(?:\.\d+)?")
+_YEAR = re.compile(r"^(?:19|20)\d\d$")
+
+
+def _val(raw: str) -> float:
+    return float(raw.replace(",", ""))
 
 
 def pool(obj, out: list | None = None) -> list[float]:
@@ -65,12 +72,12 @@ def pool(obj, out: list | None = None) -> list[float]:
         out.append(float(obj))
     elif isinstance(obj, str):
         for m in _NUM.findall(obj):
-            out.append(float(m))
+            out.append(_val(m))          # tool notes print "19,071" too
     return out
 
 
 def claimed(claim: str) -> list[tuple[str, float]]:
-    return [(m, float(m)) for m in _NUM.findall(claim)]
+    return [(m, _val(m)) for m in _NUM.findall(claim)]
 
 
 def _matches(raw: str, val: float, vals: list[float]) -> bool:
@@ -124,3 +131,79 @@ def check(tool: str, arg: str, claim: str, cache: dict | None = None) -> dict:
     missing = [raw for raw, v in nums if not _matches(raw, v, vals)]
     return {"state": "no" if missing else "ok", "tool": tool, "arg": arg,
             "n": len(nums), "missing": missing}
+
+
+# ---------------------------------------------------------------- the auto pass
+# Requiring the agent to anchor every figure does not work: measured on three
+# real answers, only 38% of the numbers it printed sat inside an anchor, and it
+# re-printed bare copies of figures it had just anchored. Verification cannot
+# depend on the writer's cooperation — so the server checks EVERY number against
+# the tools this turn actually called, anchor or no anchor.
+#
+# Of the 45 bare numbers in that sample: 84% appeared verbatim in a tool result,
+# 7% were a simple ratio or difference of two of them, and the remaining 9% were
+# a thousands-separator parsing bug (since fixed), the project's own significance
+# threshold, and a gid the agent printed. None was invented.
+
+def derived_set(vals: list[float]) -> set:
+    """Figures a reader can get from two computed ones — a share, a difference.
+
+    An agent that writes "31 of 705" and then "4.4%" did arithmetic, not
+    invention, and marking that unexplained would be wrong. The combinations
+    are fixed and mechanical; nothing here judges whether the arithmetic was
+    the RIGHT thing to compute.
+    """
+    out: set = set()
+    uniq = sorted(set(vals))[:120]                   # bounded: pairs are O(n^2)
+    for i, a in enumerate(uniq):
+        for b in uniq[i + 1:]:
+            for c in (a - b, b - a, a + b,
+                      (a / b * 100) if b else None, (b / a * 100) if a else None,
+                      (a / b) if b else None, (b / a) if a else None):
+                if c is None or c < 0 or c > 1e7:
+                    continue
+                out.add(round(c, 0))
+                out.add(round(c, 1))
+                out.add(round(c, 2))
+    return out
+
+
+def turn_pool(trail: list, cache: dict | None = None) -> tuple[list[float], list[str]]:
+    """Everything the deterministic tools of THIS turn return, recomputed."""
+    cache = {} if cache is None else cache
+    vals: list[float] = []
+    used: list[str] = []
+    for step in trail or []:
+        name = step.get("name") if isinstance(step, dict) else None
+        arg = (step.get("arg") if isinstance(step, dict) else "") or ""
+        if name in RECOMPUTABLE and arg:
+            got = recompute(name, arg, cache)
+            if got:
+                vals += got
+                used.append(f"{name}:{arg}")
+    return vals, used
+
+
+def scan(text: str, vals: list[float], deriv: set, skip: set) -> list[tuple]:
+    """(start, end, raw, verdict) for every figure printed in this text.
+
+    Verdicts: 'ok' (in a tool result), 'derived' (arithmetic of two of them),
+    'no' (in neither). Years and the answer's own gids are not figures.
+    """
+    out = []
+    for m in _NUM.finditer(text):
+        raw = m.group(0)
+        if _YEAR.fullmatch(raw):
+            continue
+        v = _val(raw)
+        if v in skip:
+            continue
+        dp = len(raw.split(".")[1]) if "." in raw else 0
+        if any(round(x, dp) == round(v, dp) for x in vals):
+            verdict = "ok"
+        elif round(v, dp) in deriv:
+            verdict = "derived"
+        else:
+            verdict = "no"
+        out.append((m.start(), m.end(), raw, verdict))
+    return out

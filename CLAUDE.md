@@ -988,6 +988,25 @@ Still weak:
   This is only possible because the corpus does not move — the provenance
   literature verifies against a recorded trace precisely because re-calling a
   web tool would answer differently (see `docs/figure-verification-prior-work.md`).
+- **The check does not wait for the agent to declare it** (added 2026-09-09,
+  after measuring). Asking the agent to anchor its figures reached **38%
+  coverage**: it anchored some numbers and printed bare copies of the same ones
+  a sentence later. Verification that depends on the writer's cooperation is
+  not verification. So the server now scans EVERY number an answer prints and
+  checks it against the tools that turn actually called (the trail is stored
+  with the turn for exactly this). Measured on the bare numbers of three real
+  answers: 84% appeared verbatim in a tool result, 7% were a ratio or
+  difference of two of them (`derived_set` accepts that — an agent computing a
+  share is not inventing one), and the last 9% were a thousands-separator bug
+  (`3,324` read as `324`), the project's own significance threshold, and a gid.
+  None was invented. After the fixes a fresh answer checks 30 of 30.
+  Consequences to keep: years and the answer's own cited gids are not figures;
+  a tool that applies a threshold must **state that threshold in its output**
+  (`field_trend.rule`) so a sentence quoting the bar verifies like any figure;
+  an explicit `⟦tool:arg|…⟧` anchor still binds a figure to ONE call and is
+  the stronger form; and a number the server cannot place is marked as the
+  server's own notice — a dotted underline, not a red ✗, because "not in this
+  turn's tools" is a fact about our reach, not an accusation about the claim.
 - **Run the audit suite before calling an interface change done** (added
   2026-09-08): `scripts/audit/run.sh` — routes + MCP tools + verifier
   (`api_audit.py`), the verifier benchmark (`verify_bench.py`: the papers' own

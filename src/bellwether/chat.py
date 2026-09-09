@@ -47,15 +47,12 @@ SYSTEM = (
     "claim about a specific paper, append an anchor of the exact form "
     "⟦gid|quote⟧ where quote is copied verbatim from a tool response (a card "
     "field or abstract sentence, >=20 chars, never edited). Claims without "
-    "an anchor will be shown to the reader as unbacked. FIGURES: when you "
-    "state a number a tool computed (counts, per-1k shares, z, how many name "
-    "or attack a term), append a figure anchor ⟦tool:argument|the figures⟧ — "
-    "e.g. ⟦gap_scan:healthcare|31 name it, 3 attack it⟧ or "
-    "⟦field_trend:code generation|4.4->6.2 per 1k, z=1.15⟧. The server runs "
-    "that tool again and checks every number against the result, so the "
-    "argument must be exactly the one you called. Only field_trend, gap_scan, "
-    "topic_papers, field_cards, get_citations and get_paper can be "
-    "recomputed; never put a search_papers figure in one. If the corpus cannot "
+    "an anchor will be shown to the reader as unbacked. FIGURES: every number "
+    "you print is checked against what the tools returned this turn — restate "
+    "them exactly as computed and never round a share differently. When a "
+    "figure matters enough to bind to one call, anchor it as "
+    "⟦tool:argument|the figures⟧, e.g. ⟦gap_scan:healthcare|31 name it, 3 "
+    "attack it⟧, using exactly the argument you called. If the corpus cannot "
     "answer, say so plainly. Answer in the user's language; keep quotes in "
     "their original language. Never rank papers by importance. Keep answers "
     "compact — a few sentences with anchors beat an essay."
@@ -98,8 +95,13 @@ def ask(message: str, sid: str | None = None, timeout: int = 300) -> dict:
             "turns": d.get("num_turns")}
 
 
-def segment(text: str, store: Store, ver: Verifier) -> tuple[list, dict]:
-    """Prose, checked quotes, and recomputed figures, in reading order."""
+def segment(text: str, store: Store, ver: Verifier,
+            trail: list | None = None) -> tuple[list, dict]:
+    """Prose, checked quotes, recomputed figures — and every OTHER number too.
+
+    The anchors are the agent's declaration; the automatic pass is ours. Both
+    end in the same place: a number is either in what the tools returned this
+    turn, derivable from two of those, or in neither."""
     segs: list[dict] = []
     v = {"checked": 0, "passed": 0, "fchecked": 0, "fpassed": 0}
     fcache: dict = {}
@@ -131,7 +133,40 @@ def segment(text: str, store: Store, ver: Verifier) -> tuple[list, dict]:
                      "why": fig.get("why")})
     if pos < len(text):
         segs.append({"t": "p", "s": text[pos:]})
-    return segs, v
+    return _auto_figures(segs, v, trail, fcache), v
+
+
+def _auto_figures(segs: list, v: dict, trail, fcache: dict) -> list:
+    """Check every printed number against this turn's own tool results.
+
+    Numbers that hold up stay plain prose and are only counted; a number that
+    is in no tool result and is not arithmetic over two of them is wrapped so
+    the reader can see WHICH one it is. The mark states a fact — this number is
+    not in what the tools returned — and accuses the sentence of nothing."""
+    vals, used = figures.turn_pool(trail, fcache)
+    if not vals:
+        return segs
+    deriv = figures.derived_set(vals)
+    skip = {float(s["gid"]) for s in segs if s.get("t") == "c"}
+    out: list = []
+    for seg in segs:
+        if seg.get("t") != "p":
+            out.append(seg)
+            continue
+        text, pos = seg["s"], 0
+        for a, b, raw, verdict in figures.scan(text, vals, deriv, skip):
+            v["fchecked"] += 1
+            v["fpassed"] += verdict != "no"
+            if verdict != "no":
+                continue
+            if a > pos:
+                out.append({"t": "p", "s": text[pos:a]})
+            out.append({"t": "n", "s": raw, "v": "no", "auto": True,
+                        "tool": ", ".join(used[:2]) or "this turn's tools",
+                        "arg": "", "missing": [raw]})
+            pos = b
+        out.append({"t": "p", "s": text[pos:]})
+    return out
 
 
 _STORE: Store | None = None
@@ -454,7 +489,7 @@ def stream(body: dict, emit) -> None:
     if failed or result_text is None:
         emit({"t": "error", "error": failed or "the agent returned nothing"})
         return
-    segs, v = segment(result_text, store, ver)
+    segs, v = segment(result_text, store, ver, trail)
     turn = {"q": q, "segs": segs, "verified": v,
             # what it was answered against, so the same question can be put to
             # the same shelf later — the corpus is fixed, that is the point

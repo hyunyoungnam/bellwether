@@ -435,6 +435,10 @@ def t_field_trend(a: dict) -> dict:
                             "z": round(z, 2),
                             "significant_99": abs(z) >= 2.576})
     return {"topic": want, "editions": rows, "changes": changes,
+            # the rule states its own constants, so a sentence that quotes the
+            # bar ("|z| >= 2.576, the 99% level") is checkable like any figure
+            "rule": {"z_threshold": 2.576, "confidence_pct": 99,
+                     "shares_per": 1000},
             "note": "tag coverage is ~50% of papers, so shares understate "
                     "fields that avoid the expected vocabulary; state figures "
                     "as computed shares, never as paper quotes"}

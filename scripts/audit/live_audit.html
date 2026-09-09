@@ -70,16 +70,19 @@ async function run(){
   w.send('gap_scan을 healthcare에 돌려서, 가장 많이 지적되지만 거의 공략되지 '
         +'않는 실패 하나를 수치와 함께 한 문단으로 알려줘.');
   for(let i=0;i<60&&w.BW.busy;i++)await sleep(2000);
-  const figs=[...D().querySelectorAll('.fig')];
-  line(figs.length>0,'the agent anchors the figures it states',figs.length+' figure chips');
-  line(figs.some(f=>f.classList.contains('ok')),'and they survive recomputation',
-       figs.map(f=>f.className.replace('fig ','')).join(','));
   const fdoc=await (await fetch('/chats/'+w.BW.chat)).json();
-  const fseg=(fdoc.turns[0].segs||[]).filter(x=>x.t==='n');
-  line(fseg.every(x=>x.tool&&x.arg),'each figure keeps the tool and argument it came from',
-       fseg.map(x=>x.tool+':'+x.arg).slice(0,2).join(' · '));
-  line((fdoc.turns[0].verified||{}).fchecked>0,'and the turn counts them apart from quotes',
-       JSON.stringify(fdoc.turns[0].verified));
+  const fv=fdoc.turns[0].verified||{};
+  // every number the answer prints is checked, whether the agent anchored it
+  // or not — so the count must exceed what any anchors alone could cover
+  line((fv.fchecked||0)>0,'the figures an answer prints are checked',
+       JSON.stringify(fv));
+  const anchored=(fdoc.turns[0].segs||[]).filter(x=>x.t==='n'&&!x.auto);
+  line((fv.fchecked||0)>=anchored.length,'including the ones with no anchor',
+       `${fv.fchecked} checked · ${anchored.length} anchored`);
+  line((fv.fpassed||0)/Math.max(fv.fchecked||1,1)>=0.8,
+       'and most of them survive recomputation',`${fv.fpassed}/${fv.fchecked}`);
+  line(anchored.every(x=>x.tool),'an anchored figure keeps the call it came from',
+       anchored.map(x=>x.tool+':'+x.arg).slice(0,2).join(' · '));
   const fresh3=[fdoc];
 
   head('a run the reader calls off');

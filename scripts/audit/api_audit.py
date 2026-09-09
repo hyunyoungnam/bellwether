@@ -225,6 +225,29 @@ check("and counts quotes and figures apart",
 check("a wrong figure names the number that failed",
       [x for x in _segs if x["t"] == "n" and x["v"] == "no"][0]["missing"] == ["99"])
 
+# ---- the automatic pass: every printed number, anchor or not
+_trail = [{"name": "field_trend", "arg": "code generation"},
+          {"name": "gap_scan", "arg": "healthcare"}]
+_auto = ("ICLR 4.4->6.2 per 1k, z=1.15, under the |z| >= 2.576 (99%) bar. "
+         "The corpus went 3,324 -> 6,592. Benchmarks: 31 against 3, and "
+         "705 papers of which 686 state a limitation. Invented: 4,242.")
+_segs2, _v2 = segment(_auto, _st, _V(_st), _trail)
+_marked = [x["s"] for x in _segs2 if x.get("auto")]
+check("the auto pass checks numbers with no anchor at all",
+      _v2["fchecked"] >= 12, f"{_v2['fchecked']} figures checked")
+check("a thousands separator is one number, not two",
+      "324" not in _marked and "592" not in _marked, str(_marked))
+check("the rule's own threshold verifies (the tool states it)",
+      "2.576" not in _marked and "99" not in _marked, str(_marked))
+check("only the invented figure is marked", _marked == ["4,242"], str(_marked))
+check("and it is marked as the server's notice, not as a failed claim",
+      all(x.get("auto") for x in _segs2 if x.get("t") == "n"))
+check("a turn with no recomputable tool marks nothing",
+      not [x for x in segment(_auto, _st, _V(_st), [])[0] if x.get("t") == "n"])
+check("derived arithmetic counts as explained",
+      "derived" == figures.scan("4.4", [31.0, 705.0], figures.derived_set([31.0, 705.0]),
+                                set())[0][3])
+
 # the tool the tree renders must carry a reader-facing caption
 try:
     tree = mcp.t_gap_scan({"topic": "llm inference"})

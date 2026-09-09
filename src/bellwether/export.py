@@ -144,7 +144,9 @@ def conversation(doc: dict, store: Store | None = None) -> dict:
                 # that produced it, and whether running them again agreed
                 f = {"figures": s.get("s"), "tool": s.get("tool"),
                      "argument": s.get("arg"), "recomputed": s.get("v"),
-                     "not_found": s.get("missing") or []}
+                     "not_found": s.get("missing") or [],
+                     # declared by the agent, or noticed by the server
+                     "source": "server" if s.get("auto") else "anchor"}
                 tf.append(f)
                 figs.append(f)
                 text.append(s.get("s", ""))
@@ -206,9 +208,13 @@ def conversation_md(doc: dict, store: Store | None = None) -> str:
             out.append("| ✓ | figures | recomputed from |")
             out.append("|---|---|---|")
             for f in t["figures"]:
-                mark = {"ok": "✓", "no": "✗"}.get(f["recomputed"], "·")
+                if f["source"] == "server":
+                    mark, src = "·", f"not in {f['tool']}"
+                else:
+                    mark = {"ok": "✓", "no": "✗"}.get(f["recomputed"], "·")
+                    src = f"{f['tool']}({f['argument']})"
                 out.append(f"| {mark} | {(f['figures'] or '').replace('|', chr(92)+'|')} "
-                           f"| {f['tool']}({f['argument']}) |")
+                           f"| {src} |")
             out.append("")
     v = b["verification"]
     out += ["---", "",

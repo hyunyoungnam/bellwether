@@ -93,6 +93,8 @@ body{margin:0;background:var(--bg);color:var(--ink);
 .fig.no{background:color-mix(in srgb,var(--no) 14%,var(--bg));outline:1px solid #e0b4a6}
 .fig.no b{color:var(--no)}
 .fig.na{background:var(--bg);color:var(--ink2)}
+/* the server's own notice: a dotted underline, not a red flag */
+.fig.auto{background:none;padding:0;border-bottom:1.5px dotted var(--mut)}
 .fig.na b{color:var(--mut)}
 /* the quote's role wears the card's own colour */
 .cite.rL{background:color-mix(in srgb,var(--hp) 32%,var(--card))}
@@ -287,6 +289,7 @@ const STR={
      failed:'답변을 받지 못했습니다.', copy:'복사', copied:'복사됨', again:'다시 실행',
      figs:'수치', figOk:'이 기기에서 다시 계산해 일치함', figNa:'재계산할 수 없는 수치',
      figNo:x=>`재계산 결과에 없음: ${x}`,
+     figAuto:t=>`이 턴이 부른 도구(${t})의 결과에 없는 숫자`,
      vTipF:(p,c)=>`수치 ${c}개 중 ${p}개가 도구 재실행과 일치`,
      vTip:(p,c)=>`인용 ${c}개 중 ${p}개가 논문 원문에서 그대로 확인됨`,
      pubGrp:'발행'},
@@ -306,6 +309,7 @@ const STR={
      again:'Ask again', figs:'figures',
      figOk:'recomputed on this machine and matched', figNa:'not recomputable',
      figNo:x=>`not in the recomputed result: ${x}`,
+     figAuto:t=>`not in what this turn's tools returned (${t})`,
      vTipF:(p,c)=>`${p} of ${c} figures matched the tool run again`,
      vTip:(p,c)=>`${p} of ${c} quotes found verbatim in the papers`,
      pubGrp:'Published'}};
@@ -531,6 +535,11 @@ async function hydrateTree(el,tr){
 // paper but RECOMPUTED — the tool that produced it was run again here, and the
 // chip carries the numbers themselves, in the sentence where they belong.
 function figHTML(s){
+  // An anchor the agent declared and that failed is a ✗ — it made a claim that
+  // did not hold. A number the SERVER noticed is not an accusation: it states
+  // that this figure is in none of the tools this turn ran, and stops there.
+  if(s.auto)return `<span class="fig auto" title="${esc(STR[LANG].figAuto(s.tool))}"
+    >${esc(s.s)}</span>`;
   const cls=s.v==='ok'?'ok':s.v==='no'?'no':'na';
   const mark=s.v==='ok'?'✓':s.v==='no'?'✗':'·';
   const why=s.v==='ok'?STR[LANG].figOk
