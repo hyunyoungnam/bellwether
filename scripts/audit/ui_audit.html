@@ -147,6 +147,13 @@ async function run(){
        D().querySelectorAll('.cite.mini').length+' markers');
   line(w.BW.papers.length>0,'the papers the answer cites reach the side panel',
        w.BW.papers.length+' papers');
+  const pubrow=q('.hrow.pub');
+  if(pubrow){
+    line(/^★/.test(pubrow.textContent.trim()),'a published conversation is marked in the rail');
+    line(!/^★/.test(pubrow.dataset.title||''),
+         'and its stored title is free of that marker — rename prefills the title',
+         (pubrow.dataset.title||'').slice(0,32));
+  } else line(false,'a published conversation exists to check');
   q('#newq').click(); await sleep(250);
   line(!!q('.hero'),'new question returns to the empty screen');
   line(w.location.hash==='','new question clears the address',w.location.hash||'(empty)');
