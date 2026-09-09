@@ -147,6 +147,7 @@ async function run(){
        D().querySelectorAll('.cite.mini').length+' markers');
   line(w.BW.papers.length>0,'the papers the answer cites reach the side panel',
        w.BW.papers.length+' papers');
+  line(!!q('[data-again]'),'an answer can be asked again against the same corpus');
   const dl=q('[data-dl]');
   line(!!dl,'a conversation can be exported from the rail');
   if(dl){

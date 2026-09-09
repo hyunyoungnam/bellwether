@@ -273,7 +273,7 @@ const STR={
      delQ:'이 대화를 삭제할까요?', renQ:'대화 이름', pubHd:'예시 대화',
      ph:'자율주행 연구는 지금 어떤 한계와 싸우고 있나요?', ph2:'이어서 질문하기',
      stop:'생성 중단', stopped:'중단했습니다', retry:'다시 시도',
-     failed:'답변을 받지 못했습니다.', copy:'복사', copied:'복사됨',
+     failed:'답변을 받지 못했습니다.', copy:'복사', copied:'복사됨', again:'다시 실행',
      vTip:(p,c)=>`인용 ${c}개 중 ${p}개가 논문 원문에서 그대로 확인됨`,
      pubGrp:'발행'},
  en:{newq:'New question', today:'Today', etal:' et al.', ask:'ask',
@@ -289,6 +289,7 @@ const STR={
      ph:'What limitations is autonomous-driving research fighting right now?',
      ph2:'Ask a follow-up', stop:'Stop generating', stopped:'Stopped',
      retry:'Retry', failed:'No answer came back.', copy:'Copy', copied:'Copied',
+     again:'Ask again',
      vTip:(p,c)=>`${p} of ${c} quotes found verbatim in the papers`,
      pubGrp:'Published'}};
 let LANG=localStorage.getItem('wn_lang')||'ko';
@@ -515,8 +516,11 @@ function aHTML(t){
   const v=t.verified||{checked:0,passed:0};
   const badge=v.checked?`<span class="${v.passed===v.checked?'vok':'vno'}"
     title="${esc(STR[LANG].vTip(v.passed,v.checked))}">${v.passed===v.checked?'✓':'✗'} ${v.passed}/${v.checked}</span>`:'';
+  // the corpus does not move, so the same question can be put to it again —
+  // the new answer starts its own conversation and the old one stays put
+  const again=t.q?`<button class="cpy" data-again="${esc(t.q)}">${esc(STR[LANG].again)}</button>`:'';
   const foot=`<div class="afoot">${badge}
-    <button class="cpy">${esc(STR[LANG].copy)}</button></div>`;
+    <button class="cpy">${esc(STR[LANG].copy)}</button>${again}</div>`;
   // live turns carry the trail as strings, reopened ones as {name,arg} rows
   const tr=(t.trail||[]).map(x=>typeof x==='string'?x:(x.name+(x.arg?'  '+x.arg:'')));
   const trail=tr.length?`<details class="trail"><summary>${STR[LANG].steps(tr.length)}</summary>
@@ -527,6 +531,8 @@ function aHTML(t){
 function turnHTML(t){
   return `<div class="qmsg"><div>${esc(t.q)}</div></div>`+aHTML(t);
 }
+// a live turn knows its own question too, so the footer can offer the re-run
+function aHTMLq(q,t){ return aHTML({...t,q}); }
 
 function wireComposer(){
   const q=$('#q'), go=$('#go');
@@ -651,7 +657,7 @@ async function send(text){
           // a new conversation gets its address the moment it exists, so a
           // reload after the first answer does not lose it
           if(location.hash!=='#c'+CHAT)history.replaceState(null,'','#c'+CHAT);
-          pend.outerHTML=aHTML({segs:ev.segs,verified:ev.verified,trail});
+          pend.outerHTML=aHTMLq(v,{segs:ev.segs,verified:ev.verified,trail});
           for(const s of ev.segs)if(s.t==='c')addPaper(s.gid);
           loadHist();
         }
@@ -750,6 +756,8 @@ function answerText(am){
   return out.replace(/[ \t]+\n/g,'\n').trim();
 }
 document.addEventListener('click',e=>{
+  const ag=e.target.closest('[data-again]');
+  if(ag&&!BUSY){ const q=ag.dataset.again; showEmpty(); send(q); return; }
   const c=e.target.closest('.cpy');
   if(c){
     let el=c.closest('.afoot');
