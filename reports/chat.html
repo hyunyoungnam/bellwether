@@ -53,6 +53,7 @@ body{margin:0;background:var(--bg);color:var(--ink);
   padding:9px 15px;max-width:80%;white-space:pre-wrap}
 .amsg{margin:0 0 6px;white-space:pre-wrap}
 .afoot{display:flex;align-items:center;gap:10px;font-size:12.5px;color:var(--mut);margin:8px 0 0}
+.trmark{font-size:11.5px;color:var(--mut);border-left:1px solid var(--ring);padding-left:10px}
 .afoot .cpy{font:inherit;font-size:12.5px;color:var(--mut);background:none;border:0;
   padding:0;cursor:pointer;opacity:0;transition:opacity .12s}
 .amsg:hover+.afoot .cpy,.afoot:hover .cpy,.afoot .cpy:focus{opacity:1}
@@ -290,6 +291,7 @@ const STR={
      figs:'수치', figOk:'이 기기에서 다시 계산해 일치함', figNa:'재계산할 수 없는 수치',
      figNo:x=>`재계산 결과에 없음: ${x}`,
      figAuto:t=>`이 턴이 부른 도구(${t})의 결과에 없는 숫자`,
+     trBy:(n,m,by)=>`번역 ${n}/${m} · ${by}`, trWait:'한국어로 옮기는 중…',
      vTipF:(p,c)=>`수치 ${c}개 중 ${p}개가 도구 재실행과 일치`,
      vTip:(p,c)=>`인용 ${c}개 중 ${p}개가 논문 원문에서 그대로 확인됨`,
      pubGrp:'발행'},
@@ -310,6 +312,7 @@ const STR={
      figOk:'recomputed on this machine and matched', figNa:'not recomputable',
      figNo:x=>`not in the recomputed result: ${x}`,
      figAuto:t=>`not in what this turn's tools returned (${t})`,
+     trBy:(n,m,by)=>`translated ${n}/${m} · ${by}`, trWait:'rendering Korean…',
      vTipF:(p,c)=>`${p} of ${c} figures matched the tool run again`,
      vTip:(p,c)=>`${p} of ${c} quotes found verbatim in the papers`,
      pubGrp:'Published'}};
@@ -564,7 +567,8 @@ function aHTML(t){
   // the corpus does not move, so the same question can be put to it again —
   // the new answer starts its own conversation and the old one stays put
   const again=t.q?`<button class="cpy" data-again="${esc(t.q)}">${esc(STR[LANG].again)}</button>`:'';
-  const foot=`<div class="afoot">${badge}${fbadge}
+  const trm=t.trmeta?`<span class="trmark" title="${esc(STR[LANG].trBy(t.trmeta.translated,t.trmeta.of,t.trmeta.by))}">${esc(STR[LANG].trBy(t.trmeta.translated,t.trmeta.of,t.trmeta.by.split('/').pop()))}</span>`:'';
+  const foot=`<div class="afoot">${badge}${fbadge}${trm}
     <button class="cpy">${esc(STR[LANG].copy)}</button>${again}</div>`;
   // live turns carry the trail as strings, reopened ones as {name,arg} rows
   const tr=(t.trail||[]).map(x=>typeof x==='string'?x:(x.name+(x.arg?'  '+x.arg:'')));
@@ -573,8 +577,16 @@ function aHTML(t){
   const trees=(t.trees||[]).map(treeHTML).join('');
   return `<div class="amsg">${body}</div>${trees}${foot}${trail}`;
 }
+// The answer is written and verified in English; Korean is a rendering of it
+// that the server keeps beside the original. Quote and figure chips are the
+// same objects in both, so nothing about the evidence changes with language.
+function viewOf(t){
+  if(LANG!=='ko'||!t.ko)return t;
+  const meta=t.ko.find(s=>s.t==='meta');
+  return {...t, segs:t.ko.filter(s=>s.t!=='meta'), trmeta:meta};
+}
 function turnHTML(t){
-  return `<div class="qmsg"><div>${esc(t.q)}</div></div>`+aHTML(t);
+  return `<div class="qmsg"><div>${esc(t.q)}</div></div>`+aHTML(viewOf(t));
 }
 // a live turn knows its own question too, so the footer can offer the re-run
 function aHTMLq(q,t){ return aHTML({...t,q}); }
@@ -618,7 +630,14 @@ function failHTML(detail,q){
 async function openChat(id){
   if(BUSY)return;
   try{
-    const d=await (await fetch('/chats/'+id)).json();
+    let d=await (await fetch('/chats/'+id)).json();
+    // Korean is rendered on demand and kept: ask once, then it is in the doc
+    if(LANG==='ko'&&(d.turns||[]).some(t=>!t.ko)){
+      showThread(d.turns||[]);                       // English first, no wait
+      const r=await fetch('/chats/'+id+'/ko',{method:'GET'});
+      const d2=await r.json();
+      if(!d2.error)d=d2;
+    }
     // gone (deleted in another tab): don't leave its address in the bar
     if(d.error){ showEmpty(); loadHist(); return; }
     CHAT=d.id; history.replaceState(null,'','#c'+d.id); showThread(d.turns);

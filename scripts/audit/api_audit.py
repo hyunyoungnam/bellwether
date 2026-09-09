@@ -226,6 +226,34 @@ check("and counts quotes and figures apart",
 check("a wrong figure names the number that failed",
       [x for x in _segs if x["t"] == "n" and x["v"] == "no"][0]["missing"] == ["99"])
 
+# ---- Korean rendering: prose only, figures guarded, verdicts untouched
+from bellwether import translate  # noqa: E402
+if translate.up():
+    if pubs:
+        code, raw = req("GET", f"/chats/{pubs[0]['id']}/ko")
+        kd = json.loads(raw)
+        kt = (kd.get("turns") or [{}])[0]
+        check("GET /chats/<id>/ko renders the prose", code == 200 and kt.get("ko"))
+        if kt.get("ko"):
+            meta = [x for x in kt["ko"] if x.get("t") == "meta"]
+            check("and states its own coverage", bool(meta and meta[0].get("of")),
+                  str(meta[:1]))
+            en_c = [x for x in kt.get("segs", []) if x.get("t") == "c"]
+            ko_c = [x for x in kt["ko"] if x.get("t") == "c"]
+            check("quote chips are identical in both languages", en_c == ko_c)
+            en_n = [x for x in kt.get("segs", []) if x.get("t") == "n"]
+            ko_n = [x for x in kt["ko"] if x.get("t") == "n"]
+            check("figure chips are identical in both languages", en_n == ko_n)
+    # the guard itself: a rendering that loses a figure is refused
+    check("a translation that drops a figure is refused",
+          not translate._figures_survive("31 name it, 3 attack it",
+                                         "31개가 지적함"))
+    check("and one that keeps them passes",
+          translate._figures_survive("4.4 -> 6.2 per 1k, z=1.15",
+                                     "1,000편당 4.4 → 6.2, z=1.15"))
+else:
+    check("translation engine reachable (skipped: down)", True, "engine down")
+
 # ---- the guarantee, offered as a tool
 _vq_card = mcp.t_paper({"gid": 19662})["verified_sentences"]
 _vq = _vq_card.get("limitation_of_prior_work") or _vq_card.get("key_change")
@@ -286,11 +314,12 @@ try:
 except Exception as exc:  # noqa: BLE001
     check("verifier", False, str(exc)[:60])
 
-# the interface language reaches the agent as a tie-breaker only
+# the agent always writes English now — Korean is rendered from it, so the
+# system prompt must NOT bend to the interface language
 from bellwether.chat import SYSTEM, system_for  # noqa: E402
-check("system prompt takes the reader's language",
-      system_for("ko") != SYSTEM and system_for("en") != SYSTEM
-      and system_for(None) == SYSTEM and "Korean" in system_for("ko"))
+check("the agent writes one canonical language",
+      system_for("ko") == SYSTEM == system_for("en")
+      and "ALWAYS write your answer in English" in SYSTEM)
 
 bad = [r for r in rows if r[0] == "FAIL"]
 print(f"\n{len(rows) - len(bad)}/{len(rows)} passed")

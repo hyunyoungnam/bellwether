@@ -73,6 +73,17 @@ class Handler(SimpleHTTPRequestHandler):
                 self._json(400, {"error": type(exc).__name__})
             return
         elif self.path.startswith("/chats/") and \
+                self.path.partition("?")[0].endswith("/ko"):
+            from . import chat
+            try:
+                cid = self.path.partition("?")[0][len("/chats/"):-len("/ko")]
+                self._json(200, chat.translate_chat(cid, "ko"))
+            except FileNotFoundError:
+                self._json(404, {"error": "no such chat"})
+            except Exception as exc:  # noqa: BLE001
+                self._json(400, {"error": f"{type(exc).__name__}: {exc}"[:200]})
+            return
+        elif self.path.startswith("/chats/") and \
                 self.path.partition("?")[0].endswith("/export"):
             from . import chat, export
             try:

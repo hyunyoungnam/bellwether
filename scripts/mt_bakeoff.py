@@ -45,6 +45,14 @@ CANDIDATES = {
     "hunyuan-mt-1.5-7b": ("tencent/HY-MT1.5-7B", "chat", "vllm"),
     "qwen3-4b": ("Qwen/Qwen3-4B-Instruct-2507", "chat", "vllm"),
     "kanana-2.1b": ("kakaocorp/kanana-1.5-2.1b-instruct-2505", "chat", "vllm"),
+    # KISTI's Korean model, continued-pretrained on science and technology
+    # text — the register our answers are actually written in
+    "koni-4b": ("KISTI-KONI/KONI-4B-instruct-20250901", "chat", "vllm"),
+    # the Korean labs' small models, the register our readers write in
+    "midm-2.0-mini": ("K-intelligence/Midm-2.0-Mini-Instruct", "chat", "vllm"),
+    "exaone-4.0-1.2b": ("LGAI-EXAONE/EXAONE-4.0-1.2B", "chat", "vllm"),
+    "hyperclovax-1.5b": ("naver-hyperclovax/HyperCLOVAX-SEED-Text-Instruct-1.5B",
+                         "chat", "vllm"),
     "motif-2.6b": ("Motif-Technologies/Motif-2.6B", "chat", "hf"),
 }
 
@@ -76,6 +84,7 @@ def load_terms() -> list[str]:
 
 NOMASK = os.environ.get("MT_NOMASK") == "1"
 USE_GLOSSARY = os.environ.get("MT_GLOSSARY") == "1"
+FEWSHOT = os.environ.get("MT_FEWSHOT") == "1"
 
 # The words this corpus keeps using, and the senses a general model gets wrong.
 # Measured failures: reasoning->논리, register->등록, branch->분야, and
@@ -129,6 +138,10 @@ def score(src: str, out: str, keep: list[str], masked_out: str) -> dict:
     s_nums = [m for m, _ in figures.claimed(src)]
     o_nums = [m for m, _ in figures.claimed(out)]
     kept = len(re.findall(r"⟪\s*\d+\s*⟫", masked_out))
+    # echo: a long verbatim run of the SOURCE inside the translation means the
+    # model repeated the input instead of (or after) translating it
+    echo = max((len(w2) for w2 in re.findall(r"[A-Za-z][A-Za-z ,.:%()\-]{39,}", out)
+                if w2.strip()[:40] in src), default=0)
     hangul = len(re.findall(r"[가-힣]", out))
     latin = len(re.findall(r"[A-Za-z]", out))
     return {
@@ -141,6 +154,7 @@ def score(src: str, out: str, keep: list[str], masked_out: str) -> dict:
         "sent_out": len(_SENT.findall(out)) + 1,
         "len_ratio": round(len(out) / max(len(src), 1), 2),
         "korean": round(hangul / max(hangul + latin, 1), 2),
+        "echo_chars": echo,
     }
 
 
@@ -152,8 +166,17 @@ def build_prompt(kind: str, tok, text: str):
               "Keep every figure exactly as written and keep the unit it "
               "belongs to. Keep method, dataset and benchmark names in English."
               + (GLOSSARY if USE_GLOSSARY else ""))
-    msg = [{"role": "system", "content": sysmsg},
-           {"role": "user", "content": text}]
+    msg = [{"role": "system", "content": sysmsg}]
+    if FEWSHOT:
+        # some instruct models answer or annotate however the system prompt is
+        # worded; one worked example is the standard cure
+        msg += [{"role": "user", "content":
+                 "Reasoning papers rose 4.4 -> 6.2 per 1k, but z = 1.15 does "
+                 "not clear the bar."},
+                {"role": "assistant", "content":
+                 "추론 논문은 1,000편당 4.4 → 6.2로 늘었지만, z = 1.15는 "
+                 "기준선을 넘지 못합니다."}]
+    msg += [{"role": "user", "content": text}]
     return tok.apply_chat_template(msg, tokenize=False, add_generation_prompt=True)
 
 
@@ -168,7 +191,20 @@ def run_vllm(name: str, repo: str, kind: str, items: list[str]) -> list[dict]:
     load = time.time() - t0
     masked, keeps = zip(*(mask(t) for t in items))
     prompts = [build_prompt(kind, tok, m) for m in masked]
-    sp = SamplingParams(temperature=0.0, max_tokens=768)
+    # Stop where the chat template says a turn ends. KONI-4B ships
+    # generation_config with eos_token_id 1 (<eos>) while its template closes
+    # turns with <end_of_turn> (106) — so generation runs straight past the
+    # boundary and the model starts writing the next turn itself. This is the
+    # repo's packaging, not the model's ability; stopping on the token the
+    # template itself uses is the honest fix, not a guess at where to cut.
+    ends = [tok.eos_token_id]
+    for t2 in ("<end_of_turn>", "<|im_end|>", "<|eot_id|>"):
+        i2 = tok.convert_tokens_to_ids(t2)
+        if isinstance(i2, int) and i2 >= 0 and i2 != tok.unk_token_id:
+            ends.append(i2)
+    sp = SamplingParams(temperature=0.0, max_tokens=768,
+                        stop_token_ids=sorted(set(ends)),
+                        stop=["\nuser\n", "\nUser:", "<start_of_turn>"])
     t1 = time.time()
     outs = llm.generate(prompts, sp)
     dt = (time.time() - t1) / max(len(items), 1)
@@ -250,6 +286,7 @@ def main() -> int:
             "len_ratio_med": sorted(s["len_ratio"] for s in scores)[len(scores)//2],
             "sent_delta": sum(abs(s["sent_out"] - s["sent_src"]) for s in scores),
             "korean_med": sorted(s["korean"] for s in scores)[len(scores)//2],
+        "echoed_source": sum(1 for s in scores if s["echo_chars"] >= 40),
             "secs_per_seg": round(sum(r["secs"] for r in rows)/max(len(rows),1), 1),
         }
         report[name] = agg

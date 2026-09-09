@@ -53,23 +53,18 @@ SYSTEM = (
     "figure matters enough to bind to one call, anchor it as "
     "⟦tool:argument|the figures⟧, e.g. ⟦gap_scan:healthcare|31 name it, 3 "
     "attack it⟧, using exactly the argument you called. If the corpus cannot "
-    "answer, say so plainly. Answer in the user's language; keep quotes in "
-    "their original language. Never rank papers by importance. Keep answers "
+    "answer, say so plainly. ALWAYS write your answer in English, whatever "
+    "language the question is in — the reader's Korean is rendered from this "
+    "English by a separate step, so one text is written, verified and stored. "
+    "Never rank papers by importance. Keep answers "
     "compact — a few sentences with anchors beat an essay."
 )
 
-# The reader also sets a language for the interface. The question's own
-# language still wins — asking in English gets an English answer — but a
-# question that names nothing but a paper title has no language to mirror,
-# and this is the tie-breaker for that case.
-_UI_LANG = {"ko": " The reader's interface is set to Korean: when the "
-                  "question's own language is ambiguous, answer in Korean.",
-            "en": " The reader's interface is set to English: when the "
-                  "question's own language is ambiguous, answer in English."}
-
-
+# The interface language no longer changes what the agent writes — it always
+# writes English, and Korean is rendered from it. Kept as a seam because the
+# callers still pass a language and a second renderer may want it.
 def system_for(lang: str | None) -> str:
-    return SYSTEM + _UI_LANG.get(lang or "", "")
+    return SYSTEM
 
 # Two kinds of anchor, one scan so the segments come out in reading order:
 #   ⟦gid|quote⟧              a sentence, matched against that paper
@@ -321,6 +316,33 @@ def list_chats() -> list[dict]:
                 continue
     out.sort(key=lambda e: e["ts"], reverse=True)
     return out
+
+
+def translate_chat(cid: str, lang: str = "ko") -> dict:
+    """Render this conversation's prose into `lang`, once, and keep it.
+
+    Quotes and figures are copied untouched — the verdicts on this page were
+    reached against the English and cannot move. A segment whose figures do
+    not survive translation stays English."""
+    from . import translate
+    if lang != "ko":
+        return {"error": f"no renderer for {lang}"}
+    if not translate.up():
+        return {"error": "no translation engine", "engine": translate.ENDPOINT}
+    p2 = _doc_path(cid)
+    d = json.loads(p2.read_text())
+    done = 0
+    for t in d.get("turns", []):
+        if t.get("ko"):
+            continue
+        ko = translate.turn(t.get("segs", []))
+        if ko:
+            t["ko"] = ko
+            done += 1
+    if done:
+        p2.write_text(json.dumps(d, ensure_ascii=False))
+    d.pop("sid", None)
+    return d
 
 
 def get_chat(cid: str) -> dict:

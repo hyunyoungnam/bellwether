@@ -1,0 +1,49 @@
+{
+ "note": "EN->KO renderings this product commits to. `derived` is not a translation opinion: those are the strings the interface itself already shows, so prose that says otherwise contradicts the screen beside it. `authored` IS an opinion — ours, written down so it can be argued with, like DOMAIN_FAMILIES in taxonomy.py. No external benchmark grades these; the machine-checkable part of a translation is the figures, not the word choice. Only the labels that also appear in answer prose are listed; the rest of the interface's string table is button chrome a translator never meets.",
+ "derived_from_ui": {
+  "attacked by": "공략한 논문",
+  "named, not attacked": "지적만 한 논문",
+  "GAP?": "공백?",
+  "Papers": "논문",
+  "figures": "수치",
+  "named": "지적",
+  "attacked": "공략",
+  "state a limitation": "한계를 서술"
+ },
+ "authored": {
+  "reasoning": "추론",
+  "register": "(언어) 사용역, 즉 상투적 표현",
+  "branch": "가지",
+  "branches": "가지들",
+  "attack rate": "공략률",
+  "share": "점유율",
+  "per 1k": "1,000편당 (편은 논문이며 페이지가 아니다)",
+  "paper count": "논문 수",
+  "roughly": "대략",
+  "corpus": "코퍼스",
+  "limitation": "한계",
+  "spotlight": "스포트라이트",
+  "card": "카드",
+  "edition": "에디션",
+  "bar": "기준선 (임계값을 뜻함; '바'나 '막대'로 쓰지 말 것)",
+  "fall short": "기준에 못 미치다 (길이가 짧다는 뜻이 아님)",
+  "clear the bar": "기준선을 넘다",
+  "the share moved less than it looks": "점유율은 보이는 것만큼 움직이지 않았다",
+  "benchmark": "벤치마크 ('기준'으로 쓰지 말 것 — bar와 혼동됨)",
+  "benchmarks": "벤치마크",
+  "dataset": "데이터셋",
+  "method": "기법",
+  "task": "과제",
+  "field": "분야",
+  "paper": "논문",
+  "papers": "논문",
+  "abstract": "초록",
+  "full text": "본문",
+  "highlight": "하이라이트"
+ },
+ "rules": [
+  "수량은 '가지 10개'처럼 쓰고 '10가지'라고 쓰지 말 것 — '10가지'는 열 종류로 읽힌다",
+  "기법·데이터셋·벤치마크 이름은 영어 그대로 둘 것",
+  "수치는 원문 그대로, 단위도 원문이 붙인 그대로 유지할 것"
+ ]
+}
