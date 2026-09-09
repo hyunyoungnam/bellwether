@@ -41,6 +41,9 @@ async function run(){
   line(!!q('.hero'),'empty screen shows the composer');
   line(!!(q('#q')&&q('#q').placeholder),'composer carries an example placeholder',
        (q('#q')||{}).placeholder);
+  // the hero paints before the history arrives, so wait for the list rather
+  // than for a fixed number of milliseconds
+  for(let i=0;i<20&&!q('.pubrow');i++)await sleep(200);
   line(!!q('.pubs'),'published examples on the hero',
        String(D().querySelectorAll('.pubrow').length)+' rows');
 
