@@ -183,6 +183,48 @@ for spec in mcp.TOOLS:
     except Exception as exc:  # noqa: BLE001
         check(f"mcp {name}", False, f"{type(exc).__name__}: {exc}"[:80])
 
+# ---- figures: a number is checked by running its tool again
+from bellwether import figures        # noqa: E402
+from bellwether.mcp import Store      # noqa: E402
+from bellwether.chat import segment   # noqa: E402
+from bellwether.verify import Verifier as _V   # noqa: E402
+
+_st = Store()
+_cache: dict = {}
+FIG_CASES = [
+    ("gap_scan", "healthcare", "31 name it, 3 attack it", "ok"),
+    ("gap_scan", "healthcare", "51 name it, 3 attack it", "no"),
+    ("gap_scan", "healthcare", "by_year 2025:13, 2026:11", "ok"),
+    ("field_trend", "code generation", "4.4->6.2 per 1k, z=1.15", "ok"),
+    ("field_trend", "code generation", "z=2.9", "no"),
+    ("get_citations", "19662", "28 papers cite it", "ok"),
+    ("search_papers", "kv cache", "315 papers", "na"),
+    ("gap_scan", "no such topic at all", "12 papers", "na"),
+]
+for tool, arg, claim, want in FIG_CASES:
+    got = figures.check(tool, arg, claim, _cache)["state"]
+    check(f"figure {want}: {tool}({arg}) “{claim[:28]}”", got == want, f"got {got}")
+check("search figures are never marked verified",
+      figures.RECOMPUTABLE.get("search_papers") is None)
+check("paper ids are not figures",
+      2 > len([x for x in figures.pool({"attackers": [11, 12], "named_by": 7})
+               if x not in (2.0, 7.0)]),
+      str(figures.pool({"attackers": [11, 12], "named_by": 7})))
+
+# the whole path: an answer with both anchor kinds, through segment()
+_txt = ("A ⟦gap_scan:healthcare|31 name it, 3 attack it⟧ and "
+        "B ⟦19662|The size of the KV cache grows linearly with sequence length⟧ "
+        "and C ⟦gap_scan:healthcare|99 name it⟧.")
+_segs, _v = segment(_txt, _st, _V(_st))
+check("segment() reads both anchor kinds",
+      [x["t"] for x in _segs].count("n") == 2 and
+      [x["t"] for x in _segs].count("c") == 1,
+      str([x["t"] for x in _segs]))
+check("and counts quotes and figures apart",
+      _v == {"checked": 1, "passed": 1, "fchecked": 2, "fpassed": 1}, str(_v))
+check("a wrong figure names the number that failed",
+      [x for x in _segs if x["t"] == "n" and x["v"] == "no"][0]["missing"] == ["99"])
+
 # the tool the tree renders must carry a reader-facing caption
 try:
     tree = mcp.t_gap_scan({"topic": "llm inference"})

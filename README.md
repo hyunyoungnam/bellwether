@@ -81,6 +81,15 @@ the corpus and reports both directions:
 | the papers' own extracted sentences, accepted | 200 / 200 |
 | the same sentences edited (a swapped word, a dropped middle, two papers spliced), rejected | 418 / 418 |
 
+**Numbers are checked the other way round.** A quote can be matched against a
+paper; a figure was never written by anyone, it was computed — so a figure
+carries the tool call that produced it (`⟦gap_scan:healthcare|31 name it, 3
+attack it⟧`), and the server **runs that tool again** and checks every number
+in the claim against the result. Three outcomes, and the third is not a
+failure: matched, not matched, or *not recomputable* — the last for tools whose
+answers are not reproducible (search ranking), which are never marked verified.
+This is possible only because the corpus does not move.
+
 A conversation has an address (`#c<id>`), keeps the tool trail it was answered
 with, and exports as markdown or JSON — questions, answers, and a table of
 every quote with the verdict it was given, stamped with the corpus it was

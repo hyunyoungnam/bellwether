@@ -133,11 +133,20 @@ def _corpus_stamp(store: Store) -> dict:
 def conversation(doc: dict, store: Store | None = None) -> dict:
     """The machine-readable bundle. Prose is the agent's; quotes are checked."""
     store = store or Store()
-    cites, turns = [], []
+    cites, turns, figs = [], [], []
     for t in doc.get("turns", []):
-        text, tc = [], []
+        text, tc, tf = [], [], []
         for s in t.get("segs", []):
             if s.get("t") == "p":
+                text.append(s.get("s", ""))
+            elif s.get("t") == "n":
+                # a figure carries its own provenance: the tool and argument
+                # that produced it, and whether running them again agreed
+                f = {"figures": s.get("s"), "tool": s.get("tool"),
+                     "argument": s.get("arg"), "recomputed": s.get("v"),
+                     "not_found": s.get("missing") or []}
+                tf.append(f)
+                figs.append(f)
                 text.append(s.get("s", ""))
             else:
                 c = {"gid": s.get("gid"), "title": s.get("title"),
@@ -148,7 +157,8 @@ def conversation(doc: dict, store: Store | None = None) -> dict:
                 cites.append(c)
                 text.append(f"[{c['venue']} {c['year']} · {c['title']}]")
         turns.append({"question": t.get("q"), "answer": "".join(text),
-                      "citations": tc, "tools": t.get("trail") or [],
+                      "citations": tc, "figures": tf,
+                      "tools": t.get("trail") or [],
                       "verified": t.get("verified") or {}})
     return {
         "@context": "https://schema.org",
@@ -161,11 +171,17 @@ def conversation(doc: dict, store: Store | None = None) -> dict:
         "corpus": _corpus_stamp(store),
         "turns": turns,
         "citations": cites,
+        "figures": figs,
         "verification": {
             "checked": sum(t.get("verified", {}).get("checked", 0) for t in turns),
             "passed": sum(t.get("verified", {}).get("passed", 0) for t in turns),
+            "figures_checked": sum(t.get("verified", {}).get("fchecked", 0)
+                                   for t in turns),
+            "figures_passed": sum(t.get("verified", {}).get("fpassed", 0)
+                                  for t in turns),
             "method": "each quote was matched against the paper's own text on "
-                      "this machine before it was shown; unmatched quotes are "
+                      "this machine before it was shown, and each figure was "
+                      "checked by running its tool again here; what failed is "
                       "marked, never removed",
         },
     }
@@ -186,9 +202,18 @@ def conversation_md(doc: dict, store: Store | None = None) -> str:
                 out.append(f"| {'✓' if c['verified'] else '✗'} | "
                            f"{c['venue']} {c['year']} · {c['title']} | {q} |")
             out.append("")
+        if t["figures"]:
+            out.append("| ✓ | figures | recomputed from |")
+            out.append("|---|---|---|")
+            for f in t["figures"]:
+                mark = {"ok": "✓", "no": "✗"}.get(f["recomputed"], "·")
+                out.append(f"| {mark} | {(f['figures'] or '').replace('|', chr(92)+'|')} "
+                           f"| {f['tool']}({f['argument']}) |")
+            out.append("")
     v = b["verification"]
     out += ["---", "",
-            f"{v['passed']}/{v['checked']} quotes verified against "
-            f"{b['corpus']['papers_with_gid']:,} papers held locally "
+            f"{v['passed']}/{v['checked']} quotes verified and "
+            f"{v['figures_passed']}/{v['figures_checked']} figures recomputed "
+            f"against {b['corpus']['papers_with_gid']:,} papers held locally "
             f"({', '.join(b['corpus']['corpora'])}).", ""]
     return "\n".join(out)

@@ -83,6 +83,17 @@ body{margin:0;background:var(--bg);color:var(--ink);
 .cite b{font-weight:700;margin-right:5px}
 .cite.ok b{color:var(--ok)}
 .cite.no{outline:1px solid #e0b4a6}.cite.no b{color:var(--no)}
+/* a recomputed figure: the numbers stay in the sentence, the mark says the
+   tool was run again and agreed */
+.fig{display:inline;font:inherit;border-radius:6px;padding:1px 6px;margin:0 1px;
+  -webkit-box-decoration-break:clone;box-decoration-break:clone;cursor:help}
+.fig b{font-weight:700;margin-right:5px}
+.fig.ok{background:color-mix(in srgb,var(--ok) 12%,var(--bg))}
+.fig.ok b{color:var(--ok)}
+.fig.no{background:color-mix(in srgb,var(--no) 14%,var(--bg));outline:1px solid #e0b4a6}
+.fig.no b{color:var(--no)}
+.fig.na{background:var(--bg);color:var(--ink2)}
+.fig.na b{color:var(--mut)}
 /* the quote's role wears the card's own colour */
 .cite.rL{background:color-mix(in srgb,var(--hp) 32%,var(--card))}
 .cite.rK{background:color-mix(in srgb,var(--hy) 36%,var(--card))}
@@ -274,6 +285,9 @@ const STR={
      ph:'자율주행 연구는 지금 어떤 한계와 싸우고 있나요?', ph2:'이어서 질문하기',
      stop:'생성 중단', stopped:'중단했습니다', retry:'다시 시도',
      failed:'답변을 받지 못했습니다.', copy:'복사', copied:'복사됨', again:'다시 실행',
+     figs:'수치', figOk:'이 기기에서 다시 계산해 일치함', figNa:'재계산할 수 없는 수치',
+     figNo:x=>`재계산 결과에 없음: ${x}`,
+     vTipF:(p,c)=>`수치 ${c}개 중 ${p}개가 도구 재실행과 일치`,
      vTip:(p,c)=>`인용 ${c}개 중 ${p}개가 논문 원문에서 그대로 확인됨`,
      pubGrp:'발행'},
  en:{newq:'New question', today:'Today', etal:' et al.', ask:'ask',
@@ -289,7 +303,10 @@ const STR={
      ph:'What limitations is autonomous-driving research fighting right now?',
      ph2:'Ask a follow-up', stop:'Stop generating', stopped:'Stopped',
      retry:'Retry', failed:'No answer came back.', copy:'Copy', copied:'Copied',
-     again:'Ask again',
+     again:'Ask again', figs:'figures',
+     figOk:'recomputed on this machine and matched', figNa:'not recomputable',
+     figNo:x=>`not in the recomputed result: ${x}`,
+     vTipF:(p,c)=>`${p} of ${c} figures matched the tool run again`,
      vTip:(p,c)=>`${p} of ${c} quotes found verbatim in the papers`,
      pubGrp:'Published'}};
 let LANG=localStorage.getItem('wn_lang')||'ko';
@@ -510,16 +527,30 @@ async function hydrateTree(el,tr){
     if(d&&d.title){ bt.textContent=`${d.venue} ${d.year} · ${d.title}`; }
   });
 }
+// A figure is checked the other way round from a quote: not matched against a
+// paper but RECOMPUTED — the tool that produced it was run again here, and the
+// chip carries the numbers themselves, in the sentence where they belong.
+function figHTML(s){
+  const cls=s.v==='ok'?'ok':s.v==='no'?'no':'na';
+  const mark=s.v==='ok'?'✓':s.v==='no'?'✗':'·';
+  const why=s.v==='ok'?STR[LANG].figOk
+          :s.v==='no'?STR[LANG].figNo((s.missing||[]).join(', '))
+          :STR[LANG].figNa;
+  return `<span class="fig ${cls}" title="${esc(s.tool+'('+s.arg+') — '+why)}"
+    ><b>${mark}</b>${esc(s.s)}</span>`;
+}
 function aHTML(t){
   const seen=new Set();
-  const body=t.segs.map(s=>s.t==='p'?md(s.s):citeHTML(s,seen)).join('');
+  const body=t.segs.map(s=>s.t==='p'?md(s.s):s.t==='n'?figHTML(s):citeHTML(s,seen)).join('');
   const v=t.verified||{checked:0,passed:0};
   const badge=v.checked?`<span class="${v.passed===v.checked?'vok':'vno'}"
     title="${esc(STR[LANG].vTip(v.passed,v.checked))}">${v.passed===v.checked?'✓':'✗'} ${v.passed}/${v.checked}</span>`:'';
+  const fbadge=v.fchecked?`<span class="${v.fpassed===v.fchecked?'vok':'vno'}"
+    title="${esc(STR[LANG].vTipF(v.fpassed,v.fchecked))}">${v.fpassed===v.fchecked?'✓':'✗'} ${v.fpassed}/${v.fchecked} ${esc(STR[LANG].figs)}</span>`:'';
   // the corpus does not move, so the same question can be put to it again —
   // the new answer starts its own conversation and the old one stays put
   const again=t.q?`<button class="cpy" data-again="${esc(t.q)}">${esc(STR[LANG].again)}</button>`:'';
-  const foot=`<div class="afoot">${badge}
+  const foot=`<div class="afoot">${badge}${fbadge}
     <button class="cpy">${esc(STR[LANG].copy)}</button>${again}</div>`;
   // live turns carry the trail as strings, reopened ones as {name,arg} rows
   const tr=(t.trail||[]).map(x=>typeof x==='string'?x:(x.name+(x.arg?'  '+x.arg:'')));
@@ -746,6 +777,9 @@ function answerText(am){
   let out='';
   am.childNodes.forEach(n=>{
     if(n.nodeType===3){ out+=n.nodeValue; }
+    else if(n.classList&&n.classList.contains('fig')){
+      out+=n.textContent.replace(/^[✓✗·]\s*/,'');
+    }
     else if(n.classList&&n.classList.contains('cite')){
       // a marker chip carries the paper only in its tooltip's first line
       const lab=n.classList.contains('mini')?(n.title||'').split('\n')[0]

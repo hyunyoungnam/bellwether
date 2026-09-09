@@ -962,6 +962,32 @@ Still weak:
 - Charts follow the project dataviz standard; **load the `dataviz` skill before
   touching one.** A scatter is an all-pairs form and caps at three categorical
   hues — research areas are never eight colors; use emphasis instead.
+- **A figure is verified by recomputation, a quote by matching** (added
+  2026-09-09). An answer's numbers were never checked: the anchor protocol
+  covered sentences only, and a mistyped z or a wrong count passed unseen —
+  the closest published measurement puts numerical fabrication at 38.2% of RAG
+  failures (SIGIR '26). Figures now carry `⟦tool:argument|the figures⟧`; the
+  server runs that tool again on this machine and every number in the claim
+  must appear in the result. Three outcomes and the third is not a failure:
+  ok / no / **na** ("could not recompute" — a tool outside the list, or an
+  argument that no longer resolves). Rules that matter:
+  - **only deterministic tools** are recomputable (`figures.RECOMPUTABLE`):
+    field_trend, gap_scan, topic_papers, field_cards, get_citations,
+    get_paper. `search_papers` is excluded — its ranking and estimated total
+    come from the engine, and a ✓ that is not reproducible is worse than none.
+  - **the claim's own precision is the tolerance**: "4.4" accepts 4.43, "1.15"
+    does not accept 1.2. (FinGround uses a domain constant, ±0.5%; the claim's
+    printed precision needs no constant.)
+  - **ids are not figures.** A gid would make almost any count match, so paper
+    lists never enter the pool — but a skipped list's LENGTH does, because "28
+    papers cite this" is exactly that count. Numeric dict KEYS count too
+    (`by_year` is `{2025: 13}`), and they are ints in-process where the agent
+    saw strings.
+  - a single small integer is weak evidence (a "3" is in almost any result), so
+    an anchor passes only when EVERY number in it matches.
+  This is only possible because the corpus does not move — the provenance
+  literature verifies against a recorded trace precisely because re-calling a
+  web tool would answer differently (see `docs/figure-verification-prior-work.md`).
 - **Run the audit suite before calling an interface change done** (added
   2026-09-08): `scripts/audit/run.sh` — routes + MCP tools + verifier
   (`api_audit.py`), the verifier benchmark (`verify_bench.py`: the papers' own

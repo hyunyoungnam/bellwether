@@ -9,7 +9,7 @@ iframe{position:fixed;right:0;bottom:0;width:900px;height:700px;border:1px solid
 </style></head><body>
 <div id="out">running…</div>
 <!-- two real agent runs happen here; hold the load event open for both -->
-<img src="/slow?s=170" style="display:none" alt="">
+<img src="/slow?s=300" style="display:none" alt="">
 <iframe id="f" src="/"></iframe>
 <script>
 // The generation path, for real: one answer end to end, one answer stopped.
@@ -65,8 +65,25 @@ async function run(){
   await w.openChat(cid); await sleep(700);
   line(!!q('.trail'),'so reopening the conversation still shows how it got there');
 
+  head('figures, recomputed');
+  q('#newq').click(); await sleep(300);
+  w.send('gap_scan을 healthcare에 돌려서, 가장 많이 지적되지만 거의 공략되지 '
+        +'않는 실패 하나를 수치와 함께 한 문단으로 알려줘.');
+  for(let i=0;i<60&&w.BW.busy;i++)await sleep(2000);
+  const figs=[...D().querySelectorAll('.fig')];
+  line(figs.length>0,'the agent anchors the figures it states',figs.length+' figure chips');
+  line(figs.some(f=>f.classList.contains('ok')),'and they survive recomputation',
+       figs.map(f=>f.className.replace('fig ','')).join(','));
+  const fdoc=await (await fetch('/chats/'+w.BW.chat)).json();
+  const fseg=(fdoc.turns[0].segs||[]).filter(x=>x.t==='n');
+  line(fseg.every(x=>x.tool&&x.arg),'each figure keeps the tool and argument it came from',
+       fseg.map(x=>x.tool+':'+x.arg).slice(0,2).join(' · '));
+  line((fdoc.turns[0].verified||{}).fchecked>0,'and the turn counts them apart from quotes',
+       JSON.stringify(fdoc.turns[0].verified));
+  const fresh3=[fdoc];
+
   head('a run the reader calls off');
-  const before2=new Set(after.map(r=>r.id));
+  const before2=new Set((await (await fetch('/chats')).json()).map(r=>r.id));
   q('#newq').click(); await sleep(300);
   w.send('자율주행 분야의 블루오션을 갭 스캔으로 찾아줘.');
   await sleep(6000);
@@ -83,6 +100,7 @@ async function run(){
   head('cleanup');
   for(const r of fresh)await fetch('/chats/'+r.id,{method:'DELETE'});
   for(const r of fresh2)await fetch('/chats/'+r.id,{method:'DELETE'});
+  for(const r of fresh3)await fetch('/chats/'+r.id,{method:'DELETE'});
   const end=await (await fetch('/chats')).json();
   line(end.length===before.size,'the audit leaves no conversations behind',
        end.length+' vs '+before.size);

@@ -19,6 +19,7 @@ import subprocess
 import time
 from pathlib import Path
 
+from . import figures
 from .mcp import Store, _VENUE
 from .verify import Verifier
 
@@ -46,7 +47,15 @@ SYSTEM = (
     "claim about a specific paper, append an anchor of the exact form "
     "⟦gid|quote⟧ where quote is copied verbatim from a tool response (a card "
     "field or abstract sentence, >=20 chars, never edited). Claims without "
-    "an anchor will be shown to the reader as unbacked. If the corpus cannot "
+    "an anchor will be shown to the reader as unbacked. FIGURES: when you "
+    "state a number a tool computed (counts, per-1k shares, z, how many name "
+    "or attack a term), append a figure anchor ⟦tool:argument|the figures⟧ — "
+    "e.g. ⟦gap_scan:healthcare|31 name it, 3 attack it⟧ or "
+    "⟦field_trend:code generation|4.4->6.2 per 1k, z=1.15⟧. The server runs "
+    "that tool again and checks every number against the result, so the "
+    "argument must be exactly the one you called. Only field_trend, gap_scan, "
+    "topic_papers, field_cards, get_citations and get_paper can be "
+    "recomputed; never put a search_papers figure in one. If the corpus cannot "
     "answer, say so plainly. Answer in the user's language; keep quotes in "
     "their original language. Never rank papers by importance. Keep answers "
     "compact — a few sentences with anchors beat an essay."
@@ -65,7 +74,11 @@ _UI_LANG = {"ko": " The reader's interface is set to Korean: when the "
 def system_for(lang: str | None) -> str:
     return SYSTEM + _UI_LANG.get(lang or "", "")
 
-_ANCHOR = re.compile(r"⟦\s*(\d+)\s*\|([^⟧]+)⟧")
+# Two kinds of anchor, one scan so the segments come out in reading order:
+#   ⟦gid|quote⟧              a sentence, matched against that paper
+#   ⟦tool:arg|figures⟧       a number, recomputed by running the tool again
+_ANCHOR = re.compile(
+    r"⟦\s*(?:(\d+)\s*\|([^⟧]+)|([a-z_]{3,20})\s*:\s*([^|⟧]{1,90})\|([^⟧]{1,200}))⟧")
 
 
 def ask(message: str, sid: str | None = None, timeout: int = 300) -> dict:
@@ -85,29 +98,40 @@ def ask(message: str, sid: str | None = None, timeout: int = 300) -> dict:
             "turns": d.get("num_turns")}
 
 
-def segment(text: str, store: Store, ver: Verifier) -> tuple[list, int, int]:
-    """Split the agent's text into prose and verified/unverified cite chips."""
+def segment(text: str, store: Store, ver: Verifier) -> tuple[list, dict]:
+    """Prose, checked quotes, and recomputed figures, in reading order."""
     segs: list[dict] = []
-    checked = passed = 0
+    v = {"checked": 0, "passed": 0, "fchecked": 0, "fpassed": 0}
+    fcache: dict = {}
     pos = 0
     for m in _ANCHOR.finditer(text):
         if m.start() > pos:
             segs.append({"t": "p", "s": text[pos:m.start()]})
-        gid, quote = int(m.group(1)), m.group(2).strip()
-        role = ver.role(gid, quote)
-        ok = role is not None
-        checked += 1
-        passed += ok
-        r = store.rec(gid)
-        key = store.where(gid)[0] if r else None
-        venue, year = (key.rsplit("-", 1) if key else (None, None))
-        segs.append({"t": "c", "gid": gid, "q": quote, "v": ok, "role": role,
-                     "title": r["title"] if r else f"gid {gid}",
-                     "venue": _VENUE.get(venue, venue), "year": year})
         pos = m.end()
+        if m.group(1):                                   # ⟦gid|quote⟧
+            gid, quote = int(m.group(1)), m.group(2).strip()
+            role = ver.role(gid, quote)
+            ok = role is not None
+            v["checked"] += 1
+            v["passed"] += ok
+            r = store.rec(gid)
+            key = store.where(gid)[0] if r else None
+            venue, year = (key.rsplit("-", 1) if key else (None, None))
+            segs.append({"t": "c", "gid": gid, "q": quote, "v": ok, "role": role,
+                         "title": r["title"] if r else f"gid {gid}",
+                         "venue": _VENUE.get(venue, venue), "year": year})
+            continue
+        tool, arg, claim = (m.group(3), m.group(4).strip(), m.group(5).strip())
+        fig = figures.check(tool, arg, claim, fcache)
+        if fig["state"] != "na":                         # 'na' claims nothing
+            v["fchecked"] += 1
+            v["fpassed"] += fig["state"] == "ok"
+        segs.append({"t": "n", "s": claim, "v": fig["state"], "tool": tool,
+                     "arg": arg, "missing": fig.get("missing") or [],
+                     "why": fig.get("why")})
     if pos < len(text):
         segs.append({"t": "p", "s": text[pos:]})
-    return segs, checked, passed
+    return segs, v
 
 
 _STORE: Store | None = None
@@ -131,9 +155,8 @@ def handle(body: dict) -> dict:
     r = ask(q, body.get("sid") or None)
     if "error" in r:
         return r
-    segs, checked, passed = segment(r["text"], store, ver)
-    return {"segs": segs, "sid": r["sid"],
-            "verified": {"checked": checked, "passed": passed}}
+    segs, v = segment(r["text"], store, ver)
+    return {"segs": segs, "sid": r["sid"], "verified": v}
 
 
 # ------------------------------------------------------------- agents
@@ -431,9 +454,8 @@ def stream(body: dict, emit) -> None:
     if failed or result_text is None:
         emit({"t": "error", "error": failed or "the agent returned nothing"})
         return
-    segs, checked, passed = segment(result_text, store, ver)
-    turn = {"q": q, "segs": segs,
-            "verified": {"checked": checked, "passed": passed},
+    segs, v = segment(result_text, store, ver)
+    turn = {"q": q, "segs": segs, "verified": v,
             # what it was answered against, so the same question can be put to
             # the same shelf later — the corpus is fixed, that is the point
             "on": _corpus_id(store)}
