@@ -80,17 +80,47 @@ def main() -> int:
     # (bridged to event_id via resolved.jsonl), the PMLR camera-ready for
     # published years (rows carry event_id directly). Output is keyed by corpus,
     # because event_id is not a global identity.
-    to_event: dict[str, int] = {}
-    for r in read_jsonl(RESOLVED):
-        if r.get("arxiv_base"):
-            to_event.setdefault(r["arxiv_base"], r["event_id"])
+    # The richest full-text file each corpus has, and the bridge from arXiv id
+    # to event_id where its rows do not carry one. Same table as
+    # bellwether.mcp._FT — a corpus added there needs adding here.
+    SOURCES = {
+        # NOT the HTML pass for ICML 2026: "Correspondence to:" is printed by
+        # the ICML LaTeX template, so it survives in the PDF text and not in
+        # the arXiv HTML. Measured — the HTML source yields 0%.
+        "icml-2026": ("fulltext.jsonl", "resolved.jsonl"),
+        "icml-2025": ("fulltext_pmlr_2025.jsonl", None),
+        "neurips-2024": ("fulltext_neurips_2024.jsonl", "resolved_neurips-2024.jsonl"),
+        "neurips-2025": ("fulltext_neurips_2025.jsonl", "resolved_neurips-2025.jsonl"),
+        "iclr-2025": ("fulltext_iclr_2025.jsonl", "resolved_iclr-2025.jsonl"),
+        "iclr-2026": ("fulltext_iclr_2026.jsonl", "resolved_iclr-2026.jsonl"),
+    }
+
+    def bridge(name: str | None) -> dict[str, int]:
+        out: dict[str, int] = {}
+        if not name:
+            return out
+        path = RAW / "arxiv" / name
+        if not path.exists():
+            return out
+        for r in read_jsonl(path):
+            if r.get("arxiv_base"):
+                out.setdefault(r["arxiv_base"], r["event_id"])
+        return out
 
     found: dict[str, dict] = {}
     totals = {}
     for c in available():
-        src = FULLTEXT if c.is_focus else INTERIM / f"fulltext_pmlr_{c.year}.jsonl"
-        if not src.exists():
+        spec = SOURCES.get(c.key)
+        if spec is None:
+            print(f"  {c.key}: no full-text source listed — skipped")
             continue
+        src = INTERIM / spec[0]
+        if not src.exists():
+            src = FULLTEXT if c.is_focus else src
+        if not src.exists():
+            print(f"  {c.key}: {spec[0]} not on disk — skipped")
+            continue
+        to_event = bridge(spec[1])
         got, scanned = {}, 0
         for row in read_jsonl(src):
             if not row.get("ok"):

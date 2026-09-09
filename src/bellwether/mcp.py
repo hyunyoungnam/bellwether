@@ -606,6 +606,43 @@ def t_paper_text(a: dict) -> dict:
             "text": txt[:12000], "truncated": len(txt) > 12000}
 
 
+def t_verify_quote(a: dict) -> dict:
+    """The product's own guarantee, offered as a tool.
+
+    Every literature MCP server surveyed is a remote search gateway; this one
+    holds the papers, so it can answer the question none of them can: does this
+    sentence actually appear in that paper? Any agent — ours or someone else's
+    — can put a quote to it before publishing the quote.
+    """
+    from .verify import Verifier
+    gid = int(a["gid"])
+    quote = (a.get("quote") or "").strip()
+    ver = _verifier()
+    role = ver.role(gid, quote) if quote else None
+    r = S.rec(gid)
+    key, _ = S.where(gid)
+    venue, year = key.rsplit("-", 1)
+    return {"gid": gid, "verified": role is not None,
+            "matched_field": role,
+            "title": r["title"] if r else None,
+            "venue": _VENUE.get(venue, venue), "year": int(year),
+            "note": "matched against this paper's own text on this machine: "
+                    "the extracted sentences first, then the abstract and "
+                    "title, then the parsed full text where we hold it. "
+                    "verified=false means the sentence is not in what we hold "
+                    "— it does not mean the paper says otherwise."}
+
+
+_VER_CACHE: list = []
+
+
+def _verifier():
+    if not _VER_CACHE:
+        from .verify import Verifier
+        _VER_CACHE.append(Verifier(S))
+    return _VER_CACHE[0]
+
+
 def t_citations(a: dict) -> dict:
     gid = int(a["gid"])
     return {"paper": S.brief(gid),
@@ -692,6 +729,16 @@ TOOLS = [
      "fn": t_paper_text,
      "inputSchema": {"type": "object", "required": ["gid"], "properties": {
          "gid": _GID, "section": {"type": "string"}}}},
+    {"name": "verify_quote",
+     "description": "Check a sentence against the paper it is attributed to, "
+                    "on this machine. Returns whether the quote appears in "
+                    "that paper's own text and which field matched. Use it "
+                    "before publishing any sentence as a paper's words — "
+                    "including sentences you got from somewhere else.",
+     "fn": t_verify_quote,
+     "inputSchema": {"type": "object", "required": ["gid", "quote"],
+                     "properties": {"gid": _GID,
+                                    "quote": {"type": "string"}}}},
     {"name": "get_citations",
      "description": "Which of our corpus papers this paper cites, and which "
                     "cite it (edges within the six editions only).",

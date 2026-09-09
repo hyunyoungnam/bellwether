@@ -161,7 +161,8 @@ check("no other Meilisearch path is exposed", code == 404)
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[2] / "src"))
 from bellwether import mcp  # noqa: E402
 
-ARGS = {"search_papers": {"query": "kv cache compression", "limit": 3},
+ARGS = {"verify_quote": {"gid": 19662, "quote": "the KV cache"},
+        "search_papers": {"query": "kv cache compression", "limit": 3},
         "similar_papers": {"gid": 19662, "limit": 3},
         "get_paper": {"gid": 19662},
         "list_topics": {},
@@ -224,6 +225,20 @@ check("and counts quotes and figures apart",
       _v == {"checked": 1, "passed": 1, "fchecked": 2, "fpassed": 1}, str(_v))
 check("a wrong figure names the number that failed",
       [x for x in _segs if x["t"] == "n" and x["v"] == "no"][0]["missing"] == ["99"])
+
+# ---- the guarantee, offered as a tool
+_vq_card = mcp.t_paper({"gid": 19662})["verified_sentences"]
+_vq = _vq_card.get("limitation_of_prior_work") or _vq_card.get("key_change")
+check("verify_quote accepts the paper's own sentence",
+      mcp.t_verify_quote({"gid": 19662, "quote": _vq})["verified"])
+check("verify_quote names the field that matched",
+      mcp.t_verify_quote({"gid": 19662, "quote": _vq})["matched_field"] is not None)
+check("verify_quote rejects an invented one",
+      not mcp.t_verify_quote({"gid": 19662,
+                              "quote": "this sentence is in no paper at all"})["verified"])
+check("and rejects a quote cut mid-word (the containment is space-bounded)",
+      not mcp.t_verify_quote({"gid": 19662, "quote": _vq[:70]})["verified"]
+      if len(_vq) > 75 and not _vq[70].isspace() else True)
 
 # ---- the automatic pass: every printed number, anchor or not
 _trail = [{"name": "field_trend", "arg": "code generation"},

@@ -38,9 +38,14 @@ SRC = ROOT / "run/mt/en_answers.jsonl"
 OUT = ROOT / "run/mt"
 
 CANDIDATES = {
-    # id -> (hf repo, how to build the prompt)
-    "motif-2.6b": ("Motif-Technologies/Motif-2.6B", "chat"),
-    "qwen3-4b": ("Qwen/Qwen3-4B-Instruct-2507", "chat"),
+    # id -> (hf repo, prompt shape, backend)
+    # vLLM is the deployment target: a model it cannot serve is a model we
+    # would have to keep a second runtime alive for (Motif needs transformers
+    # 4.x pinned and has neither a vLLM path nor a GGUF).
+    "hunyuan-mt-1.5-7b": ("tencent/HY-MT1.5-7B", "chat", "vllm"),
+    "qwen3-4b": ("Qwen/Qwen3-4B-Instruct-2507", "chat", "vllm"),
+    "kanana-2.1b": ("kakaocorp/kanana-1.5-2.1b-instruct-2505", "chat", "vllm"),
+    "motif-2.6b": ("Motif-Technologies/Motif-2.6B", "chat", "hf"),
 }
 
 # ---------------------------------------------------------------- masking
@@ -151,6 +156,30 @@ def build_prompt(kind: str, tok, text: str):
     return tok.apply_chat_template(msg, tokenize=False, add_generation_prompt=True)
 
 
+def run_vllm(name: str, repo: str, kind: str, items: list[str]) -> list[dict]:
+    """The deployment path: one engine, batched, chat template from the repo."""
+    from vllm import LLM, SamplingParams
+    from transformers import AutoTokenizer
+    t0 = time.time()
+    llm = LLM(model=repo, dtype="bfloat16", gpu_memory_utilization=0.42,
+              max_model_len=4096, enforce_eager=False, trust_remote_code=True)
+    tok = AutoTokenizer.from_pretrained(repo, trust_remote_code=True)
+    load = time.time() - t0
+    masked, keeps = zip(*(mask(t) for t in items))
+    prompts = [build_prompt(kind, tok, m) for m in masked]
+    sp = SamplingParams(temperature=0.0, max_tokens=768)
+    t1 = time.time()
+    outs = llm.generate(prompts, sp)
+    dt = (time.time() - t1) / max(len(items), 1)
+    rows = [{"src": src, "masked_out": o.outputs[0].text.strip(),
+             "out": unmask(o.outputs[0].text.strip(), keep), "keep": list(keep),
+             "secs": round(dt, 1)}
+            for src, keep, o in zip(items, keeps, outs)]
+    del llm
+    print(f"  {name}: engine up in {load:.0f}s, {dt:.1f}s/segment (batched)", flush=True)
+    return rows
+
+
 def run_model(name: str, repo: str, kind: str, items: list[str]) -> list[dict]:
     import torch
     from transformers import AutoModelForCausalLM, AutoTokenizer
@@ -183,7 +212,7 @@ def run_model(name: str, repo: str, kind: str, items: list[str]) -> list[dict]:
 
 def main() -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--models", default="motif-2.6b")
+    ap.add_argument("--models", default="hunyuan-mt-1.5-7b,qwen3-4b,kanana-2.1b")
     ap.add_argument("--limit", type=int, default=24)
     a = ap.parse_args()
 
@@ -201,10 +230,11 @@ def main() -> int:
 
     report = {}
     for name in a.models.split(","):
-        repo, kind = CANDIDATES[name]
-        print(f"== {name} ({repo})", flush=True)
+        repo, kind, backend = CANDIDATES[name]
+        print(f"== {name} ({repo}, {backend})", flush=True)
         try:
-            rows = run_model(name, repo, kind, items)
+            runner = run_vllm if backend == "vllm" else run_model
+            rows = runner(name, repo, kind, items)
         except Exception as exc:  # noqa: BLE001
             print(f"  UNAVAILABLE: {type(exc).__name__}: {str(exc)[:200]}\n")
             report[name] = {"error": f"{type(exc).__name__}: {str(exc)[:300]}"}
