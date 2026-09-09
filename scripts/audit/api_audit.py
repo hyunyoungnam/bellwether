@@ -107,6 +107,40 @@ check("GET /paper/<non-numeric> is a 400", code == 400)
 code, d = req("POST", "/chat/stop", {"run": "no-such-run"})
 check("POST /chat/stop on an unknown run", code == 200 and json.loads(d) == {"ok": False})
 
+code, raw = req("POST", "/export", {"gids": [19662, 100], "fmt": "bib"})
+bib = raw.decode("utf-8", "replace")
+check("POST /export bibtex", code == 200 and bib.count("@inproceedings") == 2,
+      f"{bib.count('@inproceedings')} entries")
+check("bibtex carries the full author list", " and " in bib and "author = {" in bib)
+code, raw = req("POST", "/export", {"gids": [19662], "fmt": "csv"})
+rowsv = raw.decode("utf-8", "replace").strip().split("\n")
+check("POST /export csv", code == 200 and len(rowsv) == 2, f"{len(rowsv)} lines")
+check("csv carries the verified sentences",
+      "limitation" in rowsv[0] and "result_claim" in rowsv[0])
+code, raw = req("POST", "/export", {"gids": [], "fmt": "bib"})
+check("export of nothing is empty, not an error", code == 200 and not raw.strip())
+
+if pubs:
+    pid = pubs[0]["id"]
+    code, raw = req("GET", f"/chats/{pid}/export?fmt=md")
+    md = raw.decode("utf-8", "replace")
+    check("GET /chats/<id>/export markdown", code == 200 and md.startswith("#"))
+    check("the export tables every quote with its verdict",
+          "| ✓ |" in md or "| ✗ |" in md)
+    code, raw = req("GET", f"/chats/{pid}/export?fmt=json")
+    try:
+        bundle = json.loads(raw)
+    except Exception:  # noqa: BLE001
+        bundle = {}
+    check("GET /chats/<id>/export json", code == 200 and bundle.get("turns"))
+    check("the bundle stamps the corpus it was answered against",
+          bool((bundle.get("corpus") or {}).get("papers_with_gid")),
+          str((bundle.get("corpus") or {}).get("papers_with_gid")))
+    check("and carries the verification totals",
+          (bundle.get("verification") or {}).get("checked", 0) > 0)
+code, _ = req("GET", "/chats/zzzz/export?fmt=md")
+check("export of a missing chat 404s", code in (400, 404))
+
 code, raw = req("POST", "/meili/search", {"q": "diffusion", "limit": 2})
 try:
     hits = json.loads(raw).get("hits", [])

@@ -63,6 +63,29 @@ for search, similarity, topics, citations, and each paper's verified
 sentences. Claude Code picks it up automatically from `.mcp.json` when opened
 in this directory; the agent brings its own model, so no API key is involved.
 
+## Asking it something
+
+`/` is a conversation. Your question spawns **your own** coding agent (Claude
+Code, signed in on this machine — no API key), armed only with this project's
+MCP tools over the held corpus. Every factual sentence it writes must carry an
+anchor `⟦gid|quote⟧`, and the server checks each quote against the paper's own
+text **before the browser renders it**: a green check means the sentence
+provably exists in that paper, a red one means it does not and is shown as
+such. The agent's prose can still be wrong; the quotes cannot be invented.
+
+That check is measured, not asserted — `scripts/audit/verify_bench.py` samples
+the corpus and reports both directions:
+
+| | |
+|---|---|
+| the papers' own extracted sentences, accepted | 200 / 200 |
+| the same sentences edited (a swapped word, a dropped middle, two papers spliced), rejected | 418 / 418 |
+
+A conversation has an address (`#c<id>`), keeps the tool trail it was answered
+with, and exports as markdown or JSON — questions, answers, and a table of
+every quote with the verdict it was given, stamped with the corpus it was
+answered against.
+
 ## How the site is organized
 
 - **Landing** — one card per conference, opening its newest edition, plus
@@ -74,6 +97,11 @@ in this directory; the agent brings its own model, so no API key is involved.
   papers is the problem, not the answer. Result cards carry the highlighted
   passage, the extracted terms (proposes / builds on / compared with / data),
   the corresponding author where the paper names one, and links out.
+- **Three views of the set you picked** — one card each, one **row** each (a
+  table of the extracted fields, which is how a set gets compared), or the
+  subgroups the embeddings support. Each paper takes a mark — read / later /
+  not mine — kept in your browser; the marks never reorder anything, they only
+  record what you decided. The set leaves as **.bib** or **.csv**.
 - **An earlier year is never a browsing category.** Last year's edition exists
   as a baseline: it powers *Since last year* and appears among a paper's
   nearest neighbors (stamped with its year), nowhere else.

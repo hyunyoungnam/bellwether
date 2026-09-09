@@ -95,7 +95,7 @@ body{margin:0;background:var(--bg);color:var(--ink);
 .hact{position:absolute;right:4px;top:50%;transform:translateY(-50%);display:none;gap:2px}
 .hwrap:hover .hact{display:flex}
 .hact button{font:inherit;font-size:12px;border:0;background:var(--bg);color:var(--mut);
-  border-radius:6px;width:22px;height:22px;cursor:pointer}
+  border-radius:6px;width:21px;height:21px;cursor:pointer}
 .hact button:hover{color:var(--ink)}
 .hwrap:hover .hrow{background:var(--bg)}
 .menubtn{display:none;position:fixed;top:10px;left:10px;z-index:30;font:inherit;font-size:17px;
@@ -517,8 +517,10 @@ function aHTML(t){
     title="${esc(STR[LANG].vTip(v.passed,v.checked))}">${v.passed===v.checked?'✓':'✗'} ${v.passed}/${v.checked}</span>`:'';
   const foot=`<div class="afoot">${badge}
     <button class="cpy">${esc(STR[LANG].copy)}</button></div>`;
-  const trail=(t.trail&&t.trail.length)?`<details class="trail"><summary>${STR[LANG].steps(t.trail.length)}</summary>
-    ${t.trail.map(x=>`<div>${esc(x)}</div>`).join('')}</details>`:'';
+  // live turns carry the trail as strings, reopened ones as {name,arg} rows
+  const tr=(t.trail||[]).map(x=>typeof x==='string'?x:(x.name+(x.arg?'  '+x.arg:'')));
+  const trail=tr.length?`<details class="trail"><summary>${STR[LANG].steps(tr.length)}</summary>
+    ${tr.map(x=>`<div>${esc(x)}</div>`).join('')}</details>`:'';
   const trees=(t.trees||[]).map(treeHTML).join('');
   return `<div class="amsg">${body}</div>${trees}${foot}${trail}`;
 }
@@ -674,6 +676,7 @@ async function loadHist(){
     const rowHTML=r=>`<div class="hwrap"><button class="hrow ${r.pub?'pub':''}" data-id="${esc(r.id)}"
         data-title="${esc(r.title)}">${r.pub?'★ ':''}${esc(r.title)}</button>
         <span class="hact"><button data-pub="${esc(r.id)}" data-v="${r.pub?0:1}" title="publish">${r.pub?'★':'☆'}</button>
+        <button data-dl="${esc(r.id)}" title="export">⤓</button>
         <button data-rn="${esc(r.id)}" title="rename">✎</button>
         <button data-del="${esc(r.id)}" title="delete">✕</button></span></div>`;
     // published conversations are the ones on the front screen; they leave the
@@ -707,6 +710,14 @@ async function loadHist(){
       await fetch('/chats/'+el.dataset.del,{method:'DELETE'});
       if(CHAT===el.dataset.del)showEmpty();
       loadHist();
+    });
+    // a conversation leaves as markdown: the questions, the answers, and a
+    // table of every quote with the verdict it was given before display
+    document.querySelectorAll('[data-dl]').forEach(el=>el.onclick=e=>{
+      e.stopPropagation();
+      const a=document.createElement('a');
+      a.href='/chats/'+el.dataset.dl+'/export?fmt=md';
+      a.download=''; document.body.appendChild(a); a.click(); a.remove();
     });
     document.querySelectorAll('[data-rn]').forEach(el=>el.onclick=async e=>{
       e.stopPropagation();

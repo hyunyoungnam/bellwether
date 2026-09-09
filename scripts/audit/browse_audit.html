@@ -59,6 +59,60 @@ async function run(){
   line(stamps>0,'results carry a venue-year stamp',stamps+'/6 checked');
   line(!!q('[data-fc="q"]'),'the query stays on screen as a removable chip');
 
+  head('the set as a table');
+  const vw=v=>[...D().querySelectorAll('[data-vw]')].find(b=>b.dataset.vw===v);
+  line(!!vw('table'),'the set offers three views');
+  vw('table').click(); await sleep(900);
+  const rows=all('.tbl tbody tr');
+  line(rows.length>0,'the table renders one row per paper',rows.length+' rows');
+  line(all('.tbl thead th').length===6,'with the extracted fields as columns',
+       all('.tbl thead th').map(e=>e.textContent.trim()).join('/'));
+  line(!!q('.tbcov'),'and states its coverage',(q('.tbcov')||{}).textContent);
+  const before=all('.tbl tbody tr td.tt').map(e=>e.textContent.trim()).slice(0,3).join('|');
+  q('.tbl thead th[data-sc="p"]').click(); await sleep(700);
+  const after=all('.tbl tbody tr td.tt').map(e=>e.textContent.trim()).slice(0,3).join('|');
+  line(before!==after,'a column header sorts the table');
+  const named=all('.tbl tbody tr').slice(0,5)
+    .every(r=>r.children[2].textContent.trim().length>0);
+  line(named,'sorting puts the named ones first, never the empty ones');
+  q('.tbl thead th[data-sc="p"]').click(); await sleep(400);
+  q('.tbl thead th[data-sc="p"]').click(); await sleep(600);   // back to no sort
+
+  head('the reading queue');
+  const first=q('.tbl tbody tr');
+  const gidRow=first.dataset.tr;
+  first.querySelector('.mk [data-m="r"]').click(); await sleep(700);
+  line(!!q('.tbl tbody tr.mr, .tbl tbody tr .mk button.on.mr'),'a paper can be marked read');
+  line(!!q('.mkbar'),'the set shows progress through itself',(q('.mkn')||{}).textContent);
+  const row2=all('.tbl tbody tr')[1];
+  row2.querySelector('.mk [data-m="x"]').click(); await sleep(700);
+  const hidebtn=q('#hidex');
+  line(!!hidebtn,'excluded papers can be hidden');
+  const gone=row2.dataset.tr, setN=(q('.scn')||{}).textContent;
+  hidebtn.click(); await sleep(800);
+  line(!q(`.tbl tbody tr[data-tr="${gone}"]`),'and hiding takes that paper off the list');
+  line((q('.scn')||{}).textContent===setN,
+       'while the set count still says how big the set is',setN);
+  q('#hidex').click(); await sleep(600);
+  // marks survive a reload, and the audit cleans up after itself
+  W().localStorage.removeItem('bw_marks');
+  vw('cards').click(); await sleep(600);
+  line(!!q('.p'),'the switch goes back to cards');
+
+  head('the way out');
+  line(all('[data-ex]').length===2,'the set can leave as .bib or .csv');
+  const gids=W().BW.set.slice(0,4).map(i=>W().BW.P[i].i);
+  const rb=await fetch('/export',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({gids,fmt:'bib'})});
+  const bib=await rb.text();
+  line(rb.ok&&(bib.match(/@inproceedings/g)||[]).length===gids.length,
+       'bibtex comes back with one entry per paper',
+       (bib.match(/@inproceedings/g)||[]).length+' entries');
+  const rc=await fetch('/export',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({gids,fmt:'csv'})});
+  const csv=await rc.text();
+  line(rc.ok&&csv.split('\n').length-1>=gids.length,'and csv with one row per paper');
+
   head('deep link from a cite chip');
   await load('/browse#p19662');
   line(!!q('.p.sel'),'the linked paper is selected on the ALL screen',

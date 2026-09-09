@@ -291,6 +291,12 @@ def stop_run(run: str) -> dict:
     return {"ok": True}
 
 
+def _corpus_id(store) -> dict:
+    u = store.union
+    return {"papers": len(u.get("keys") or []),
+            "corpora": list(u.get("corpora") or [])}
+
+
 def _summ(tool_input: dict) -> str:
     for k in ("query", "topic", "gid"):
         if k in (tool_input or {}):
@@ -338,11 +344,16 @@ def stream(body: dict, emit) -> None:
 
     result_text, new_sid, failed = None, None, None
     trees: list[dict] = []
+    trail: list[dict] = []
     run = str(body.get("run") or secrets.token_hex(6))
     entry = _RUNS[run] = {"stopped": False, "proc": None}
 
     def _tool_event(name: str, arg_map: dict) -> None:
         emit({"t": "tool", "name": name, "arg": _summ(arg_map)})
+        # the trail is evidence about HOW the answer was reached, so it is
+        # stored with the turn — until now it lived only in the open tab and
+        # vanished when the conversation was reopened
+        trail.append({"name": name, "arg": _summ(arg_map)})
         # the derivation tree renders as a component, not prose: recompute the
         # same deterministic scan server-side and hand it to the page directly
         if name == "gap_scan" and (arg_map or {}).get("topic"):
@@ -422,7 +433,12 @@ def stream(body: dict, emit) -> None:
         return
     segs, checked, passed = segment(result_text, store, ver)
     turn = {"q": q, "segs": segs,
-            "verified": {"checked": checked, "passed": passed}}
+            "verified": {"checked": checked, "passed": passed},
+            # what it was answered against, so the same question can be put to
+            # the same shelf later — the corpus is fixed, that is the point
+            "on": _corpus_id(store)}
+    if trail:
+        turn["trail"] = trail
     if trees:
         turn["trees"] = trees
     CHAT_DIR.mkdir(parents=True, exist_ok=True)

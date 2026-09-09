@@ -1730,6 +1730,63 @@ border:1px solid var(--ring);background:var(--card);color:var(--ink2);display:fl
 border:1px solid var(--ring);background:var(--card);color:var(--ink2);cursor:pointer;width:100%}
 .scsplit:hover{color:var(--ink);border-color:var(--mut)}
 .scsplit.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+/* three ways to look at the same set — a switch, not a ranking of views */
+.vsw{display:flex;margin-top:11px;border:1px solid var(--ring);border-radius:8px;overflow:hidden}
+.vsw button{flex:1;font:inherit;font-size:11.5px;padding:5px 4px;border:0;background:var(--card);
+color:var(--mut);cursor:pointer}
+.vsw button+button{border-left:1px solid var(--ring)}
+.vsw button:hover{color:var(--ink)}
+.vsw button.on{background:var(--ink);color:#fff}
+/* the reading queue: progress through the set the reader picked */
+.mkbar{margin-top:10px}
+.mkb{height:4px;border-radius:2px;background:var(--line);overflow:hidden}
+.mkb i{display:block;height:100%;background:var(--ink2)}
+.mkn{font-size:11px;color:var(--mut);margin-top:4px}
+.mkn button{font:inherit;font-size:11px;border:0;background:none;color:var(--acc);
+cursor:pointer;padding:0 0 0 4px;text-decoration:underline}
+.mk{display:inline-flex;gap:2px;vertical-align:middle}
+.mk button{font:inherit;font-size:11px;line-height:1;width:20px;height:20px;border-radius:6px;
+border:1px solid var(--line);background:var(--card);color:var(--dim);cursor:pointer;padding:0}
+.mk button:hover{color:var(--ink2);border-color:var(--mut)}
+.mk button.on{color:#fff;border-color:transparent}
+.mk button.on.mr{background:var(--sh)}
+.mk button.on.ml{background:var(--mut)}
+.mk button.on.mx{background:var(--warm)}
+/* on a card the marks sit top-right, quiet until the card is hovered or marked */
+.p{position:relative}
+.p .mk{position:absolute;right:12px;top:12px;opacity:0;transition:opacity .12s}
+.p:hover .mk,.p.mr .mk,.p.ml .mk,.p.mx .mk{opacity:1}
+.p.mx{opacity:.55}
+.p.mr .ti::after{content:'✓';color:var(--sh);font-size:12px;margin-left:7px;vertical-align:2px}
+/* the table: one row per paper, the extracted fields side by side */
+.tblwrap{overflow-x:auto;background:var(--card);border:1px solid var(--line);border-radius:12px}
+.tbl{border-collapse:collapse;width:100%;font-size:12.5px;table-layout:fixed;min-width:900px}
+.tbl col.c0{width:64px}.tbl col.c1{width:30%}.tbl col.c2{width:17%}
+.tbl col.c3{width:18%}.tbl col.c4{width:16%}.tbl col.c5{width:19%}
+.tbl th{text-align:left;font-weight:600;color:var(--mut);font-size:10.5px;letter-spacing:.06em;
+text-transform:uppercase;padding:9px 10px;border-bottom:1px solid var(--line);
+white-space:nowrap;cursor:pointer;position:sticky;top:0;background:var(--card)}
+.tbl th.mkh{cursor:default}
+.tbl th:hover{color:var(--ink2)}
+.tbl th.on{color:var(--ink)}
+.tbl td{padding:8px 10px;border-bottom:1px solid var(--line);color:var(--ink2);
+vertical-align:top;max-width:230px}
+.tbl tr:last-child td{border-bottom:0}
+.tbl tr:hover td{background:var(--bg)}
+.tbl tr.sel td{box-shadow:inset 2px 0 0 var(--acc)}
+.tbl tr.mx td{opacity:.5}
+.tbl td.mkc{width:70px;padding-right:0}
+.tbl td.tt{max-width:340px;color:var(--ink)}
+.tbl td.tt button{font:inherit;font-weight:600;text-align:left;border:0;background:none;
+color:inherit;cursor:pointer;padding:0;display:-webkit-box;-webkit-line-clamp:3;
+-webkit-box-orient:vertical;overflow:hidden}
+.tbl td.tt button:hover{color:var(--acc)}
+.tbl td.tt .cyst{font-size:11px;font-weight:600;margin-right:6px}
+.tbcov{font-size:11px;color:var(--mut);margin:7px 2px 0}
+.expw{display:flex;gap:6px;margin-top:8px}
+.expw button{flex:1;font:inherit;font-size:11px;padding:4px 0;border-radius:7px;
+border:1px solid var(--ring);background:var(--card);color:var(--mut);cursor:pointer}
+.expw button:hover{color:var(--ink);border-color:var(--mut)}
 /* Inside-this-set: the since-last-year grammar, with the SELECTION as the
    denominator — which methods/tasks/domains rose or fell within the field the
    reader picked. Rows appear only when the two-test rule passes on the set's
@@ -2101,10 +2158,12 @@ function papersWithWord(w){
 // Papers are shown only once the reader has asked for some. Listing all 6,637 on
 // arrival is the problem this product exists to remove, not a neutral default.
 const MAX_SHOWN=80, NEIGHBOURS_SHOWN=5;
-const st={corp:null,q:[],qraw:'',anc:null,pick:null,topics:new Set(),fams:new Set(),sel:null,panel:null,ds:null,meth:null,mfam:null,grouped:false,lim:null};
+const st={corp:null,q:[],qraw:'',anc:null,pick:null,topics:new Set(),fams:new Set(),sel:null,panel:null,ds:null,meth:null,mfam:null,view:'cards',tsort:null,hidex:false,lim:null};
 // The claim the reader clicked to get here — the door's face, carried to the
 // destination so "why am I looking at this set?" never needs remembering.
 let STORY=null;
+// the selection the rail is currently describing — what an export sends
+let LAST_SET=[];
 // A conference pick alone is NOT a selection. Picking "ICML 2026" leaves 6,637
 // papers, which is the problem this product exists to remove — the reader still
 // has to say what their field is.
@@ -2385,7 +2444,7 @@ function card(i,full){
   const sx=SPX[p.i], spReady=!!sx;
   const pn=sx?sx[0]:[], pL=sx?sx[1]:null, pK=sx?sx[2]:null, pR=sx?sx[3]:null,
         pc1=sx?sx[4]:null, pD=sx?sx[5]:null, pCl=sx?sx[7]:null;
-  const names=(arr,fn)=>arr.map(x=>abbr(fn(x))).join(', ');
+
   // One passage, not three labelled rows. The three sentences are the paper's,
   // in the order a reader needs them, and the colour says which question each
   // answers: why it was needed, what is new, what it achieved.
@@ -2444,7 +2503,8 @@ function card(i,full){
       </div>
     </div>`
     :'';
-  return `<div class="p ${st.sel===i?'sel':''} ${full?'':(open?'exp':'cpt')}" data-i="${i}"><div class="body">
+  return `<div class="p ${st.sel===i?'sel':''} ${markOf(i)?'m'+markOf(i):''} ${full?'':(open?'exp':'cpt')}" data-i="${i}"><div class="body">
+    ${markBtns(i)}
     <div class="ti">${hl(p.t)}${p.o===2?`<span class="badge sp">${esc(CY[p.cy].hw||'Spotlight')}</span>`:''}</div>
     <div class="meta"><span class="cyst" style="color:var(--v${vhue(p.cy)})">${esc(CY[p.cy].v)} ${CY[p.cy].y}</span>${who}${nearBadge(p)}</div>
     ${passage}
@@ -2815,7 +2875,7 @@ function rowOfGid(g){
 function openPaper(g,back){
   const ix=rowOfGid(g);
   if(ix===undefined)return;
-  st.corp=-1; st.sel=ix; st.grouped=false; EXP.add(ix);
+  st.corp=-1; st.sel=ix; st.view='cards'; EXP.add(ix);
   // arriving by the back button must not rewrite the entry it just returned to
   if(!back)history.pushState(null,'','#all');
   render();
@@ -2852,7 +2912,7 @@ const corpFromHash=()=>{
   const j=CY.findIndex(c=>c.k===h);return j<0?null:j;};
 function go(j){
   if(j===null)clearPicks();          // going home ends the selection…
-  st.corp=j; st.sel=null; st.grouped=false;
+  st.corp=j; st.sel=null; st.view='cards';
   history.pushState(null,'',j===null?location.pathname+location.search
                              :'#'+(j===-1?'all':CY[j].k));
   render();
@@ -2912,7 +2972,7 @@ function allFieldsHTML(){
 let AF_OPEN=false;
 function enterWith(mut){
   st.q=[]; st.qraw=''; const q=$('#q'); if(q)q.value='';
-  st.sel=null; st.grouped=false;
+  st.sel=null; st.view='cards'; st.tsort=null;
   st.topics.clear(); st.fams.clear(); st.meth=null; st.mfam=null; st.ds=null;
   st.lim=null;
   mut();
@@ -3240,7 +3300,16 @@ function railSetCard(res,vset){
     (dch?`<div class="rh" style="margin-top:11px">Tested on <em>in this set</em></div><div class="scchips">${dch}</div>`:'')+
     (mch?`<div class="rh" style="margin-top:11px">Builds on <em>in this set</em></div><div class="scchips">${mch}</div>`:'')+
     standsOnHTML(res)+
-    `<button class="scsplit ${st.grouped?'on':''}" id="grptog2">${st.grouped?'Show papers':'Split into subgroups'}</button>`+
+    // Three ways to look at the same set: one card each, one ROW each (the
+    // extracted fields side by side, which is how a set is compared), or the
+    // subgroups the embeddings support. Never a fourth ordering by merit.
+    `<div class="vsw">`+[['cards','papers'],['table','table'],['groups','subgroups']]
+      .map(([v,l])=>`<button data-vw="${v}" class="${st.view===v?'on':''}">${l}</button>`).join('')+
+    `</div>`+markBarHTML(res)+
+    // A selection that cannot leave is a dead end: .bib for the reference
+    // manager, .csv for the fields. Both are built server-side from the same
+    // records, so the authors are the paper's full list, not the card's one name.
+    `<div class="expw"><button data-ex="bib">.bib</button><button data-ex="csv">.csv</button></div>`+
     `</div>`;
 }
 // What this set STANDS ON: the papers most of the selection cites, counted
@@ -3292,7 +3361,23 @@ function drawRail(){
 // The rtr interactions mutate the selection, so they always leave compare —
 // CMP=null is a no-op in the plain list view.
 function wireRtr(rt){
-  const g2=rt.querySelector('#grptog2'); if(g2)g2.onclick=()=>{CMP=null;st.grouped=!st.grouped;render();};
+  rt.querySelectorAll('[data-vw]').forEach(el=>el.onclick=()=>{
+    CMP=null; st.view=el.dataset.vw; render();});
+  const hx=rt.querySelector('#hidex');
+  if(hx)hx.onclick=()=>{ st.hidex=!st.hidex; render(); };
+  rt.querySelectorAll('[data-ex]').forEach(el=>el.onclick=async()=>{
+    const was=el.textContent; el.textContent='…';
+    try{
+      const r=await fetch('export',{method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({gids:LAST_SET.map(i=>P[i].i),fmt:el.dataset.ex})});
+      if(!r.ok)throw 0;
+      const b=await r.blob(), u=URL.createObjectURL(b), a=document.createElement('a');
+      a.href=u; a.download='bellwether-selection.'+el.dataset.ex;
+      document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(u);
+      el.textContent=was;
+    }catch(e){ el.textContent='not here'; setTimeout(()=>{el.textContent=was;},1400); }
+  });
   rt.querySelectorAll('[data-fc]').forEach(el=>el.onclick=()=>{
     CMP=null;
     const ax=el.dataset.fc;
@@ -3435,8 +3520,12 @@ function render(){
   }
   drawStory();
   drawInside();
+  LAST_SET=res;
   { const rt=$('#rtr'); if(rt){ rt.innerHTML=railSetCard(res); wireRtr(rt); } }
 
+  // a paper the reader marked "not mine" can be hidden — their own filter,
+  // applied after the set is counted so the count never lies about the set
+  if(st.hidex)res=res.filter(i2=>markOf(i2)!=='x');
   const extra=nearby();
   // Relevance picks the set; recency orders it. The venue's current edition
   // leads, highlights first within each, titles within that. A live search
@@ -3454,6 +3543,22 @@ function render(){
   // to narrow, and the count above says how much is not on screen.
   const extraShown=extra.slice(0, res.length>=MAX_SHOWN?0:Math.min(extra.length,MAX_SHOWN-res.length));
   ensureSpans(new Set([...show,...extraShown].map(i=>P[i].cy)));
+  if(st.view==='table'){
+    $('#results').innerHTML=renderTable(res,show)
+      +(res.length>show.length
+        ? `<div class="capped">Showing the first ${MAX_SHOWN} of ${res.length.toLocaleString()}. `+
+          `Add a topic, a benchmark, or a search word to narrow this.</div>` : '');
+    wireMarks($('#results'));
+    $('#results').querySelectorAll('[data-sc]').forEach(el=>el.onclick=()=>{
+      const k=el.dataset.sc;
+      st.tsort=(st.tsort&&st.tsort.k===k)?(st.tsort.d>0?{k,d:-1}:null):{k,d:1};
+      render();});
+    $('#results').querySelectorAll('[data-open]').forEach(el=>el.onclick=()=>{
+      const i=+el.dataset.open;
+      st.view='cards'; st.sel=i; EXP.add(i); render();
+      requestAnimationFrame(()=>$(`.p[data-i="${i}"]`)?.scrollIntoView({block:'center'}));});
+    return;
+  }
   $('#results').innerHTML=(show.map(i9=>card(i9)).join('')
     +(res.length>show.length
       ? `<div class="capped">Showing the first ${MAX_SHOWN} of ${res.length.toLocaleString()}. `+
@@ -3464,7 +3569,7 @@ function render(){
         `<span>found through the paper embeddings, not the text — read them as suggestions</span></div>`
         +extraShown.map(i9=>card(i9)).join('') : ''))
     ||'<div class="empty">No papers match all of these. Remove one.</div>';
-  if(st.grouped){ renderGrouped(res); return; }
+  if(st.view==='groups'){ renderGrouped(res); return; }
   $('#results').querySelectorAll('[data-mail]').forEach(el=>el.onclick=async ev=>{
     ev.stopPropagation();
     const addr=el.dataset.mail, was=el.textContent;
@@ -3476,6 +3581,7 @@ function render(){
   $('#results').querySelectorAll('[data-sim]').forEach(el=>el.onclick=ev=>{
     ev.stopPropagation();
     openPanel(+el.dataset.sim);});
+  wireMarks($('#results'));
   wireFold($('#results'));
 }
 // compact card -> unfold in place; the chevron on an unfolded card refolds it
@@ -3750,7 +3856,7 @@ function changedHTML(){
 // reads as a bug).
 function clearPicks(){
   st.q=[]; st.qraw=''; const q=$('#q'); if(q)q.value='';
-  st.sel=null; st.grouped=false;
+  st.sel=null; st.view='cards'; st.tsort=null;
   st.topics.clear(); st.fams.clear(); st.meth=null; st.mfam=null; st.ds=null;
   st.lim=null; st.anc=null; st.pick=null; STORY=null; CMP=null; EXP.clear(); closePanel();
 }
@@ -3808,6 +3914,89 @@ function wireChanged(){
   });
 }
 
+// the same name list the cards print, shared with the table below
+const names=(arr,fn)=>(arr||[]).map(x=>abbr(fn(x))).join(', ');
+// ---- the reading queue -----------------------------------------------------
+// Forty papers in a list is still forty papers of reading. What a reader needs
+// is to record a DECISION and see what is left. The marks are the reader's own
+// and live in this browser; nothing here reorders the set or scores a paper —
+// the AI ranks nothing, it only shows what was marked (ASReview's rule, kept).
+const MARKS=(()=>{ try{ return JSON.parse(localStorage.getItem('bw_marks')||'{}'); }
+  catch(e){ return {}; } })();
+const MARK_LABEL={r:'read',l:'later',x:'not mine'};
+function markOf(i){ return MARKS[P[i].i]||''; }
+function setMark(i,m){
+  const g=P[i].i;
+  if(MARKS[g]===m)delete MARKS[g]; else MARKS[g]=m;
+  try{ localStorage.setItem('bw_marks',JSON.stringify(MARKS)); }catch(e){}
+}
+function markBtns(i){
+  const cur=markOf(i);
+  return `<span class="mk" data-mk="${i}">`+['r','l','x'].map(m=>
+    `<button data-m="${m}" class="${cur===m?'on m'+m:''}" title="${MARK_LABEL[m]}">`+
+    `${m==='r'?'✓':m==='l'?'◷':'✕'}</button>`).join('')+`</span>`;
+}
+// counts over the CURRENT set, not the whole corpus — the progress that matters
+// is progress through what the reader picked
+function markBarHTML(res){
+  const c={r:0,l:0,x:0};
+  for(const i of res){ const m=markOf(i); if(m)c[m]++; }
+  const done=c.r+c.x;
+  if(!done&&!c.l)return '';
+  return `<div class="mkbar"><div class="mkb"><i style="width:${
+    Math.round(done/Math.max(res.length,1)*100)}%"></i></div>`+
+    `<div class="mkn">${c.r} read · ${c.l} later · ${c.x} not mine · of ${res.length}`+
+    (c.x?` <button id="hidex" class="${st.hidex?'on':''}">${st.hidex?'show':'hide'} ${c.x}</button>`:'')+
+    `</div></div>`;
+}
+function wireMarks(root){
+  root.querySelectorAll('.mk[data-mk]').forEach(el=>{
+    const i=+el.dataset.mk;
+    el.querySelectorAll('[data-m]').forEach(b=>b.onclick=ev=>{
+      ev.stopPropagation(); setMark(i,b.dataset.m); render();});
+  });
+}
+
+// ---- the set as a table ----------------------------------------------------
+// One row per paper, the extracted fields side by side. This is the view that
+// answers "which of these do I open" by COMPARING them, which a column of cards
+// cannot do. Sorting is alphabetical or by count — never by merit (guardrail 1).
+const TCOLS=[
+  {k:'t',  l:'paper',      get:i=>P[i].t},
+  {k:'p',  l:'proposes',   get:i=>names(P[i].p,mname)},
+  {k:'u',  l:'builds on',  get:i=>names(P[i].u,mname)},
+  {k:'k',  l:'data',       get:i=>names(P[i].k,dname)},
+  {k:'s',  l:'tasks',      get:i=>names(P[i].s,tname)}];
+function renderTable(res,show){
+  const st2=st.tsort;
+  let rows=show;
+  if(st2){
+    const col=TCOLS.find(c=>c.k===st2.k);
+    rows=[...show].sort((a,b)=>{
+      const x=(col.get(a)||'').toLowerCase(), y=(col.get(b)||'').toLowerCase();
+      if(!x!==!y)return x?-1:1;                    // named before unnamed, always
+      return (x<y?-1:x>y?1:0)*(st2.d||1);});
+  }
+  const cov=TCOLS.slice(1).map(c=>
+    `${c.l} in ${show.filter(i=>c.get(i)).length}`).join(' · ');
+  const head=`<tr><th class="mkh"></th>`+TCOLS.map(c=>{
+    const on=st2&&st2.k===c.k;
+    return `<th data-sc="${c.k}" class="${on?'on':''}">${c.l}${on?(st2.d>0?' ▲':' ▼'):''}</th>`;
+  }).join('')+`</tr>`;
+  const body=rows.map(i=>{
+    const p=P[i], m=markOf(i);
+    return `<tr class="${m?'m'+m:''} ${st.sel===i?'sel':''}" data-tr="${i}">
+      <td class="mkc">${markBtns(i)}</td>
+      <td class="tt"><button data-open="${i}">${hl(p.t)}</button>
+        <span class="cyst" style="color:var(--v${vhue(p.cy)})">${esc(CY[p.cy].v)} ${CY[p.cy].y}</span>
+        ${p.o===2?`<span class="badge sp">${esc(CY[p.cy].hw||'Spotlight')}</span>`:''}</td>
+      <td>${hl(names(p.p,mname))}</td><td>${hl(names(p.u,mname))}</td>
+      <td>${hl(names(p.k,dname))}</td><td>${hl(names(p.s,tname))}</td></tr>`;}).join('');
+  const cols=`<colgroup>`+[0,1,2,3,4,5].map(n=>`<col class="c${n}">`).join('')+`</colgroup>`;
+  return `<div class="tblwrap"><table class="tbl">${cols}<thead>${head}</thead><tbody>${body}</tbody></table></div>`+
+    `<div class="tbcov">${show.length} rows · ${cov}</div>`;
+}
+
 function renderGrouped(res){
   if(!EMB){
     ensureEmb().then(render);
@@ -3828,7 +4017,7 @@ function renderGrouped(res){
   $('#results').innerHTML=html;
   wireFold($('#results'));
   $('#results').querySelectorAll('.grow[data-i]').forEach(el=>el.onclick=()=>{
-    st.grouped=false; st.sel=+el.dataset.i; EXP.add(st.sel); render();
+    st.view='cards'; st.sel=+el.dataset.i; EXP.add(st.sel); render();
     $(`.p[data-i="${st.sel}"]`)?.scrollIntoView({block:'center'});});
 }
 
@@ -3852,6 +4041,9 @@ const c=D.coverage;
 // is new" on the cards that have none. Stating them in place beats a block that
 // is read once and then ignored.
 
+// module state for the audit harness (scripts/audit): `let`/`const` bindings
+// are not window properties, so this is the only way to assert on them
+window.BW={get st(){return st},get set(){return LAST_SET},get marks(){return MARKS},P};
 $('#ttl').onclick=()=>{ if(st.corp!==null)go(null); };
 // the affordance follows the behaviour: a link-look only off the landing
 st.corp=corpFromHash();

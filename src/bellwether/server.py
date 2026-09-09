@@ -72,6 +72,30 @@ class Handler(SimpleHTTPRequestHandler):
             except Exception as exc:  # noqa: BLE001
                 self._json(400, {"error": type(exc).__name__})
             return
+        elif self.path.startswith("/chats/") and \
+                self.path.partition("?")[0].endswith("/export"):
+            from . import chat, export
+            try:
+                head, _, qs = self.path.partition("?")
+                cid = head[len("/chats/"):-len("/export")]
+                fmt = "md"
+                for kv in qs.split("&"):
+                    if kv.startswith("fmt="):
+                        fmt = kv[4:]
+                doc = chat.get_chat(cid)
+                if fmt == "json":
+                    body = json.dumps(export.conversation(doc), ensure_ascii=False,
+                                      indent=2).encode()
+                    ctype, ext = "application/json", "json"
+                else:
+                    body = export.conversation_md(doc).encode()
+                    ctype, ext = "text/markdown; charset=utf-8", "md"
+                self._file(body, ctype, f"bellwether-{cid}.{ext}")
+            except FileNotFoundError:
+                self._json(404, {"error": "no such chat"})
+            except Exception as exc:  # noqa: BLE001
+                self._json(400, {"error": type(exc).__name__})
+            return
         elif self.path == "/chats" or self.path.startswith("/chats/"):
             from . import chat
             try:
@@ -135,6 +159,23 @@ class Handler(SimpleHTTPRequestHandler):
                 self._json(404, {"error": "no such chat"})
             except Exception as exc:  # noqa: BLE001
                 self._json(400, {"error": type(exc).__name__})
+            return
+        if self.path == "/export":
+            from . import export
+            try:
+                body = json.loads(
+                    self.rfile.read(int(self.headers.get("Content-Length", 0)))
+                    or b"{}")
+                gids = [int(g) for g in (body.get("gids") or [])][:2000]
+                if body.get("fmt") == "csv":
+                    out, ctype, name = (export.as_csv(gids), "text/csv; charset=utf-8",
+                                        "bellwether-selection.csv")
+                else:
+                    out, ctype, name = (export.bibtex(gids), "application/x-bibtex",
+                                        "bellwether-selection.bib")
+                self._file(out.encode(), ctype, name)
+            except Exception as exc:  # noqa: BLE001
+                self._json(400, {"error": f"{type(exc).__name__}: {exc}"[:200]})
             return
         if self.path == "/chat/stop":
             from . import chat
@@ -205,6 +246,14 @@ class Handler(SimpleHTTPRequestHandler):
             self.wfile.write(out)
         except Exception as exc:  # noqa: BLE001
             self._json(502, {"error": type(exc).__name__})
+
+    def _file(self, body: bytes, ctype: str, name: str) -> None:
+        self.send_response(200)
+        self.send_header("Content-Type", ctype)
+        self.send_header("Content-Length", str(len(body)))
+        self.send_header("Content-Disposition", f'attachment; filename="{name}"')
+        self.end_headers()
+        self.wfile.write(body)
 
     def _json(self, code: int, obj: dict) -> None:
         msg = json.dumps(obj).encode()

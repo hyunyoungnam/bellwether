@@ -11,6 +11,9 @@ cp scripts/audit/*.html reports/.preview/
 echo "=== api ==="
 PYTHONPATH=src python3 scripts/audit/api_audit.py "$BASE"
 
+echo "=== verifier (accept the paper's words, reject edited ones) ==="
+PYTHONPATH=src python3 scripts/audit/verify_bench.py 200
+
 LOG=${WNAI_SERVE_LOG:-run/serve.log}
 shot(){ local mark; mark=$(wc -l < "$LOG" 2>/dev/null || echo 0)
   timeout 420 firefox --headless --profile "$PROF" --window-size="$2" \

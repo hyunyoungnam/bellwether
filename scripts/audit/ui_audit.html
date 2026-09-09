@@ -147,6 +147,14 @@ async function run(){
        D().querySelectorAll('.cite.mini').length+' markers');
   line(w.BW.papers.length>0,'the papers the answer cites reach the side panel',
        w.BW.papers.length+' papers');
+  const dl=q('[data-dl]');
+  line(!!dl,'a conversation can be exported from the rail');
+  if(dl){
+    const r=await fetch('/chats/'+dl.dataset.dl+'/export?fmt=md');
+    const md=await r.text();
+    line(r.ok&&md.includes('|'),'and comes back as markdown with its quote table',
+         md.split('\n')[0].slice(0,40));
+  }
   const pubrow=q('.hrow.pub');
   if(pubrow){
     line(/^★/.test(pubrow.textContent.trim()),'a published conversation is marked in the rail');

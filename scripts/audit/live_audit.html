@@ -33,7 +33,9 @@ async function run(){
   const before=await idsBefore();
 
   head('one answer, end to end');
-  w.send('Reply in one short sentence: what corpus do you hold? No tools needed.');
+  // one tool, one anchor, one short answer — enough to exercise the whole path
+  w.send('Find one paper about KV cache compression and give its key change '
+        +'in one sentence, with the anchor.');
   await sleep(1200);
   line(w.BW.busy,'the composer goes into stop mode while it works');
   line(q('#go').textContent==='■','the ask button becomes a stop button');
@@ -51,6 +53,17 @@ async function run(){
   line(fresh.length===1,'the conversation is saved once',fresh.length+' new');
   line(!!q('.hrow.on'),'and appears in the rail, marked as open');
   line(w.location.hash==='#c'+w.BW.chat,'with its own address',w.location.hash);
+
+  head('what the turn keeps');
+  const cid=w.BW.chat;
+  const doc=await (await fetch('/chats/'+cid)).json();
+  const t0=doc.turns[0];
+  line((t0.trail||[]).length>0,'the tool trail is stored with the turn',
+       (t0.trail||[]).length+' steps');
+  line(!!(t0.on&&t0.on.papers),'and what it was answered against',
+       JSON.stringify(t0.on||{}).slice(0,60));
+  await w.openChat(cid); await sleep(700);
+  line(!!q('.trail'),'so reopening the conversation still shows how it got there');
 
   head('a run the reader calls off');
   const before2=new Set(after.map(r=>r.id));
