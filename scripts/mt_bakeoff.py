@@ -70,15 +70,26 @@ def load_terms() -> list[str]:
     return _TERMS
 
 
+NOMASK = os.environ.get("MT_NOMASK") == "1"
+
+
 def mask(text: str) -> tuple[str, list[str]]:
+    """Masking is meant to protect figures — but a model that does not respect
+    the token is worse than none, so the harness can also hand over the plain
+    text and simply check what came back."""
+    if NOMASK:
+        return text, []
     keep: list[str] = []
 
     def put(m: re.Match) -> str:
         keep.append(m.group(0))
         return f"⟪{len(keep)-1}⟫"
 
-    # order matters: the longest things first, or a term eats a number
-    out = re.sub(r"`[^`]+`|\*\*[^*]+\*\*", put, text)
+    # order matters: the longest things first, or a term eats a number.
+    # NOT bold spans: in our answers ** ** wraps whole clauses, and masking
+    # those hands the model a sentence with nothing to translate — measured,
+    # it swallowed entire segments and flattered every score.
+    out = re.sub(r"`[^`]+`", put, text)
     names = [t for t in load_terms() if t.lower() in out.lower()][:40]
     for n in sorted(names, key=len, reverse=True):
         out = re.sub(re.escape(n), put, out, flags=re.I)
