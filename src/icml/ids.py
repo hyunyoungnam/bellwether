@@ -21,9 +21,16 @@ Output: data/processed/ids.json
 from __future__ import annotations
 
 import json
+import ssl
 import time
 import urllib.request
 import urllib.error
+
+# Python 3.13 verifies certificates strictly (VERIFY_X509_STRICT) and rejects
+# S2's chain for a missing Authority Key Identifier. Verification stays on;
+# only the strict extension checks are relaxed.
+_SSL = ssl.create_default_context()
+_SSL.verify_flags &= ~ssl.VERIFY_X509_STRICT
 
 from .common import INTERIM, PROCESSED, dump_json, load_json, read_jsonl
 from pathlib import Path
@@ -46,7 +53,7 @@ def _http(url: str, data: bytes | None = None, tries: int = 8):
         req = urllib.request.Request(url, data=data, headers={
             **UA, **({"Content-Type": "application/json"} if data else {})})
         try:
-            with urllib.request.urlopen(req, timeout=60) as r:
+            with urllib.request.urlopen(req, timeout=60, context=_SSL) as r:
                 return json.loads(r.read().decode("utf-8"))
         except urllib.error.HTTPError as e:
             if e.code in (429, 500, 502, 503, 504):
@@ -98,8 +105,14 @@ def main() -> int:
     for i in range(0, len(todo), 500):
         chunk = todo[i:i + 500]
         body = json.dumps({"ids": [f"ARXIV:{b}" for b in chunk]}).encode()
-        res = _http("https://api.semanticscholar.org/graph/v1/paper/batch"
-                    "?fields=paperId,externalIds", data=body)
+        try:
+            res = _http("https://api.semanticscholar.org/graph/v1/paper/batch"
+                        "?fields=paperId,externalIds", data=body)
+        except (RuntimeError, urllib.error.HTTPError) as exc:
+            # S2 throttles hard without a key — skip the batch, keep going;
+            # a rerun refetches only what the cache is missing
+            print(f"  S2 batch at {i} skipped: {str(exc)[:60]}")
+            continue
         for b, r in zip(chunk, res):
             if r:
                 ext = r.get("externalIds") or {}

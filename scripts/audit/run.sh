@@ -16,9 +16,19 @@ PYTHONPATH=src python3 scripts/audit/verify_bench.py 200
 
 LOG=${WNAI_SERVE_LOG:-run/serve.log}
 shot(){ local mark; mark=$(wc -l < "$LOG" 2>/dev/null || echo 0)
-  timeout 420 firefox --headless --profile "$PROF" --window-size="$2" \
-    --screenshot "$PWD/reports/.preview/audit-$1.png" \
-    "$BASE/.preview/$1.html" >/dev/null 2>&1
+  if command -v firefox >/dev/null 2>&1; then
+    timeout 420 firefox --headless --profile "$PROF" --window-size="$2" \
+      --screenshot "$PWD/reports/.preview/audit-$1.png" \
+      "$BASE/.preview/$1.html" >/dev/null 2>&1
+  else
+    # local WSL has no firefox: Windows Edge headless reaches the same server
+    # through localhost forwarding; the verdict still lands in the server log
+    local EDGE="/mnt/c/Program Files (x86)/Microsoft/Edge/Application/msedge.exe"
+    [ -x "$EDGE" ] || EDGE="/mnt/c/Program Files/Microsoft/Edge/Application/msedge.exe"
+    "$EDGE" --headless=new --disable-gpu --timeout=420000 --window-size="$2" \
+      --screenshot="$(wslpath -w "$PWD/reports/.preview")\\audit-$1.png" \
+      "$BASE/.preview/$1.html" >/dev/null 2>&1
+  fi
   # each harness posts its verdict to the server log; the shot is the detail
   tail -n +$((mark+1)) "$LOG" 2>/dev/null | grep '^\[audit\]' || echo "  (no verdict — see the shot)"
   echo "  -> reports/.preview/audit-$1.png"; }
