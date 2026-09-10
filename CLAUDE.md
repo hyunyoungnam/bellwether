@@ -913,6 +913,22 @@ Still weak:
   name in a passage still links: in-corpus -> compare ("the paper it
   cites"), else arXiv/DOI/S2 via the paper's own or Semantic Scholar's
   parsed references — never a guess.
+- **Cited-in sentences, verbatim and unclassified (2026-09-10).** scite's
+  question without scite's verdicts: an unfolded card shows what later corpus
+  papers say AT the citation — the citing paper's own sentence, located by
+  the reference head's natbib tag (icml.cite_contexts), never paraphrased,
+  never labelled supporting/disputing. They ride the spans parts as slot 8
+  (one sentence per citer on the page; the two-sentence record stays in
+  cite_contexts.json and surfaces in get_citations as "context"). Trap: the
+  body searched must be the SAME fulltext file the references came from —
+  the PDF twin of an HTML row renders citations differently and silently
+  drops coverage (measured 70% -> 57%). Numeric reference styles yield
+  nothing rather than guesses (23% of edges). The legend doubles as the role
+  toggle (st.role): click a colour to read every card by one question —
+  display-level only, guardrail 5 still binds, the set never changes.
+  External ids (icml.ids -> ids.json) map by exact arXiv id only;
+  icml-2025/PMLR stays unmapped rather than title-guessed; exports carry
+  eprint/doi/openalex/s2 when the map exists and omit them when it doesn't.
 - **Picking a similar paper opens a side-by-side compare (2026-08-25).** The
   Similar panel's neighbor click no longer scrolls-or-walks: it opens a
   two-card split view — the read paper left, the picked one right, a "both

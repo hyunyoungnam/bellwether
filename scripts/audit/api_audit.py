@@ -321,6 +321,58 @@ check("the agent writes one canonical language",
       system_for("ko") == SYSTEM == system_for("en")
       and "ALWAYS write your answer in English" in SYSTEM)
 
+# ---- citation contexts (C): located sentences ride the graph end to end
+try:
+    with open("data/processed/cite_contexts.json", encoding="utf-8") as fh:
+        _cc = json.load(fh)
+    _cs = _cc["stats"]
+    check("cite_contexts: >=60% of edges carry a located sentence",
+          _cs["edges_with_context"] * 100 >= 60 * _cs["edges"],
+          f"{_cs['edges_with_context']:,}/{_cs['edges']:,}")
+    _tg = next(iter(_cc["contexts"]))
+    _cg0 = _cc["contexts"][_tg][0][0]
+    _cit = mcp.t_citations({"gid": int(_tg)})
+    _hit = [b for b in _cit["cited_by"] if b["gid"] == _cg0]
+    check("get_citations carries the citing paper's own sentence",
+          bool(_hit) and _hit[0].get("context", {}).get("sentence", "")
+          == _cc["contexts"][_tg][0][2])
+    check("the tool's note says what a context is", "context" in _cit["note"])
+except Exception as exc:  # noqa: BLE001
+    check("citation contexts", False, str(exc)[:60])
+
+# the page ships them: spans rows grew a 9th slot, the card has the block
+import glob as _gl  # noqa: E402
+_spf = sorted(_gl.glob("reports/data/spans_*.json"))
+if _spf:
+    with open(_spf[0], encoding="utf-8") as fh:
+        _sp = json.load(fh)
+    _row0 = next(iter(_sp.values()))
+    check("spans rows carry the context slot", len(_row0) == 9,
+          f"slot count {len(_row0)}")
+with open("reports/index.html", encoding="utf-8") as fh:
+    _page = fh.read()
+check("the card renders cited-in verbatim sentences",
+      "cited in" in _page and 'class="ctx"' in _page)
+
+# ---- H: the legend doubles as the role toggle, display-level only
+check("legend buttons carry data-role", _page.count("data-role=") >= 3)
+check("role narrows the passage, never the set",
+      "st.role" in _page and "role:null" in _page)
+
+# ---- D: external ids reach the exports (once ids.json is built)
+import os as _os  # noqa: E402
+if _os.path.exists("data/processed/ids.json"):
+    with open("data/processed/ids.json", encoding="utf-8") as fh:
+        _ids = json.load(fh)["ids"]
+    _g5 = next(g for g, x in _ids.items() if x.get("arxiv") and x.get("doi"))
+    code, raw = req("POST", "/export", {"gids": [int(_g5)], "fmt": "bib"})
+    check("bibtex carries eprint + doi for a mapped paper",
+          code == 200 and b"eprint" in raw and b"doi" in raw)
+    code, raw = req("POST", "/export", {"gids": [int(_g5)], "fmt": "csv"})
+    check("csv carries the id columns", code == 200 and b"openalex" in raw)
+else:
+    check("ids.json not built — id export checks skipped, not failed", True)
+
 bad = [r for r in rows if r[0] == "FAIL"]
 print(f"\n{len(rows) - len(bad)}/{len(rows)} passed")
 sys.exit(1 if bad else 0)

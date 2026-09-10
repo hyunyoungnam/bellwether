@@ -877,9 +877,26 @@ def build_payload(span_source: str) -> dict:
     if _CIT.exists():
         for a3, b3 in load_json(_CIT)["edges"]:
             cited_of[a3].append(b3)
+    # Citation contexts (icml.cite_contexts): the citing paper's own sentence
+    # at the citation, attached to the CITED paper's row. Verbatim and
+    # unclassified; one sentence per citing paper ships to the page (the
+    # full record stays in cite_contexts.json for the MCP tool).
+    _CTX = PROCESSED / "cite_contexts.json"
+    ctx_of: dict[str, list] = {}
+    if _CTX.exists():
+        for k5, rows5 in load_json(_CTX)["contexts"].items():
+            first: set = set()
+            kept5 = []
+            for cg5, bk5, s5 in rows5:
+                if cg5 in first:
+                    continue
+                first.add(cg5)
+                kept5.append([cg5, bk5, s5])
+            ctx_of[k5] = kept5
     for r in rows:
         r["cg"] = cited_of.get(r["i"], None) and cited_of[r["i"]][:80]
         r["cl"] = cite_links.get(r["i"])
+        r["cx"] = ctx_of.get(str(r["i"]))
 
     nb = load_json(NEIGHBORS) if NEIGHBORS.exists() else None
     with_span = sum(1 for r in rows if r["n"])
@@ -1521,6 +1538,18 @@ color:#4a4943;line-height:1.6}
 letter-spacing:.07em;margin-right:5px}
 .tm.new b{color:#9a7a00}
 .tm.eff b{color:#1d6ea8}
+/* cited-in: the citing papers' sentences, verbatim — located, not judged */
+.ctx{margin:12px 0 2px;border-top:1px dashed rgba(0,0,0,.12);padding-top:9px}
+.cxh{font-weight:600;color:#8a8981;font-size:10px;text-transform:uppercase;letter-spacing:.07em}
+.cxr{margin:8px 0 0}
+.cxr .cxt{font-size:12.5px}
+.cxv{font-size:10.5px;margin-left:7px}
+.cxs{font-size:12.5px;color:#4a4943;line-height:1.55;margin-top:1px}
+.cxb{font-size:9.5px;color:#a8a79f;text-transform:uppercase;letter-spacing:.06em;margin-left:6px}
+/* the legend doubles as the role toggle */
+.legend button.sw{font:inherit;background:none;border:0;padding:0;cursor:pointer;text-align:left}
+#legend.rsel .sw[data-role]{opacity:.32}
+#legend.rsel .sw[data-role].on{opacity:1}
 .meta i{font-style:italic;color:#8a8981}
 /* The address is copied, not opened: a mailto: hands the reader off to whatever
    client the OS picked, which is rarely what they wanted. */
@@ -2010,10 +2039,10 @@ body.haspanel #cmp{margin-right:max(0px,calc(352px - (100vw - 1266px)/2))}
 <div class="insbox" id="inset" hidden></div>
 
 <div class="legend" id="legend">
-  <span class="sw"><span class="hl why">why it was needed</span></span>
-  <span class="sw"><span class="hl new">what is new</span></span>
-  <span class="sw"><span class="hl eff">what it achieved</span></span>
-  <span>— the paper's own sentences, cut but never rewritten. The colours and the order are ours.</span></div>
+  <button class="sw" data-role="why" title="show only these sentences"><span class="hl why">why it was needed</span></button>
+  <button class="sw" data-role="new" title="show only these sentences"><span class="hl new">what is new</span></button>
+  <button class="sw" data-role="eff" title="show only these sentences"><span class="hl eff">what it achieved</span></button>
+  <span>— the paper's own sentences, cut but never rewritten. The colours and the order are ours. Click a colour to read the cards by that question alone.</span></div>
 
 <div class="res" id="results"></div>
 
@@ -2167,7 +2196,7 @@ function papersWithWord(w){
 // Papers are shown only once the reader has asked for some. Listing all 6,637 on
 // arrival is the problem this product exists to remove, not a neutral default.
 const MAX_SHOWN=80, NEIGHBOURS_SHOWN=5;
-const st={corp:null,q:[],qraw:'',anc:null,pick:null,topics:new Set(),fams:new Set(),sel:null,panel:null,ds:null,meth:null,mfam:null,view:'cards',tsort:null,hidex:false,box:null,lim:null};
+const st={corp:null,q:[],qraw:'',anc:null,pick:null,topics:new Set(),fams:new Set(),sel:null,panel:null,ds:null,meth:null,mfam:null,view:'cards',tsort:null,hidex:false,box:null,lim:null,role:null};
 // The claim the reader clicked to get here — the door's face, carried to the
 // destination so "why am I looking at this set?" never needs remembering.
 let STORY=null;
@@ -2453,19 +2482,21 @@ function card(i,full){
   const p=P[i];
   const sx=SPX[p.i], spReady=!!sx;
   const pn=sx?sx[0]:[], pL=sx?sx[1]:null, pK=sx?sx[2]:null, pR=sx?sx[3]:null,
-        pc1=sx?sx[4]:null, pD=sx?sx[5]:null, pCl=sx?sx[7]:null;
+        pc1=sx?sx[4]:null, pD=sx?sx[5]:null, pCl=sx?sx[7]:null, pCx=sx?sx[8]:null;
 
   // One passage, not three labelled rows. The three sentences are the paper's,
   // in the order a reader needs them, and the colour says which question each
   // answers: why it was needed, what is new, what it achieved.
+  // H: st.role narrows the passage to one of the three sentences — a way of
+  // READING the cards, never a filter on the set (guardrail 5).
   const parts=[];
-  if(pL)parts.push(`<span class="hl why">${markLim(annotate(pL,p,true,pCl))}</span>`);
+  if(pL&&(!st.role||st.role==='why'))parts.push(`<span class="hl why">${markLim(annotate(pL,p,true,pCl))}</span>`);
   const change=pK||pn[0]||'';
-  if(change)parts.push(`<span class="hl new">${annotate(change,p,true,pCl)}</span>`);
+  if(change&&(!st.role||st.role==='new'))parts.push(`<span class="hl new">${annotate(change,p,true,pCl)}</span>`);
   // The deep pass's mechanism sentences (highlight papers, full-paper source)
   // extend the yellow: HOW it works, still the paper's own words in the same
   // wash — full text enriches the passage itself, never a side ledger.
-  if(open&&pD&&pD[0]){
+  if(open&&pD&&pD[0]&&(!st.role||st.role==='new')){
     const tk=s2=>new Set(s2.toLowerCase().match(/[a-z]{4,}/g)||[]);
     const ov=(A,B)=>{let c=0;for(const w of A)if(B.has(w))c++;return c/Math.max(Math.min(A.size,B.size),1);};
     const seen=change?[tk(change)]:[];
@@ -2476,7 +2507,7 @@ function card(i,full){
       parts.push(`<span class="hl new">${annotate(m,p,true,pCl)}</span>`);
     }
   }
-  if(pR)parts.push(`<span class="hl eff">${annotate(pR,p,true,pCl)}</span>`);
+  if(pR&&(!st.role||st.role==='eff'))parts.push(`<span class="hl eff">${annotate(pR,p,true,pCl)}</span>`);
 
   // The extracted terms are part of the summary, not a footnote under it.
   const term=(lab,v,cls)=>v?`<span class="tm ${cls}"><b>${lab}</b>${hl(v)}</span>`:'';
@@ -2501,7 +2532,7 @@ function card(i,full){
   const passage=open
     ?`<div class="rule"></div>`+
      (parts.length?`<div class="passage">${parts.join(' ')}</div>`
-      :spReady?`<div class="passage miss">no sentence in this paper states what is new</div>`
+      :spReady?`<div class="passage miss">${st.role?({why:'no limitation sentence on file for this paper',new:'no what-is-new sentence on file for this paper',eff:'no result sentence on file for this paper'})[st.role]:'no sentence in this paper states what is new'}</div>`
       :`<div class="passage miss">loading the paper's own sentences…</div>`)
     :'';
   const foot=open
@@ -2513,12 +2544,27 @@ function card(i,full){
       </div>
     </div>`
     :'';
+  // Cited-in: what later papers in this corpus say when they cite this one —
+  // their sentences verbatim, no supporting/disputing verdicts of ours.
+  let ctxb='';
+  if(open&&pCx&&pCx.length){
+    const rows2=pCx.map(([g2,bk,s3])=>{
+      const j2=BYID[g2];
+      if(j2===undefined)return '';
+      const q=P[j2];
+      return `<div class="cxr"><a class="citelink cxt" data-cg="${g2}">${esc(q.t)}</a>`+
+             `<span class="cxv" style="color:var(--v${vhue(q.cy)})">${esc(CY[q.cy].v)} ${CY[q.cy].y}</span>`+
+             `<div class="cxs">“${esc(s3)}”<span class="cxb">${esc(bk)}</span></div></div>`;
+    }).filter(Boolean).join('');
+    if(rows2)ctxb=`<div class="ctx"><div class="cxh">cited in · the citing paper's own sentence</div>${rows2}</div>`;
+  }
   return `<div class="p ${st.sel===i?'sel':''} ${markOf(i)?'m'+markOf(i):''} ${full?'':(open?'exp':'cpt')}" data-i="${i}"><div class="body">
     ${markBtns(i)}
     <div class="ti">${hl(p.t)}${p.o===2?`<span class="badge sp">${esc(CY[p.cy].hw||'Spotlight')}</span>`:''}</div>
     <div class="meta"><span class="cyst" style="color:var(--v${vhue(p.cy)})">${esc(CY[p.cy].v)} ${CY[p.cy].y}</span>${who}${nearBadge(p)}</div>
     ${passage}
     ${terms?`<div class="terms">${terms}</div>`:''}
+    ${ctxb}
     ${foot}
   </div></div>`;
 }
@@ -4184,6 +4230,13 @@ render();
 // card on the ALL screen, selected and unfolded
 { const pm=location.hash.match(/^#p(\d+)$/);
   if(pm)openPaper(+pm[1]); }
+// the legend is also the role toggle (display-level; the set never changes)
+$('#legend').querySelectorAll('.sw[data-role]').forEach(el=>el.onclick=()=>{
+  st.role=st.role===el.dataset.role?null:el.dataset.role;
+  const lg=$('#legend');
+  lg.classList.toggle('rsel',!!st.role);
+  lg.querySelectorAll('.sw[data-role]').forEach(e2=>e2.classList.toggle('on',st.role===e2.dataset.role));
+  render();});
 // the link home only exists where home exists — a dist upload serves this
 // page AT the root and would link to itself
 if(location.pathname.replace(/\/$/,'').endsWith('/browse'))$('#homelink').hidden=false;
@@ -4242,7 +4295,7 @@ def main() -> int:
     for r in payload["papers"]:
         spans_by[keys_by_ci[r["cy"]]][str(r["i"])] = [
             r.pop("n"), r.pop("L"), r.pop("K"), r.pop("R"), r.pop("c1"),
-            r.pop("D"), r.pop("cg"), r.pop("cl")]
+            r.pop("D"), r.pop("cg"), r.pop("cl"), r.pop("cx")]
     for k, v in spans_by.items():
         parts[f"spans_{k}.json"] = dump(v)
     parts["search.json"] = dump({"terms": payload.pop("terms"),

@@ -62,6 +62,7 @@ def _fields(store: Store, gid: int) -> dict:
         "title": rec.get("title") or "",
         "authors": rec.get("authors") or [],
         "url": rec.get("virtual_url") or rec.get("paper_url") or "",
+        "ids": store.ext_ids.get(str(gid)) or {},
         "limitation": L or "", "key_change": K or (n[0] if n else ""),
         "result_claim": R or "",
         "proposes": join(t.get("p")), "builds_on": join(t.get("b")),
@@ -90,12 +91,19 @@ def bibtex(gids: list[int], store: Store | None = None) -> str:
                 f'  year = {{{f["year"]}}}']
         if f["url"]:
             rows.append(f'  url = {{{f["url"]}}}')
+        x = f["ids"]
+        if x.get("arxiv"):
+            rows.append(f'  eprint = {{{x["arxiv"]}}}')
+            rows.append('  archiveprefix = {arXiv}')
+        if x.get("doi"):
+            rows.append(f'  doi = {{{x["doi"]}}}')
         rows.append(f'  note = {{{f["venue"]} {f["year"]}}}')
         out.append("@inproceedings{" + k + ",\n" + ",\n".join(rows) + "\n}")
     return "\n\n".join(out) + ("\n" if out else "")
 
 
 CSV_COLS = ["gid", "title", "venue", "year", "authors", "url",
+            "arxiv", "doi", "openalex", "s2",
             "proposes", "builds_on", "data", "tasks",
             "limitation", "key_change", "result_claim"]
 
@@ -110,8 +118,13 @@ def as_csv(gids: list[int], store: Store | None = None) -> str:
             f = _fields(store, gid)
         except (KeyError, IndexError, ValueError):
             continue
+        x = f["ids"]
         w.writerow([f["gid"], f["title"], f["venue"], f["year"],
                     "; ".join(f["authors"]), f["url"],
+                    x.get("arxiv", ""), x.get("doi", ""),
+                    f'https://openalex.org/{x["oa"]}' if x.get("oa") else "",
+                    (f'https://www.semanticscholar.org/paper/{x["s2"]}'
+                     if x.get("s2") else ""),
                     f["proposes"], f["builds_on"], f["data"], f["tasks"],
                     f["limitation"], f["key_change"], f["result_claim"]])
     return buf.getvalue()

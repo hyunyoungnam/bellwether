@@ -182,6 +182,22 @@ class Store:
         return self._c["cnote"]
 
     @property
+    def cite_ctx(self) -> dict:
+        """cited gid (str) -> [[citing gid, bucket, sentence], ...]."""
+        if "cctx" not in self._c:
+            p = PROCESSED / "cite_contexts.json"
+            self._c["cctx"] = self._json(p)["contexts"] if p.exists() else {}
+        return self._c["cctx"]
+
+    @property
+    def ext_ids(self) -> dict:
+        """gid (str) -> {arxiv, doi, s2, oa} — icml.ids, exact matches only."""
+        if "xids" not in self._c:
+            p = PROCESSED / "ids.json"
+            self._c["xids"] = self._json(p)["ids"] if p.exists() else {}
+        return self._c["xids"]
+
+    @property
     def search_key(self) -> str | None:
         try:
             return (ROOT / "data/meili/search_key").read_text().strip()
@@ -645,10 +661,31 @@ def _verifier():
 
 def t_citations(a: dict) -> dict:
     gid = int(a["gid"])
+
+    def _cx(citing: int, cited: int):
+        # the citing paper's own sentence at the citation, where the reference
+        # style let icml.cite_contexts locate it (name-year heads only)
+        for cg, bucket, sent in S.cite_ctx.get(str(cited), ()):
+            if cg == citing:
+                return {"section": bucket, "sentence": sent}
+        return None
+
+    def _side(gids, direction):
+        out = []
+        for g in gids[:40]:
+            b = S.brief(g)
+            c = _cx(gid, g) if direction == "out" else _cx(g, gid)
+            if c:
+                b["context"] = c
+            out.append(b)
+        return out
+
     return {"paper": S.brief(gid),
-            "cites": [S.brief(g) for g in S.cites_out.get(gid, ())[:40]],
-            "cited_by": [S.brief(g) for g in S.cites_in.get(gid, ())[:40]],
-            "note": "in-corpus edges only (between our six editions); "
+            "cites": _side(S.cites_out.get(gid, ()), "out"),
+            "cited_by": _side(S.cites_in.get(gid, ()), "in"),
+            "note": "in-corpus edges only (between our six editions); context "
+                    "= the citing paper's verbatim sentence at the citation, "
+                    "present where the reference style allowed locating it; "
                     + S.cite_note}
 
 
@@ -741,7 +778,9 @@ TOOLS = [
                                     "quote": {"type": "string"}}}},
     {"name": "get_citations",
      "description": "Which of our corpus papers this paper cites, and which "
-                    "cite it (edges within the six editions only).",
+                    "cite it (edges within the six editions only). Where the "
+                    "reference style allows it, each entry carries the citing "
+                    "paper's verbatim sentence at the citation (context).",
      "fn": t_citations,
      "inputSchema": {"type": "object", "required": ["gid"], "properties": {
          "gid": _GID}}},
