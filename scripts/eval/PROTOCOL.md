@@ -105,3 +105,9 @@ every system identically, and is listed so a reader can judge it:
 - Bellwether rendering: a cite chip whose quote is the paper's title renders
   once in bold; sentence chips render as "quote" — Title. Re-rendered from
   the saved sidecars; the answers themselves were not re-generated.
+- 2026-09-14 (after PaperQA2's answers) — titles in *italics* are
+  candidates; reference-list lines lose a leading "(citation key):" and
+  "Unknown authors." prefix and may run to 400 chars; the decline pattern
+  also recognises "none of the … are …", "no titles can be listed", "is not
+  among them". Each was a format the second system used and the grader
+  had never seen.

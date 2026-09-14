@@ -37,7 +37,9 @@ _DECLINE = re.compile(r"not (?:yet )?(?:available|public|released|announced|"
                       r"accessible)|cannot|can't|unable|no (?:accepted )?list|"
                       r"has(?:n't| not) (?:been )?(?:released|announced|published)|"
                       r"do not have|don't have|outside (?:my|the) (?:scope|corpus)|"
-                      r"not (?:in|covered by) (?:my|the|this) (?:corpus|data)",
+                      r"not (?:in|covered by|among) (?:my|the|this|them)|"
+                      r"none of the|no (?:titles|papers|count) can be|"
+                      r"is not (?:among|in) (?:them|the corpus)|not (?:one of|part of)",
                       re.I)
 
 
@@ -85,18 +87,24 @@ def candidates(text: str):
     out = []
     for m in _BOLD.finditer(text):
         out.append(m.group(1))
+    for m in re.finditer(r"(?<!\*)\*([^*\n]{20,200})\*(?!\*)", text):   # *italic titles*
+        out.append(m.group(1))
     for m in re.finditer(r"[\"“]([^\"”\n]{20,200})[\"”]", text):
         out.append(m.group(1))
     for line in text.splitlines():
         s = re.sub(r"^\s*(?:[-*•]|\d+[.)])\s+", "", line).strip()
         if not s:
             continue
+        # reference-list conventions: a leading "(citation key):" and an
+        # "Unknown authors." prefix carry no title; drop them
+        s = re.sub(r"^\([^)]{0,120}\)\s*:?\s*", "", s)
+        s = re.sub(r"^(?:unknown authors|anonymous)\.\s*", "", s, flags=re.I)
         # any line may carry "quote" — Title …: every dash-separated piece
         # is a candidate, so the title after an em-dash is not lost
         for piece in re.split(r"\s+[—–]\s+", s):
             piece = re.split(r"\s+\(", piece, maxsplit=1)[0].strip(" *_\"“”")
             piece = re.sub(r"\s*\[UNVERIFIED\]\s*$", "", piece)
-            if 20 <= len(piece) <= 200:
+            if 20 <= len(piece) <= 400:
                 out.append(piece)
     seen, uniq = set(), []
     for c in out:
