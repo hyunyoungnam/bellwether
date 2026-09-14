@@ -288,6 +288,9 @@ check("and it is marked as the server's notice, not as a failed claim",
       all(x.get("auto") for x in _segs2 if x.get("t") == "n"))
 check("a turn with no recomputable tool marks nothing",
       not [x for x in segment(_auto, _st, _V(_st), [])[0] if x.get("t") == "n"])
+check("a typographic minus reads as a sign",
+      figures.claimed("z \u22120.09")[0][1] == -0.09
+      and figures.scan("z \u22120.09", [-0.09], set(), set())[0][3] == "ok")
 check("derived arithmetic counts as explained",
       "derived" == figures.scan("4.4", [31.0, 705.0], figures.derived_set([31.0, 705.0]),
                                 set())[0][3])

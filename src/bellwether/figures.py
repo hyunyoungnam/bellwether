@@ -76,8 +76,13 @@ def pool(obj, out: list | None = None) -> list[float]:
     return out
 
 
+# the agent writes "z −0.09" with a typographic minus; same length as "-",
+# so offsets computed on the normalised text still index the original
+_MINUS = str.maketrans({"\u2212": "-"})
+
+
 def claimed(claim: str) -> list[tuple[str, float]]:
-    return [(m, _val(m)) for m in _NUM.findall(claim)]
+    return [(m, _val(m)) for m in _NUM.findall(claim.translate(_MINUS))]
 
 
 def _matches(raw: str, val: float, vals: list[float]) -> bool:
@@ -185,6 +190,7 @@ def turn_pool(trail: list, cache: dict | None = None) -> tuple[list[float], list
 
 
 def scan(text: str, vals: list[float], deriv: set, skip: set) -> list[tuple]:
+    text = text.translate(_MINUS)
     """(start, end, raw, verdict) for every figure printed in this text.
 
     Verdicts: 'ok' (in a tool result), 'derived' (arithmetic of two of them),

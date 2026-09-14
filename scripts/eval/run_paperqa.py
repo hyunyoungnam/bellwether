@@ -76,7 +76,25 @@ def build(limit: int | None) -> int:
     return n
 
 
+def _cache_sentence_transformers() -> None:
+    """PaperQA2 builds a SentenceTransformer per document it indexes (measured
+    4.7 s per file = model load); one instance per model name is enough."""
+    import sentence_transformers as st
+    if getattr(st, "_bellwether_cached", False):
+        return
+    orig, cache = st.SentenceTransformer, {}
+
+    def cached(name, *a, **kw):
+        if name not in cache:
+            cache[name] = orig(name, *a, **kw)
+        return cache[name]
+
+    st.SentenceTransformer = cached
+    st._bellwether_cached = True
+
+
 def settings():
+    _cache_sentence_transformers()
     from paperqa import Settings
     s = Settings(llm=LLM, summary_llm=LLM, embedding=EMBED, temperature=0.0)
     # every model slot — the agent loop and parsing enrichment default to
@@ -85,6 +103,11 @@ def settings():
     s.parsing.enrichment_llm = LLM
     s.agent.index.paper_directory = str(CORPUS)
     s.agent.index.index_directory = str(INDEX)
+    # batch_size defaults to 1 and the sentence-transformer is instantiated
+    # per batch — measured 10 s per file, i.e. days for the corpus
+    s.agent.index.batch_size = 2000
+    s.agent.index.concurrency = 2
+    s.embedding_config = {"batch_size": 128, "device": "cpu"}
     s.agent.index.manifest_file = str(CORPUS / "manifest.csv")
     s.parsing.use_doc_details = False        # no Crossref/S2 lookups
     s.parsing.disable_doc_valid_check = True

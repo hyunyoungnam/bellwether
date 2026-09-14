@@ -78,3 +78,25 @@ Bellwether only, the server's figure-verification tally.
 
 `scores/<system>.json` per system and `scores/summary.md` — one table,
 systems as columns, metrics as rows, with n and the declined count.
+
+## Grader changelog (before any cross-system comparison)
+
+The questions and truth are frozen; the grader is code and had bugs. Every
+change below was made while only Bellwether's answers existed, applies to
+every system identically, and is listed so a reader can judge it:
+
+- 2026-09-14 — quotes: a quoted *title* is a citation, not a quote; the same
+  sentence quoted twice in one answer is one quote; attribution looks first
+  at the paper named right after the quote on the same line, then up to four
+  lines above. Title matching tries the four rarest tokens as anchors (a
+  title followed by prose carried a rare word the title lacked and missed).
+- 2026-09-14 — phantom titles: bold and quoted spans no longer cross lines;
+  a candidate must have >= 5 content words, >= 60% capitalised, not end in a
+  colon (headings like "Closest competitors (…)" were counted as phantoms).
+- 2026-09-14 — scope honesty: "declined" is judged on the first 700
+  characters, whatever follows (an answer that says "not available" and
+  then offers the nearest edition instead is honest, not fabricated).
+- 2026-09-14 — numbers: tokens inside "2025/26" and "level-3" are not counted.
+- Bellwether rendering: a cite chip whose quote is the paper's title renders
+  once in bold; sentence chips render as "quote" — Title. Re-rendered from
+  the saved sidecars; the answers themselves were not re-generated.
