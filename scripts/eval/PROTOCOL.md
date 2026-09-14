@@ -68,8 +68,11 @@ Bellwether only, the server's figure-verification tally.
 - **Contamination.** Frontier models may have seen 2026 papers in training;
   T3/T6 still require *listing the right ones*, which weights cannot do
   exhaustively. T5 is immune (the list does not exist yet).
-- **Cost.** Every paid call passes `budget.py` (daily cap, default $10);
-  the Anthropic Console workspace limit is the hard backstop.
+- **Cost.** Every paid call passes `budget.py`: daily cap $10 and monthly
+  cap $100, enforced in code because the key is on a team account with no
+  per-key limit — the key is loaded into a process only while both caps
+  have room, LiteLLM is capped at what is left, and a ledger
+  (`run/eval_spend.jsonl`) records every response synchronously.
 
 ## Outputs
 

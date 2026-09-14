@@ -103,11 +103,9 @@ def main() -> int:
     if not os.environ.get("ANTHROPIC_API_KEY"):
         print("ANTHROPIC_API_KEY missing — put it in ~/.bellwether/.env", file=sys.stderr)
         return 2
-    import litellm
-    litellm.success_callback = [budget.litellm_callback]
-    litellm.max_budget = budget.remaining()
+    budget.arm_litellm()          # observe every call; LiteLLM stops at what is left
     budget.assert_room()
-    print(f"budget: ${budget.remaining():.2f} left today")
+    print("budget:", budget.status())
 
     from paperqa import ask
     s = settings()
@@ -132,11 +130,14 @@ def main() -> int:
             return 3
         sess = getattr(r, "session", r)
         text = getattr(sess, "formatted_answer", None) or getattr(sess, "answer", "") or str(r)
+        # the authoritative ledger line: PaperQA2's own per-session cost,
+        # written synchronously; anything the callbacks saw beyond it is
+        # flushed at exit
+        budget.charge(LLM, usd=float(getattr(sess, "cost", 0) or 0), note=f"paperqa {q['id']}")
         f.write_text(f"<!-- system: paperqa | llm: {LLM} | embed: {EMBED} | "
                      f"{time.strftime('%Y-%m-%d %H:%M')} | {time.time() - t0:.0f}s -->\n"
                      f"{text}\n", encoding="utf-8")
-        print(f"{q['id']}: {len(text)} chars, {time.time() - t0:.0f}s, "
-              f"spent today ${budget.today_spend():.2f}")
+        print(f"{q['id']}: {len(text)} chars, {time.time() - t0:.0f}s | {budget.status()}")
         if a.dry:
             break
     return 0
