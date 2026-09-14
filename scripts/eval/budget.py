@@ -216,15 +216,46 @@ def flush(note: str = "unflushed") -> float:
 atexit.register(flush, "unflushed-at-exit")
 
 
+_SAMPLING = ("temperature", "top_p", "top_k")
+
+
+def _rejects_sampling(model: str) -> bool:
+    """Claude Opus 5 / Sonnet 5 / Opus 4.7+ / Fable return 400 on sampling
+    parameters; harnesses like PaperQA2 always send temperature."""
+    m = (model or "").lower()
+    return "claude" in m and any(x in m for x in
+                                 ("opus-5", "sonnet-5", "opus-4-8", "opus-4-7", "fable"))
+
+
 def arm_litellm() -> None:
-    """Point LiteLLM at the ledger and cap this process at what is left —
-    LiteLLM raises BudgetExceededError in the call path, which is the real
-    mid-run stop (a raise inside the callback thread would not reach the
-    caller)."""
+    """Point LiteLLM at the ledger, cap this process at what is left (LiteLLM
+    raises BudgetExceededError in the call path — the real mid-run stop; a
+    raise inside its callback thread would not reach the caller), and strip
+    sampling parameters for models that reject them. Call BEFORE importing
+    the harness so its module-level bindings see the wrapped functions."""
     import litellm
     if litellm_callback not in (litellm.success_callback or []):
         litellm.success_callback = list(litellm.success_callback or []) + [litellm_callback]
     litellm.max_budget = remaining()
+    if not getattr(litellm, "_bellwether_strip", False):
+        _c, _ac = litellm.completion, litellm.acompletion
+
+        def _clean(a, kw):
+            model = kw.get("model") or (a[0] if a and isinstance(a[0], str) else "")
+            if _rejects_sampling(model):
+                for k in _SAMPLING:
+                    kw.pop(k, None)
+
+        def completion(*a, **kw):
+            _clean(a, kw)
+            return _c(*a, **kw)
+
+        async def acompletion(*a, **kw):
+            _clean(a, kw)
+            return await _ac(*a, **kw)
+
+        litellm.completion, litellm.acompletion = completion, acompletion
+        litellm._bellwether_strip = True
 
 
 if __name__ == "__main__":

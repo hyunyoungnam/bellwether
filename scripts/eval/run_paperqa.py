@@ -79,6 +79,10 @@ def build(limit: int | None) -> int:
 def settings():
     from paperqa import Settings
     s = Settings(llm=LLM, summary_llm=LLM, embedding=EMBED, temperature=0.0)
+    # every model slot — the agent loop and parsing enrichment default to
+    # gpt-4o and would fail (or bill OpenAI) silently otherwise
+    s.agent.agent_llm = LLM
+    s.parsing.enrichment_llm = LLM
     s.agent.index.paper_directory = str(CORPUS)
     s.agent.index.index_directory = str(INDEX)
     s.agent.index.manifest_file = str(CORPUS / "manifest.csv")
