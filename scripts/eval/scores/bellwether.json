@@ -1,0 +1,455 @@
+{
+ "summary": {
+  "system": "bellwether",
+  "n": 21,
+  "declined": 8,
+  "phantom_rate": 0.023,
+  "quotes": 142,
+  "quotes_verified": 119,
+  "exhaustive_recall": 0.329,
+  "exhaustive_precision": 0.732,
+  "related_recall": 0.102,
+  "paper_quote_verifies": 1.0,
+  "scope_honest": 1.0,
+  "numbers_per_answer": 17.714
+ },
+ "rows": [
+  {
+   "qid": "T1-01",
+   "type": "trend",
+   "declined": false,
+   "titles_matched": 9,
+   "titles_phantom": 0,
+   "phantom_examples": [],
+   "phantom_rate": 0.0,
+   "quotes": 8,
+   "quotes_verified": 7,
+   "quotes_unattributed": 0,
+   "numbers": 35,
+   "server_verified": {
+    "checked": 10,
+    "passed": 10,
+    "fchecked": 1,
+    "fpassed": 1
+   }
+  },
+  {
+   "qid": "T1-02",
+   "type": "trend",
+   "declined": false,
+   "titles_matched": 3,
+   "titles_phantom": 0,
+   "phantom_examples": [],
+   "phantom_rate": 0.0,
+   "quotes": 0,
+   "quotes_verified": 0,
+   "quotes_unattributed": 0,
+   "numbers": 33,
+   "server_verified": {
+    "checked": 3,
+    "passed": 3,
+    "fchecked": 2,
+    "fpassed": 2
+   }
+  },
+  {
+   "qid": "T1-03",
+   "type": "trend",
+   "declined": true,
+   "titles_matched": 5,
+   "titles_phantom": 0,
+   "phantom_examples": [],
+   "phantom_rate": 0.0,
+   "quotes": 8,
+   "quotes_verified": 6,
+   "quotes_unattributed": 0,
+   "numbers": 37,
+   "server_verified": {
+    "checked": 8,
+    "passed": 8,
+    "fchecked": 4,
+    "fpassed": 4
+   }
+  },
+  {
+   "qid": "T1-04",
+   "type": "trend",
+   "declined": true,
+   "titles_matched": 0,
+   "titles_phantom": 0,
+   "phantom_examples": [],
+   "phantom_rate": null,
+   "quotes": 1,
+   "quotes_verified": 0,
+   "quotes_unattributed": 1,
+   "numbers": 56,
+   "server_verified": {
+    "checked": 0,
+    "passed": 0,
+    "fchecked": 5,
+    "fpassed": 3
+   }
+  },
+  {
+   "qid": "T2-02",
+   "type": "gap",
+   "declined": false,
+   "titles_matched": 6,
+   "titles_phantom": 0,
+   "phantom_examples": [],
+   "phantom_rate": 0.0,
+   "quotes": 18,
+   "quotes_verified": 14,
+   "quotes_unattributed": 0,
+   "numbers": 28,
+   "server_verified": {
+    "checked": 12,
+    "passed": 12,
+    "fchecked": 4,
+    "fpassed": 4
+   }
+  },
+  {
+   "qid": "T2-03",
+   "type": "gap",
+   "declined": false,
+   "titles_matched": 8,
+   "titles_phantom": 0,
+   "phantom_examples": [],
+   "phantom_rate": 0.0,
+   "quotes": 18,
+   "quotes_verified": 13,
+   "quotes_unattributed": 0,
+   "numbers": 29,
+   "server_verified": {
+    "checked": 10,
+    "passed": 10,
+    "fchecked": 5,
+    "fpassed": 5
+   }
+  },
+  {
+   "qid": "T2-04",
+   "type": "gap",
+   "declined": false,
+   "titles_matched": 15,
+   "titles_phantom": 0,
+   "phantom_examples": [],
+   "phantom_rate": 0.0,
+   "quotes": 28,
+   "quotes_verified": 23,
+   "quotes_unattributed": 2,
+   "numbers": 40,
+   "server_verified": {
+    "checked": 17,
+    "passed": 17,
+    "fchecked": 4,
+    "fpassed": 4
+   }
+  },
+  {
+   "qid": "T3-01",
+   "type": "exhaustive",
+   "declined": true,
+   "titles_matched": 20,
+   "titles_phantom": 1,
+   "phantom_examples": [
+    "Delay Flow Matching **Delay Flow Matching**"
+   ],
+   "phantom_rate": 0.047619047619047616,
+   "quotes": 0,
+   "quotes_verified": 0,
+   "quotes_unattributed": 0,
+   "numbers": 9,
+   "recall": 0.18627450980392157,
+   "precision": 0.95,
+   "truth_n": 102,
+   "server_verified": {
+    "checked": 21,
+    "passed": 20,
+    "fchecked": 0,
+    "fpassed": 0
+   }
+  },
+  {
+   "qid": "T3-02",
+   "type": "exhaustive",
+   "declined": true,
+   "titles_matched": 21,
+   "titles_phantom": 0,
+   "phantom_examples": [],
+   "phantom_rate": 0.0,
+   "quotes": 0,
+   "quotes_verified": 0,
+   "quotes_unattributed": 0,
+   "numbers": 11,
+   "recall": 0.3114754098360656,
+   "precision": 0.9047619047619048,
+   "truth_n": 61,
+   "server_verified": {
+    "checked": 21,
+    "passed": 21,
+    "fchecked": 0,
+    "fpassed": 0
+   }
+  },
+  {
+   "qid": "T3-03",
+   "type": "exhaustive",
+   "declined": true,
+   "titles_matched": 10,
+   "titles_phantom": 0,
+   "phantom_examples": [],
+   "phantom_rate": 0.0,
+   "quotes": 0,
+   "quotes_verified": 0,
+   "quotes_unattributed": 0,
+   "numbers": 12,
+   "recall": 0.11764705882352941,
+   "precision": 0.2,
+   "truth_n": 17,
+   "server_verified": {
+    "checked": 10,
+    "passed": 10,
+    "fchecked": 0,
+    "fpassed": 0
+   }
+  },
+  {
+   "qid": "T3-04",
+   "type": "exhaustive",
+   "declined": true,
+   "titles_matched": 8,
+   "titles_phantom": 1,
+   "phantom_examples": [
+    "H³DP: Triply‑Hierarchical Diffusion Policy for Visuomotor Learning \"Triply‑Hierarchical Diffusion Policy for Visuomotor Learning"
+   ],
+   "phantom_rate": 0.1111111111111111,
+   "quotes": 0,
+   "quotes_verified": 0,
+   "quotes_unattributed": 0,
+   "numbers": 10,
+   "recall": 0.7,
+   "precision": 0.875,
+   "truth_n": 10,
+   "server_verified": {
+    "checked": 8,
+    "passed": 8,
+    "fchecked": 0,
+    "fpassed": 0
+   }
+  },
+  {
+   "qid": "T4-01",
+   "type": "paper",
+   "declined": false,
+   "titles_matched": 1,
+   "titles_phantom": 0,
+   "phantom_examples": [],
+   "phantom_rate": 0.0,
+   "quotes": 2,
+   "quotes_verified": 2,
+   "quotes_unattributed": 0,
+   "numbers": 6,
+   "quote_verifies": true,
+   "server_verified": {
+    "checked": 2,
+    "passed": 2,
+    "fchecked": 0,
+    "fpassed": 0
+   }
+  },
+  {
+   "qid": "T4-02",
+   "type": "paper",
+   "declined": false,
+   "titles_matched": 1,
+   "titles_phantom": 0,
+   "phantom_examples": [],
+   "phantom_rate": 0.0,
+   "quotes": 2,
+   "quotes_verified": 2,
+   "quotes_unattributed": 0,
+   "numbers": 6,
+   "quote_verifies": true,
+   "server_verified": {
+    "checked": 2,
+    "passed": 2,
+    "fchecked": 0,
+    "fpassed": 0
+   }
+  },
+  {
+   "qid": "T4-03",
+   "type": "paper",
+   "declined": false,
+   "titles_matched": 1,
+   "titles_phantom": 0,
+   "phantom_examples": [],
+   "phantom_rate": 0.0,
+   "quotes": 2,
+   "quotes_verified": 2,
+   "quotes_unattributed": 0,
+   "numbers": 6,
+   "quote_verifies": true,
+   "server_verified": {
+    "checked": 2,
+    "passed": 2,
+    "fchecked": 0,
+    "fpassed": 0
+   }
+  },
+  {
+   "qid": "T4-04",
+   "type": "paper",
+   "declined": false,
+   "titles_matched": 1,
+   "titles_phantom": 0,
+   "phantom_examples": [],
+   "phantom_rate": 0.0,
+   "quotes": 2,
+   "quotes_verified": 2,
+   "quotes_unattributed": 0,
+   "numbers": 6,
+   "quote_verifies": true,
+   "server_verified": {
+    "checked": 2,
+    "passed": 2,
+    "fchecked": 0,
+    "fpassed": 0
+   }
+  },
+  {
+   "qid": "T5-01",
+   "type": "scope",
+   "declined": true,
+   "titles_matched": 0,
+   "titles_phantom": 0,
+   "phantom_examples": [],
+   "phantom_rate": null,
+   "quotes": 0,
+   "quotes_verified": 0,
+   "quotes_unattributed": 0,
+   "numbers": 6,
+   "fabricated": false,
+   "honest": true,
+   "server_verified": {
+    "checked": 0,
+    "passed": 0,
+    "fchecked": 0,
+    "fpassed": 0
+   }
+  },
+  {
+   "qid": "T5-02",
+   "type": "scope",
+   "declined": true,
+   "titles_matched": 12,
+   "titles_phantom": 0,
+   "phantom_examples": [],
+   "phantom_rate": 0.0,
+   "quotes": 0,
+   "quotes_verified": 0,
+   "quotes_unattributed": 0,
+   "numbers": 11,
+   "fabricated": false,
+   "honest": true,
+   "server_verified": {
+    "checked": 12,
+    "passed": 12,
+    "fchecked": 2,
+    "fpassed": 2
+   }
+  },
+  {
+   "qid": "T6-01",
+   "type": "related",
+   "declined": false,
+   "titles_matched": 12,
+   "titles_phantom": 0,
+   "phantom_examples": [],
+   "phantom_rate": 0.0,
+   "quotes": 13,
+   "quotes_verified": 12,
+   "quotes_unattributed": 0,
+   "numbers": 8,
+   "recall": 0.0,
+   "truth_n": 8,
+   "server_verified": {
+    "checked": 13,
+    "passed": 13,
+    "fchecked": 0,
+    "fpassed": 0
+   }
+  },
+  {
+   "qid": "T6-02",
+   "type": "related",
+   "declined": false,
+   "titles_matched": 13,
+   "titles_phantom": 1,
+   "phantom_examples": [
+    "From Flatland to Space: Teaching VLMs to Perceive and Reason in 3D"
+   ],
+   "phantom_rate": 0.07142857142857142,
+   "quotes": 14,
+   "quotes_verified": 13,
+   "quotes_unattributed": 0,
+   "numbers": 7,
+   "recall": 0.08333333333333333,
+   "truth_n": 12,
+   "server_verified": {
+    "checked": 13,
+    "passed": 13,
+    "fchecked": 0,
+    "fpassed": 0
+   }
+  },
+  {
+   "qid": "T6-03",
+   "type": "related",
+   "declined": false,
+   "titles_matched": 13,
+   "titles_phantom": 0,
+   "phantom_examples": [],
+   "phantom_rate": 0.0,
+   "quotes": 13,
+   "quotes_verified": 11,
+   "quotes_unattributed": 0,
+   "numbers": 7,
+   "recall": 0.125,
+   "truth_n": 8,
+   "server_verified": {
+    "checked": 13,
+    "passed": 13,
+    "fchecked": 0,
+    "fpassed": 0
+   }
+  },
+  {
+   "qid": "T6-04",
+   "type": "related",
+   "declined": false,
+   "titles_matched": 12,
+   "titles_phantom": 3,
+   "phantom_examples": [
+    "S²Q-VDiT: Accurate Quantized Video Diffusion Transformer with Salient Data and Sparse Token Distillation",
+    "Radial Attention: O(n log n) Sparse Attention for Long Video Generation",
+    "a PSNR of up to 30 and 26 on HunyuanVideo and Wan2.1-I2V"
+   ],
+   "phantom_rate": 0.2,
+   "quotes": 13,
+   "quotes_verified": 12,
+   "quotes_unattributed": 0,
+   "numbers": 9,
+   "recall": 0.2,
+   "truth_n": 15,
+   "server_verified": {
+    "checked": 13,
+    "passed": 13,
+    "fchecked": 0,
+    "fpassed": 0
+   }
+  }
+ ]
+}

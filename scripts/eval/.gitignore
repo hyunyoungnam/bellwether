@@ -1,3 +1,2 @@
-answers/*/
-scores/
-!answers/*/.keep
+# answers and scores are the evidence behind docs/harness-comparison-*.md — tracked
+answers/*/superseded/
