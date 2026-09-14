@@ -15,7 +15,8 @@ questions outside scope are scored on *honesty about scope*, not on content.
 | id | system | what it isolates | how it runs |
 |---|---|---|---|
 | `bellwether` | this repo, `POST /chat` | the platform | `run_bellwether.py` (user's claude CLI login, no key) |
-| `orx` | OpenResearch harness + the same Claude model | model fixed, harness varies | manual: paste questions, save answers as `answers/orx/<qid>.md` |
+| `claude-web` | the same signed-in `claude` CLI, same default model and 12-turn limit, Bellwether's MCP tools and verifier removed, built-in WebSearch/WebFetch allowed, run from an empty directory outside the repo | model fixed, platform removed — the cleanest ablation | `run_claude.py --profile web` (subscription, no key) |
+| `orx` | OpenResearch skill on the same CLI (`orx discover`/`orx paper` retrieval) | model fixed, gateway retrieval | **blocked on this network**: orx's Rust binary trusts only its bundled roots and cannot pass the TLS-inspecting gateway (SSL_CERT_FILE ignored); rerun elsewhere if wanted |
 | `paperqa` | PaperQA2 over the **same evidence** (title, abstract, extracted sentences per paper) | evidence fixed, harness varies | `run_paperqa.py` (API key, budget-capped) |
 | `scholarqa` | Ai2 ScholarQA (open pipeline, Semantic Scholar index) | possession vs gateway | `answers/scholarqa/<qid>.md` (needs S2 key; else the public app, pasted) |
 | `chatgpt` | ChatGPT with search | product tier, for outside readers | manual paste |
