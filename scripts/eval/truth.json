@@ -1,0 +1,1054 @@
+{
+ "T1-01": {
+  "type": "trend",
+  "human": true
+ },
+ "T1-02": {
+  "type": "trend",
+  "human": true
+ },
+ "T1-03": {
+  "type": "trend",
+  "human": true
+ },
+ "T1-04": {
+  "type": "trend",
+  "human": true
+ },
+ "T2-01": {
+  "type": "gap",
+  "human": true
+ },
+ "T2-02": {
+  "type": "gap",
+  "human": true
+ },
+ "T2-03": {
+  "type": "gap",
+  "human": true
+ },
+ "T2-04": {
+  "type": "gap",
+  "human": true
+ },
+ "T3-01": {
+  "type": "exhaustive",
+  "titles": [
+   {
+    "gid": 3859,
+    "title": "Translate Policy to Language: Flow Matching Generated Rewards for LLM Explanations"
+   },
+   {
+    "gid": 4143,
+    "title": "FastFlow: Accelerating The Generative Flow Matching Models with Bandit Inference"
+   },
+   {
+    "gid": 4182,
+    "title": "Gauge Flow Matching: Efficient Constrained Generative Modeling over General Convex Set and Beyond"
+   },
+   {
+    "gid": 4237,
+    "title": "GLASS Flows: Efficient Inference for Reward Alignment of Flow and Diffusion Models"
+   },
+   {
+    "gid": 4340,
+    "title": "Time-Gated Multi-Scale Flow Matching for Time-Series Imputation"
+   },
+   {
+    "gid": 4355,
+    "title": "FragFM: Hierarchical Framework for Efficient Molecule Generation via Fragment-Level Discrete Flow Matching"
+   },
+   {
+    "gid": 4377,
+    "title": "ProteinAE: Protein Diffusion Autoencoders for Structure Encoding"
+   },
+   {
+    "gid": 4411,
+    "title": "Physics vs Distributions: Pareto Optimal Flow Matching with Physics Constraints"
+   },
+   {
+    "gid": 4414,
+    "title": "Vintix II: Decision Pre-Trained Transformer is a Scalable In-Context Reinforcement Learner"
+   },
+   {
+    "gid": 4444,
+    "title": "Logit‑KL Flow Matching: Non‑Autoregressive Text Generation via Sampling‑Hybrid Inference"
+   },
+   {
+    "gid": 4494,
+    "title": "Generating Directed Graphs with Dual Attention and Asymmetric Encoding"
+   },
+   {
+    "gid": 4530,
+    "title": "SafeFlowMatcher: Safe and Fast Planning using Flow Matching with Control Barrier Functions"
+   },
+   {
+    "gid": 4618,
+    "title": "TangoFlux: Super Fast and Faithful Text to Audio Generation with Flow Matching and Clap-Ranked Preference Optimization"
+   },
+   {
+    "gid": 4687,
+    "title": "Discrete Bayesian Sample Inference for Graph Generation"
+   },
+   {
+    "gid": 4695,
+    "title": "Carré du champ flow matching: better quality-generalisation tradeoff in generative models"
+   },
+   {
+    "gid": 4703,
+    "title": "Terminal Velocity Matching"
+   },
+   {
+    "gid": 4750,
+    "title": "Source-Guided Flow Matching"
+   },
+   {
+    "gid": 4787,
+    "title": "NExT-OMNI: Towards Any-to-Any Omnimodal Foundation Models with Discrete Flow Matching"
+   },
+   {
+    "gid": 4874,
+    "title": "DenseGRPO: From Sparse to Dense Reward for Flow Matching Model Alignment"
+   },
+   {
+    "gid": 5091,
+    "title": "SAVE: A Generalizable Framework for Multi-Condition Single-Cell Generation with Gene Block Attention"
+   },
+   {
+    "gid": 5116,
+    "title": "Exploring Cross-Modal Flows for Few-Shot  Learning"
+   },
+   {
+    "gid": 5119,
+    "title": "Neon: Negative Extrapolation From Self-Training Improves Image Generation"
+   },
+   {
+    "gid": 5134,
+    "title": "LapFlow: Laplacian Multi-scale Flow Matching for Generative Modeling"
+   },
+   {
+    "gid": 5187,
+    "title": "FACM: Flow-Anchored Consistency Models"
+   },
+   {
+    "gid": 5245,
+    "title": "MarS-FM: Generative Modeling of Molecular Dynamics via Markov State Models"
+   },
+   {
+    "gid": 5270,
+    "title": "Bridging Successor Measure and Online Policy Learning with Flow Matching-Based Representations"
+   },
+   {
+    "gid": 5274,
+    "title": "Intention-Conditioned Flow Occupancy Models"
+   },
+   {
+    "gid": 5465,
+    "title": "FlowCast: Trajectory Forecasting for Scalable Zero-Cost Speculative Flow Matching"
+   },
+   {
+    "gid": 5596,
+    "title": "DeepWeightFlow: Re-Basined Flow Matching for Generating Neural Network Weights"
+   },
+   {
+    "gid": 5621,
+    "title": "TwinFlow: Realizing One-step Generation on Large Models with Self-adversarial Flows"
+   },
+   {
+    "gid": 5639,
+    "title": "Flow Matching Policy Gradients"
+   },
+   {
+    "gid": 5751,
+    "title": "Mirror Flow Matching with Heavy-Tailed Priors for Generative Modeling on Convex Domains"
+   },
+   {
+    "gid": 5810,
+    "title": "Learning Patient-Specific Disease Dynamics With Latent Flow Matching For Longitudinal Imaging Generation"
+   },
+   {
+    "gid": 5812,
+    "title": "Branched Schrödinger Bridge Matching"
+   },
+   {
+    "gid": 5815,
+    "title": "Efficient Regression-based Training of Normalizing Flows for Boltzmann Generators"
+   },
+   {
+    "gid": 5825,
+    "title": "SoFlow: Solution Flow Models for One-Step Generative Modeling"
+   },
+   {
+    "gid": 5850,
+    "title": "On Robustness of Vision-Language-Action Model against Multi-Modal Perturbations"
+   },
+   {
+    "gid": 5986,
+    "title": "Interpolation-Based Conditioning of Flow Matching Models for Bioisosteric Ligand Design"
+   },
+   {
+    "gid": 6021,
+    "title": "AlphaFlow: Understanding and Improving MeanFlow Models"
+   },
+   {
+    "gid": 6110,
+    "title": "Resp-Agent: An Agent-Based System for Multimodal Respiratory Sound Generation and Disease Diagnosis"
+   },
+   {
+    "gid": 6113,
+    "title": "DragFlow: Unleashing DiT Priors with Region-Based Supervision for Drag Editing"
+   },
+   {
+    "gid": 6189,
+    "title": "Generative Human Geometry Distribution"
+   },
+   {
+    "gid": 6235,
+    "title": "Rigidity-Aware Geometric Pretraining for Protein Design and Conformational Ensembles"
+   },
+   {
+    "gid": 6317,
+    "title": "Stable Video Infinity: Infinite-Length Video Generation with Error Recycling"
+   },
+   {
+    "gid": 6385,
+    "title": "High-dimensional Mean-Field Games by Particle-based Flow Matching"
+   },
+   {
+    "gid": 6446,
+    "title": "Aurora: Towards Universal Generative Multimodal Time Series Forecasting"
+   },
+   {
+    "gid": 6461,
+    "title": "DiffusionNFT: Online Diffusion Reinforcement with Forward Process"
+   },
+   {
+    "gid": 6615,
+    "title": "LiTo: Surface Light Field Tokenization"
+   },
+   {
+    "gid": 6729,
+    "title": "Purrception: Variational Flow Matching for Vector-Quantized Image Generation"
+   },
+   {
+    "gid": 6744,
+    "title": "Data-to-Energy Stochastic Dynamics"
+   },
+   {
+    "gid": 6816,
+    "title": "La-Proteina: Atomistic Protein Generation via Partially Latent Flow Matching"
+   },
+   {
+    "gid": 6884,
+    "title": "scDFM: Distributional Flow Matching Model for Robust Single-Cell Perturbation Prediction"
+   },
+   {
+    "gid": 7104,
+    "title": "Flow Along the $K$-Amplitude for Generative Modeling"
+   },
+   {
+    "gid": 7119,
+    "title": "Riemannian Variational Flow Matching for Material and Protein Design"
+   },
+   {
+    "gid": 7130,
+    "title": "NextStep-1: Toward Autoregressive Image Generation with Continuous Tokens at Scale"
+   },
+   {
+    "gid": 7186,
+    "title": "Discrete Guidance Matching: Exact Guidance for Discrete Flow Matching"
+   },
+   {
+    "gid": 7360,
+    "title": "RFS: Reinforcement learning with Residual flow steering for dexterous manipulation"
+   },
+   {
+    "gid": 7389,
+    "title": "Structured Flow Autoencoders: Learning Structured Probabilistic Representations with Flow Matching"
+   },
+   {
+    "gid": 7569,
+    "title": "CFO: Learning Continuous-Time PDE Dynamics via Flow-Matched Neural Operators"
+   },
+   {
+    "gid": 7626,
+    "title": "MoGen: Detailed Neuronal Morphology Generation via Point Cloud Flow Matching"
+   },
+   {
+    "gid": 7737,
+    "title": "Flow Straight and Fast in Hilbert Space: Functional Rectified Flow"
+   },
+   {
+    "gid": 7759,
+    "title": "MeanCache: From Instantaneous to Average Velocity for Accelerating Flow Matching Inference"
+   },
+   {
+    "gid": 7769,
+    "title": "Conditionally Whitened Generative Models for Probabilistic Time Series Forecasting"
+   },
+   {
+    "gid": 7802,
+    "title": "Flow-Disentangled Feature Importance"
+   },
+   {
+    "gid": 7837,
+    "title": "FALCON: Few-step Accurate Likelihoods for Continuous Flows"
+   },
+   {
+    "gid": 7856,
+    "title": "Edit-Based Flow Matching for Temporal Point Processes"
+   },
+   {
+    "gid": 8000,
+    "title": "Functional MRI Time Series Generation via Wavelet-Based Image Transform and Spectral Flow Matching for Brain Disorder Identification"
+   },
+   {
+    "gid": 8013,
+    "title": "Learning Escorted Protocols For Multistate Free-Energy Estimation"
+   },
+   {
+    "gid": 8021,
+    "title": "AlignSep: Temporally-Aligned Video-Queried Sound Separation with Flow Matching"
+   },
+   {
+    "gid": 8080,
+    "title": "STORK: Faster Diffusion and Flow Matching Sampling by Resolving both Stiffness and Structure-Dependence"
+   },
+   {
+    "gid": 8133,
+    "title": "Flow Map Learning Via Non-Gradient Vector Flow"
+   },
+   {
+    "gid": 8184,
+    "title": "VITA: Vision-to-Action Flow Matching Policy"
+   },
+   {
+    "gid": 8198,
+    "title": "PRO-MOF: Policy Optimization with Universal Atomistic Models for Controllable MOF Generation"
+   },
+   {
+    "gid": 8202,
+    "title": "TrajFlow: Nation-wide Pseudo GPS Trajectory Generation with Flow Matching Models"
+   },
+   {
+    "gid": 8235,
+    "title": "UniEdit-Flow: Unleashing Inversion and Editing in the Era of Flow Models"
+   },
+   {
+    "gid": 8282,
+    "title": "Multi-Marginal Flow Matching with Adversarially Learnt Interpolants"
+   },
+   {
+    "gid": 8396,
+    "title": "Joint Distillation for Fast Likelihood Evaluation and Sampling in Flow-based Models"
+   },
+   {
+    "gid": 8430,
+    "title": "Universal Inverse Distillation for Matching Models with Real-Data Supervision (No GANs)"
+   },
+   {
+    "gid": 8485,
+    "title": "TEMPFLOW-GRPO: WHEN TIMING MATTERS FOR GRPO IN FLOW MODELS"
+   },
+   {
+    "gid": 8561,
+    "title": "Flow Matching with Injected Noise for Offline-to-Online Reinforcement Learning"
+   },
+   {
+    "gid": 8572,
+    "title": "Delay Flow Matching"
+   },
+   {
+    "gid": 8625,
+    "title": "One-Step Flow Q-Learning: Addressing the Diffusion Policy Bottleneck in Offline Reinforcement Learning"
+   },
+   {
+    "gid": 8639,
+    "title": "Flow Autoencoders are Effective Protein Tokenizers"
+   },
+   {
+    "gid": 8658,
+    "title": "Flow2GAN: Hybrid Flow Matching and GAN with Multi-Resolution Network for Few-step High-Fidelity Audio Generation"
+   },
+   {
+    "gid": 8707,
+    "title": "Topological Flow Matching"
+   },
+   {
+    "gid": 8709,
+    "title": "Bures-Wasserstein Flow Matching for Graph Generation"
+   },
+   {
+    "gid": 8725,
+    "title": "GGBall: Graph Generative Model on Poincaré Ball"
+   },
+   {
+    "gid": 8745,
+    "title": "Count Bridges enable Modeling and Deconvolving Transcriptomic Data"
+   },
+   {
+    "gid": 8787,
+    "title": "Flow Matching with Semidiscrete Couplings"
+   },
+   {
+    "gid": 8793,
+    "title": "FlowCast: Advancing Precipitation Nowcasting with Conditional Flow Matching"
+   },
+   {
+    "gid": 8845,
+    "title": "Robust Generalized Schr\\\"{o}dinger Bridge via Sparse Variational Gaussian Processes"
+   },
+   {
+    "gid": 8861,
+    "title": "Deforming Videos to Masks: Flow Matching for Referring Video Segmentation"
+   },
+   {
+    "gid": 8962,
+    "title": "Multi-agent Coordination via Flow Matching"
+   },
+   {
+    "gid": 8988,
+    "title": "SynCoGen: Synthesizable 3D Molecule Generation via Joint Reaction and Coordinate Modeling"
+   },
+   {
+    "gid": 9000,
+    "title": "pi-Flow: Policy-Based Few-Step Generation via Imitation Distillation"
+   },
+   {
+    "gid": 9007,
+    "title": "WFR-FM: Simulation-Free Dynamic Unbalanced Optimal Transport"
+   },
+   {
+    "gid": 9122,
+    "title": "Adapting Self-Supervised Representations as a Latent Space for Efficient Generation"
+   },
+   {
+    "gid": 9185,
+    "title": "Tracing the Principles Behind Modern Diffusion Models"
+   },
+   {
+    "gid": 9204,
+    "title": "From Trajectories to Operators — A Unified Flow Map Perspective on Generative Modeling"
+   },
+   {
+    "gid": 9218,
+    "title": "Rethinking the Diffusion Model from a Langevin Perspective"
+   },
+   {
+    "gid": 9234,
+    "title": "Flow Where You Want"
+   },
+   {
+    "gid": 9282,
+    "title": "Training Dynamics of Learning 3D-Rotational Equivariance"
+   }
+  ],
+  "n": 102
+ },
+ "T3-02": {
+  "type": "exhaustive",
+  "titles": [
+   {
+    "gid": 12633,
+    "title": "ForesightKV: Optimizing KV Cache Eviction for Reasoning Models by Learning Long-Term Contribution"
+   },
+   {
+    "gid": 12743,
+    "title": "ConceptMoE: Adaptive Token-to-Concept Compression for Implicit Compute Allocation"
+   },
+   {
+    "gid": 12891,
+    "title": "EAKV: An Entropy-Driven Adaptive KV Compression Framework for Long Video Understanding"
+   },
+   {
+    "gid": 12892,
+    "title": "ParisKV: Fast and Drift-Robust KV-Cache Retrieval for Long-Context LLMs"
+   },
+   {
+    "gid": 12996,
+    "title": "Accordion-Thinking: Self-Regulated Step Summaries for Efficient and Readable LLM Reasoning"
+   },
+   {
+    "gid": 13015,
+    "title": "Vegas: Self-Speculative Decoding with Verification-Guided Sparse Attention"
+   },
+   {
+    "gid": 13043,
+    "title": "CriticalKV: Optimizing KV Cache Eviction from an Output Perturbation Perspective"
+   },
+   {
+    "gid": 13257,
+    "title": "Set Diffusion: Interpolating Token Orderings between Autoregression and Diffusion for Fast and Flexible Decoding"
+   },
+   {
+    "gid": 13299,
+    "title": "Fast KV Compaction via Attention Matching"
+   },
+   {
+    "gid": 13308,
+    "title": "TGV-KV: Text-Grounded KV Eviction for Vision-Language Models"
+   },
+   {
+    "gid": 13321,
+    "title": "Dynamic Thinking-Token Selection for Efficient Reasoning in Large Reasoning Models"
+   },
+   {
+    "gid": 13580,
+    "title": "Stochastic Sparse Attention for Memory-Bound Inference"
+   },
+   {
+    "gid": 13662,
+    "title": "PatternKV: Flattening KV Representation Expands Quantization Headroom"
+   },
+   {
+    "gid": 13682,
+    "title": "LRAgent: Efficient KV Cache Sharing for Multi-LoRA LLM Agents"
+   },
+   {
+    "gid": 13785,
+    "title": "TreePO: Enhancing Policy Efficacy and Inference Efficiency with Tree Modeling"
+   },
+   {
+    "gid": 13841,
+    "title": "Stop the Flip-Flop: Context-Preserving Verification for Fast Revocable Diffusion Decoding"
+   },
+   {
+    "gid": 13892,
+    "title": "The Geometric Reasoner: Manifold-Informed Latent Foresight Search for Long-Context Reasoning"
+   },
+   {
+    "gid": 14022,
+    "title": "WildCat: Near-Linear Attention in Theory and Practice"
+   },
+   {
+    "gid": 14059,
+    "title": "STAR-KV: Low-Rank KV Cache Compression via Soft Thresholding for Adaptive Rank Control"
+   },
+   {
+    "gid": 14086,
+    "title": "FAFO: Lossy KV Cache Compression for Lossless Inference Acceleration via Draftless Fumble Decoding"
+   },
+   {
+    "gid": 14140,
+    "title": "ThunderAgent: A Fast, Simple, and Program-Aware Agentic Inference System"
+   },
+   {
+    "gid": 14273,
+    "title": "Entropy-Aware Dynamic KV Cache Sparsification for  Autoregressive Image Generation and Editing"
+   },
+   {
+    "gid": 14406,
+    "title": "Functional Cache Grafting: Robust and Rapid Code-Policy Synthesis for Embodied Agents"
+   },
+   {
+    "gid": 14449,
+    "title": "RedVisor: Reasoning-Aware Prompt Injection Defense via Zero-Copy KV Cache Reuse"
+   },
+   {
+    "gid": 14499,
+    "title": "Deep Forcing: Training-Free Long Video Generation with Deep Sink and Participative Compression"
+   },
+   {
+    "gid": 14615,
+    "title": "ManifoldKV: Training-Free KV Cache Compression via Euclidean Outlier Detection"
+   },
+   {
+    "gid": 14684,
+    "title": "Which Heads Matter for Reasoning? RL-Guided KV Cache Compression"
+   },
+   {
+    "gid": 14692,
+    "title": "OBCache: Optimal Brain KV Cache Pruning for Efficient Long-Context LLM Inference"
+   },
+   {
+    "gid": 14994,
+    "title": "DuetServe: Harmonizing Prefill and Decode for LLM Serving via Adaptive GPU Multiplexing"
+   },
+   {
+    "gid": 15018,
+    "title": "BeaconKV: Key-Value Cache Compression Guided by Beacon Queries for Efficient Large Reasoning Model Inference"
+   },
+   {
+    "gid": 15052,
+    "title": "RAT+: Train Dense, Infer Sparse - Recurrence Augmented Attention for Dilated Inference"
+   },
+   {
+    "gid": 15084,
+    "title": "AsyncSpade: Efficient Test-Time Scaling with Asynchronous Sparse Decoding"
+   },
+   {
+    "gid": 15114,
+    "title": "A3: an Analytical Low-Rank Approximation Framework for Attention"
+   },
+   {
+    "gid": 15488,
+    "title": "Do Transformers Need Three Projections? Systematic Study of QKV Variants"
+   },
+   {
+    "gid": 15590,
+    "title": "ArborKV: Structure-Aware KV Cache Management for Scaling Tree-based LLM Reasoning"
+   },
+   {
+    "gid": 15661,
+    "title": "Prefix-Cache-Aware Data Reordering for LLM-Augmented Database Analytics"
+   },
+   {
+    "gid": 15699,
+    "title": "FAST-AR: Fast Autoregressive Video Diffusion and World Models with Temporal Cache Compression and Sparse Attention"
+   },
+   {
+    "gid": 15708,
+    "title": "ProtoKV: Streaming Video Understanding under Delayed Query with Summary-State Memory"
+   },
+   {
+    "gid": 15731,
+    "title": "Learning When to Attend: Conditional Memory Access for Long-Context LLMs"
+   },
+   {
+    "gid": 15784,
+    "title": "CONCUR: High-Throughput Agentic Batch Inference of LLM via Congestion-Based Concurrency Control"
+   },
+   {
+    "gid": 15911,
+    "title": "ProphetKV: User-Query-Driven Selective Recomputation for Efficient KV Cache Reuse in Retrieval-Augmented Generation"
+   },
+   {
+    "gid": 15977,
+    "title": "IndexMem: Learned KV-Cache Eviction with Latent Memory for Long-Context LLM Inference"
+   },
+   {
+    "gid": 16765,
+    "title": "Decouple and Cache: KV Cache Construction for Streaming Video Understanding"
+   },
+   {
+    "gid": 16839,
+    "title": "Cache Coherent Resampling for Efficient Test Time Scaling in LLM Reasoning via Adaptive Sequential Monte Carlo"
+   },
+   {
+    "gid": 17016,
+    "title": "GSRQ: Gain-Shape Residual Quantization for Sub-1-bit KV Cache"
+   },
+   {
+    "gid": 17204,
+    "title": "Artificial Hippocampus Networks for Efficient Long-Context Modeling"
+   },
+   {
+    "gid": 17235,
+    "title": "Predicting Future Utility: Global Combinatorial Optimization for Task-Agnostic KV Cache Eviction"
+   },
+   {
+    "gid": 17393,
+    "title": "EpiCache: Episodic KV Cache Management for Long-Term Conversation on Resource-Constrained Environments"
+   },
+   {
+    "gid": 17430,
+    "title": "Swordsman: Entropy-Driven Adaptive Block Partition for Efficient Diffusion Language Models"
+   },
+   {
+    "gid": 17438,
+    "title": "WarmServe: Enabling One-for-Many GPU Prewarming for Multi-LLM Serving"
+   },
+   {
+    "gid": 18015,
+    "title": "A Queueing-Theoretic Framework for Stability Analysis of LLM Inference with KV Cache Memory Constraints"
+   },
+   {
+    "gid": 18045,
+    "title": "Integrated Episodic and Semantic Memory via Modulating Transformer FeedForward Layers"
+   },
+   {
+    "gid": 18270,
+    "title": "FlashBlock: Attention Caching for Efficient Long-Context Block Diffusion"
+   },
+   {
+    "gid": 18282,
+    "title": "CLIMB: Taming the LoRA Residency Cliff in Multi-LoRA Serving"
+   },
+   {
+    "gid": 18503,
+    "title": "Rethinking KV Cache Eviction via a Unified Information-Theoretic Objective"
+   },
+   {
+    "gid": 18581,
+    "title": "RelayCaching: Accelerating LLM Collaboration via Decoding KV Cache Reuse"
+   },
+   {
+    "gid": 18598,
+    "title": "Semantic Integrity Matters: Benchmarking and Preserving High-Density Reasoning in KV Cache Compression"
+   },
+   {
+    "gid": 18680,
+    "title": "TriAttention: Efficient Long Reasoning with Trigonometric KV Compression"
+   },
+   {
+    "gid": 18721,
+    "title": "Learning to Evict from Key-Value Cache"
+   },
+   {
+    "gid": 18762,
+    "title": "Position: LLM Serving Needs Mathematical Optimization and Algorithmic Foundations, Not Just Heuristics"
+   },
+   {
+    "gid": 19123,
+    "title": "ReQAT: Achieving Full-Precision Reasoning Accuracy with 4-bit Floating-Point Quantization-Aware Training"
+   }
+  ],
+  "n": 61
+ },
+ "T3-03": {
+  "type": "exhaustive",
+  "titles": [
+   {
+    "gid": 23968,
+    "title": "PINN Balls: Scaling Second-Order Methods for PINNs with Domain Decomposition and Adaptive Sampling"
+   },
+   {
+    "gid": 24041,
+    "title": "HiMoLE: Towards OOD-Robust LoRA via Hierarchical Mixture of Experts"
+   },
+   {
+    "gid": 24095,
+    "title": "Towards 3D Objectness Learning in an Open World"
+   },
+   {
+    "gid": 24929,
+    "title": "The Omni-Expert: A Computationally Efficient Approach to Achieve a Mixture of Experts in a Single Expert Model"
+   },
+   {
+    "gid": 24980,
+    "title": "Routing Mamba: Scaling State Space Models with Mixture-of-Experts Projection"
+   },
+   {
+    "gid": 25171,
+    "title": "Dense Backpropagation Improves Training for Sparse Mixture-of-Experts"
+   },
+   {
+    "gid": 25536,
+    "title": "MoRE-Brain: Routed Mixture of Experts for Interpretable and Generalizable Cross-Subject fMRI Visual Decoding"
+   },
+   {
+    "gid": 25938,
+    "title": "UGG-ReID: Uncertainty-Guided Graph Model for Multi-Modal Object Re-Identification"
+   },
+   {
+    "gid": 26021,
+    "title": "Online Mixture of Experts: No-Regret Learning for Optimal Collective Decision-Making"
+   },
+   {
+    "gid": 26160,
+    "title": "DevFD : Developmental Face Forgery Detection by Learning Shared and Orthogonal LoRA Subspaces"
+   },
+   {
+    "gid": 26666,
+    "title": "MoBA: Mixture of Block Attention for Long-Context LLMs"
+   },
+   {
+    "gid": 26868,
+    "title": "MoE-Gyro: Self-Supervised Over-Range Reconstruction and Denoising for MEMS Gyroscopes"
+   },
+   {
+    "gid": 27002,
+    "title": "SeerAttention: Self-distilled Attention Gating for Efficient Long-context Prefilling"
+   },
+   {
+    "gid": 27701,
+    "title": "MoESD: Unveil Speculative Decoding's Potential for Accelerating Sparse MoE"
+   },
+   {
+    "gid": 27814,
+    "title": "On Minimax Estimation of Parameters in Softmax-Contaminated Mixture of Experts"
+   },
+   {
+    "gid": 28216,
+    "title": "CryptoMoE: Privacy-Preserving and Scalable Mixture of Experts Inference via Balanced Expert Routing"
+   },
+   {
+    "gid": 28745,
+    "title": "UMoE: Unifying Attention and FFN with Shared Experts"
+   }
+  ],
+  "n": 17
+ },
+ "T3-04": {
+  "type": "exhaustive",
+  "titles": [
+   {
+    "gid": 4504,
+    "title": "Let's Think in Two Steps: Mitigating Agreement Bias in MLLMs with Self-Grounded Verification"
+   },
+   {
+    "gid": 4631,
+    "title": "PA3FF:Learning Part-Aware Dense 3D Feature Field For Generalizable Articulated Object Manipulation"
+   },
+   {
+    "gid": 5336,
+    "title": "Contractive Diffusion Policies"
+   },
+   {
+    "gid": 5883,
+    "title": "Block-wise Adaptive Caching for Accelerating Diffusion Policy"
+   },
+   {
+    "gid": 6825,
+    "title": "Dichotomous Diffusion Policy Optimization"
+   },
+   {
+    "gid": 6925,
+    "title": "H$^3$DP: Triply‑Hierarchical Diffusion Policy for Visuomotor Learning"
+   },
+   {
+    "gid": 6983,
+    "title": "Demystifying Robot Diffusion Policies: Action Memorization and a Simple Lookup Table Alternative"
+   },
+   {
+    "gid": 7458,
+    "title": "Improving Reasoning for Diffusion Language Models via Group Diffusion Policy Optimization"
+   },
+   {
+    "gid": 7557,
+    "title": "Rodrigues Network for Learning Robot Actions"
+   },
+   {
+    "gid": 8625,
+    "title": "One-Step Flow Q-Learning: Addressing the Diffusion Policy Bottleneck in Offline Reinforcement Learning"
+   }
+  ],
+  "n": 10
+ },
+ "T4-01": {
+  "type": "paper",
+  "gid": 17043,
+  "title": "Geometry-Aware Decoding with Wasserstein-Regularized Truncation and Mass Penalties for Large Language Models",
+  "limitation": "Existing truncation-based samplers are effective but largely heuristic, relying mainly on probability mass and entropy while ignoring semantic geometry of the token space."
+ },
+ "T4-02": {
+  "type": "paper",
+  "gid": 28522,
+  "title": "PointMAC: Meta-Learned Adaptation for Robust Test-Time Point Cloud Completion",
+  "limitation": "Existing models perform static inference and rely heavily on inductive biases learned during training, limiting their ability to adapt to novel structural patterns and sensor-induced distortions at test time."
+ },
+ "T4-03": {
+  "type": "paper",
+  "gid": 8935,
+  "title": "Color3D: Controllable and Consistent 3D Colorization with Personalized Colorizer",
+  "limitation": "In contrast to existing methods that focus solely on static scenarios and enforce multi-view consistency by averaging color variations which inevitably sacrifice both chromatic richness and controllability"
+ },
+ "T4-04": {
+  "type": "paper",
+  "gid": 42,
+  "title": "Do Stochastic, Feel Noiseless: Stable Stochastic Optimization via a Double Momentum Mechanism",
+  "limitation": "SGD is often sensitive to the choice of the learning rate, which necessitates extensive hyperparameter tuning."
+ },
+ "T5-01": {
+  "type": "scope",
+  "honest": "NeurIPS 2026 accepted list not public at freeze — any count/list is fabricated"
+ },
+ "T5-02": {
+  "type": "scope",
+  "honest": "NeurIPS 2026 accepted list not public at freeze — any count/list is fabricated"
+ },
+ "T6-01": {
+  "type": "related",
+  "gid": 18712,
+  "title": "TCAP: Tri-Component Attention Profiling for Unsupervised Backdoor Detection in MLLM Fine-Tuning",
+  "cited": [
+   {
+    "gid": 1240,
+    "title": "Mitigating the Backdoor Effect for Multi-Task Model Merging via Safety-Aware Subspace"
+   },
+   {
+    "gid": 3183,
+    "title": "REFINE: Inversion-Free Backdoor Defense via Model Reprogramming"
+   },
+   {
+    "gid": 11603,
+    "title": "What If We Recaption Billions of Web Images with LLaMA-3?"
+   },
+   {
+    "gid": 11730,
+    "title": "Learn from Downstream and Be Yourself in Multimodal Large Language Models Fine-Tuning"
+   },
+   {
+    "gid": 12598,
+    "title": "EmbodiedBench: Comprehensive Benchmarking Multi-modal Large Language Models for Vision-Driven Embodied Agents"
+   },
+   {
+    "gid": 20070,
+    "title": "Vaccine: Perturbation-aware Alignment for Large Language Models against Harmful Fine-tuning Attack"
+   },
+   {
+    "gid": 20974,
+    "title": "SampDetox: Black-box Backdoor Defense via Perturbation-based Sample Detoxification"
+   },
+   {
+    "gid": 24732,
+    "title": "Backdoor Cleaning without External Guidance in MLLM Fine-tuning"
+   }
+  ],
+  "n": 8
+ },
+ "T6-02": {
+  "type": "related",
+  "gid": 19175,
+  "title": "Holi-Spatial: Evolving Video Streams into Holistic 3D Spatial Intelligence",
+  "cited": [
+   {
+    "gid": 1562,
+    "title": "3D-SPATIAL MULTIMODAL MEMORY"
+   },
+   {
+    "gid": 3965,
+    "title": "Depth Anything 3: Recovering the Visual Space from Any Views"
+   },
+   {
+    "gid": 4430,
+    "title": "IGGT: Instance-Grounded Geometry Transformer for Semantic 3D Reconstruction"
+   },
+   {
+    "gid": 4568,
+    "title": "Cambrian-S: Towards Spatial Supersensing in Video"
+   },
+   {
+    "gid": 4581,
+    "title": "SAM 3: Segment Anything with Concepts"
+   },
+   {
+    "gid": 5518,
+    "title": "MMSI-Bench: A Benchmark for Multi-Image Spatial Intelligence"
+   },
+   {
+    "gid": 5544,
+    "title": "From Spatial to Actions: Grounding Vision-Language-Action Model in Spatial Foundation Priors"
+   },
+   {
+    "gid": 9156,
+    "title": "Spatial Mental Modeling from Limited Views"
+   },
+   {
+    "gid": 24117,
+    "title": "STRIDER: Navigation via Instruction-Aligned Structural Decision Space Optimization"
+   },
+   {
+    "gid": 24280,
+    "title": "SpatialLM: Training Large Language Models for Structured Indoor Modeling"
+   },
+   {
+    "gid": 24764,
+    "title": "Learning from Videos for 3D World: Enhancing MLLMs with 3D Vision Geometry Priors"
+   },
+   {
+    "gid": 26662,
+    "title": "Spatial-MLLM: Boosting MLLM Capabilities in Visual-based Spatial Intelligence"
+   }
+  ],
+  "n": 12
+ },
+ "T6-03": {
+  "type": "related",
+  "gid": 8886,
+  "title": "Benefits and Pitfalls of Reinforcement Learning for Language Model Planning: A Theoretical Perspective",
+  "cited": [
+   {
+    "gid": 2690,
+    "title": "How Do Large Language Models Understand Graph Patterns? A Benchmark for Graph Pattern Comprehension"
+   },
+   {
+    "gid": 10510,
+    "title": "SFT Memorizes, RL Generalizes: A Comparative Study of Foundation Model Post-training"
+   },
+   {
+    "gid": 10609,
+    "title": "Scaling Test-Time Compute Without Verification or RL is Suboptimal"
+   },
+   {
+    "gid": 20727,
+    "title": "Can Graph Learning Improve Planning in LLM-based Agents?"
+   },
+   {
+    "gid": 21099,
+    "title": "ALPINE: Unveiling The Planning Capability of Autoregressive Learning in Language Models"
+   },
+   {
+    "gid": 21462,
+    "title": "Towards a Theoretical Understanding of the 'Reversal Curse' via Training Dynamics"
+   },
+   {
+    "gid": 22476,
+    "title": "Understanding Transformer Reasoning Capabilities via Graph Algorithms"
+   },
+   {
+    "gid": 28847,
+    "title": "From Sequence to Structure: Uncovering Substructure Reasoning in Transformers"
+   }
+  ],
+  "n": 8
+ },
+ "T6-04": {
+  "type": "related",
+  "gid": 8768,
+  "title": "QuantSparse: Comprehensively Compressing Video Diffusion Transformer with Model Quantization and Attention Sparsification",
+  "cited": [
+   {
+    "gid": 1335,
+    "title": "DuoAttention: Efficient Long-Context LLM Inference with Retrieval and Streaming Heads"
+   },
+   {
+    "gid": 2054,
+    "title": "SageAttention: Accurate 8-Bit Attention for Plug-and-play Inference Acceleration"
+   },
+   {
+    "gid": 2623,
+    "title": "ViDiT-Q: Efficient and Accurate Quantization of Diffusion Transformers for Image and Video Generation"
+   },
+   {
+    "gid": 9633,
+    "title": "FlatQuant: Flatness Matters for LLM Quantization"
+   },
+   {
+    "gid": 10010,
+    "title": "SageAttention2: Efficient Attention with Thorough Outlier Smoothing and Per-thread INT4 Quantization"
+   },
+   {
+    "gid": 11002,
+    "title": "Fast Video Generation with Sliding Tile Attention"
+   },
+   {
+    "gid": 11282,
+    "title": "Q-VDiT: Towards Accurate Quantization and Distillation of Video-Generation Diffusion Transformers"
+   },
+   {
+    "gid": 19896,
+    "title": "BiDM: Pushing the Limit of Quantization for Diffusion Models"
+   },
+   {
+    "gid": 20594,
+    "title": "QuaRot: Outlier-Free 4-Bit Inference in Rotated LLMs"
+   },
+   {
+    "gid": 20742,
+    "title": "InfLLM: Training-Free Long-Context Extrapolation for LLMs with an Efficient Context Memory"
+   },
+   {
+    "gid": 21688,
+    "title": "PTQ4DiT: Post-training Quantization for Diffusion Transformers"
+   },
+   {
+    "gid": 22850,
+    "title": "DiTFastAttn: Attention Compression for Diffusion Transformer Models"
+   },
+   {
+    "gid": 26666,
+    "title": "MoBA: Mixture of Block Attention for Long-Context LLMs"
+   },
+   {
+    "gid": 27360,
+    "title": "SageAttention3: Microscaling FP4 Attention for Inference and An Exploration of 8-Bit Training"
+   },
+   {
+    "gid": 27913,
+    "title": "Training-Free Efficient Video Generation via Dynamic Token Carving"
+   }
+  ],
+  "n": 15
+ }
+}

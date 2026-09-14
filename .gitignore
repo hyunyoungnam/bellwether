@@ -15,3 +15,6 @@ bin/
 data/meili/
 src/*.egg-info/
 report_roadmap.md
+
+# API keys for the eval harnesses (scripts/eval) — never committed
+.env

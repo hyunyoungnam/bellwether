@@ -190,6 +190,14 @@ class Store:
         return self._c["cctx"]
 
     @property
+    def blue_ocean(self) -> dict:
+        """icml.blue_ocean output: validated (field, technique) candidates."""
+        if "bo" not in self._c:
+            p = PROCESSED / "blue_ocean.json"
+            self._c["bo"] = self._json(p) if p.exists() else {}
+        return self._c["bo"]
+
+    @property
     def ext_ids(self) -> dict:
         """gid (str) -> {arxiv, doi, s2, oa} — icml.ids, exact matches only."""
         if "xids" not in self._c:
@@ -659,6 +667,44 @@ def _verifier():
     return _VER_CACHE[0]
 
 
+def t_blue_ocean(a: dict) -> dict:
+    """(field, technique) pairs no paper in the corpus has combined, ranked
+    by how the field's own stated failures match what the technique claims to
+    fix elsewhere — computed by icml.blue_ocean and validated by time (editions
+    <= 2025 predicting the 2026 editions). Two tiers with their own measured
+    precision; the agent relays the evidence sentences, never a verdict."""
+    bo = S.blue_ocean
+    if not bo:
+        return {"error": "blue_ocean.json not built — run icml.blue_ocean --emit"}
+    want = (a.get("field") or "").strip().lower()
+    k = max(1, min(int(a.get("k") or 8), 25))
+    out = {"field": want or None, "tiers": {}}
+    for name, tier in bo["tiers"].items():
+        rows = [c for c in tier["candidates"]
+                if not want or want in c["field"] or c["field"] in want]
+        out["tiers"][name] = {
+            "scorer": tier["scorer"],
+            "validated_precision_at_50": tier["precision_at"]["50"],
+            "candidates": rows[:k],
+        }
+    v = bo["validation"]
+    out["rule"] = {
+        "validation": "retrospective link prediction, editions <= 2025 -> 2026",
+        "base_rate": v["base_rate"],
+        "precision_at_50": {s: v["precision_at"][s]["50"] for s in v["precision_at"]},
+        "fields": v["fields"], "techniques": v["techniques"],
+    }
+    out["note"] = ("a candidate is a pair NO paper in the six editions has "
+                   "combined; 'established' = most likely to be filled within a "
+                   "year (measured P@50 above), 'novel' = techniques few fields "
+                   "use yet, about half the hit rate. field_states are the "
+                   "field's own limitation sentences, technique_claims the "
+                   "technique's own result/key-change sentences elsewhere — "
+                   "quote them, do not paraphrase them into a recommendation. "
+                   "Fields are declared domains (~29% of papers declare one)")
+    return out
+
+
 def t_citations(a: dict) -> dict:
     gid = int(a["gid"])
 
@@ -776,6 +822,18 @@ TOOLS = [
      "inputSchema": {"type": "object", "required": ["gid", "quote"],
                      "properties": {"gid": _GID,
                                     "quote": {"type": "string"}}}},
+    {"name": "blue_ocean",
+     "description": "Blue-ocean candidates: (application field, technique) "
+                    "pairs no paper in the six editions has combined, ranked by "
+                    "how the field's stated failures match the technique's "
+                    "claims elsewhere; time-validated (editions <= 2025 "
+                    "predicting 2026, precision stated in the result). Optional "
+                    "field filter. Returns the papers' own evidence sentences.",
+     "fn": t_blue_ocean,
+     "inputSchema": {"type": "object", "properties": {
+         "field": {"type": "string", "description":
+                   "application domain, e.g. healthcare, robotics, drug discovery"},
+         "k": {"type": "integer", "description": "candidates per tier (<= 25)"}}}},
     {"name": "get_citations",
      "description": "Which of our corpus papers this paper cites, and which "
                     "cite it (edges within the six editions only). Where the "

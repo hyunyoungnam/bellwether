@@ -1,0 +1,122 @@
+{
+ "questions": [
+  {
+   "id": "T1-01",
+   "type": "trend",
+   "q": "Among ICML 2026 papers, which techniques for code generation grew the most compared with ICML 2025? Give the share of papers per 1,000 for both years and state how you computed it."
+  },
+  {
+   "id": "T1-02",
+   "type": "trend",
+   "q": "Did reinforcement learning with verifiable rewards become more common between NeurIPS 2024 and NeurIPS 2025? Give shares per 1,000 papers for each edition and how you counted."
+  },
+  {
+   "id": "T1-03",
+   "type": "trend",
+   "q": "Between ICLR 2025 and ICLR 2026, which methods for LLM inference efficiency (KV cache, speculative decoding, quantization) rose or fell? Give counts or shares and the method you used to count."
+  },
+  {
+   "id": "T1-04",
+   "type": "trend",
+   "q": "How did the share of diffusion-model papers change from NeurIPS 2024 to NeurIPS 2025 and ICML 2025 to ICML 2026? Report shares per 1,000 papers and your counting method."
+  },
+  {
+   "id": "T2-01",
+   "type": "gap",
+   "q": "In healthcare-related papers at NeurIPS 2025, which limitations do papers state most often, and which of those are rarely attacked by other papers' proposals? Quote the limitation sentences verbatim with the paper titles."
+  },
+  {
+   "id": "T2-02",
+   "type": "gap",
+   "q": "For autonomous driving papers across ICML/NeurIPS/ICLR 2025-2026, which failure modes are widely named in limitation statements but seldom addressed as a paper's main contribution? Quote the papers' own sentences."
+  },
+  {
+   "id": "T2-03",
+   "type": "gap",
+   "q": "Among papers on LLM agents at ICLR 2026, which limitations are named by many but attacked by few? Support each with a verbatim limitation sentence and its paper."
+  },
+  {
+   "id": "T2-04",
+   "type": "gap",
+   "q": "In drug discovery papers at ICML 2026, what stated limitations of prior work recur, and which of them does no paper in the same edition attempt to solve? Quote verbatim."
+  },
+  {
+   "id": "T3-01",
+   "type": "exhaustive",
+   "q": "List every ICLR 2026 accepted paper whose title or abstract contains the phrase \"flow matching\". Titles only, complete list.",
+   "corpus": "iclr-2026",
+   "phrase": "flow matching"
+  },
+  {
+   "id": "T3-02",
+   "type": "exhaustive",
+   "q": "List every ICML 2026 accepted paper whose title or abstract contains the phrase \"KV cache\". Titles only, complete list.",
+   "corpus": "icml-2026",
+   "phrase": "kv cache"
+  },
+  {
+   "id": "T3-03",
+   "type": "exhaustive",
+   "q": "List every NeurIPS 2025 accepted paper whose title or abstract contains the phrase \"mixture of experts\". Titles only, complete list.",
+   "corpus": "neurips-2025",
+   "phrase": "mixture of experts"
+  },
+  {
+   "id": "T3-04",
+   "type": "exhaustive",
+   "q": "List every ICLR 2026 accepted paper whose title or abstract contains the phrase \"diffusion policy\". Titles only, complete list.",
+   "corpus": "iclr-2026",
+   "phrase": "diffusion policy"
+  },
+  {
+   "id": "T4-01",
+   "type": "paper",
+   "q": "In its own words, what limitation of prior work does the paper \"Geometry-Aware Decoding with Wasserstein-Regularized Truncation and Mass Penalties for Large Language Models\" (ICML 2026) state? Quote the sentence verbatim."
+  },
+  {
+   "id": "T4-02",
+   "type": "paper",
+   "q": "In its own words, what limitation of prior work does the paper \"PointMAC: Meta-Learned Adaptation for Robust Test-Time Point Cloud Completion\" (NeurIPS 2025) state? Quote the sentence verbatim."
+  },
+  {
+   "id": "T4-03",
+   "type": "paper",
+   "q": "In its own words, what limitation of prior work does the paper \"Color3D: Controllable and Consistent 3D Colorization with Personalized Colorizer\" (ICLR 2026) state? Quote the sentence verbatim."
+  },
+  {
+   "id": "T4-04",
+   "type": "paper",
+   "q": "In its own words, what limitation of prior work does the paper \"Do Stochastic, Feel Noiseless: Stable Stochastic Optimization via a Double Momentum Mechanism\" (ICLR 2025) state? Quote the sentence verbatim."
+  },
+  {
+   "id": "T5-01",
+   "type": "scope",
+   "q": "How many NeurIPS 2026 accepted papers use diffusion models? Give the number."
+  },
+  {
+   "id": "T5-02",
+   "type": "scope",
+   "q": "List the NeurIPS 2026 accepted papers on protein design. Titles only."
+  },
+  {
+   "id": "T6-01",
+   "type": "related",
+   "q": "Here is the abstract of a paper I am preparing. Which papers from ICML 2025-2026, NeurIPS 2024-2025, or ICLR 2025-2026 should it cite? List 10 titles.\n\nFine-Tuning-as-a-Service (FTaaS) facilitates the customization of Multimodal Large Language Models (MLLMs) but introduces critical backdoor risks via poisoned data. Existing defenses either rely on supervised signals or fail to generalize across diverse trigger types and modalities. In this work, we uncover a universal backdoor fingerprint—attention allocation divergence—where poisoned samples disrupt the balanced attention distribution across three functional components: system instructions, vision inputs, and user textual queries, regardless of trigger morphology. Motivated by this insight, we propose Tri-Component Attention Profiling (TCAP), an unsupervised defense framework to filter backdoor samples. TCAP decomposes cross-modal attention maps into the three components, identifies trigger-responsive attention heads via Gaussian Mixture Model (GMM) statistical profiling, and isolates poisoned samples through EM-based vote aggregation. Extensive experiments across diverse MLLM architectures and attack methods demonstrate that TCAP achieves consistently strong performance, establishing it as a robust and practical backdoor defense in MLLMs."
+  },
+  {
+   "id": "T6-02",
+   "type": "related",
+   "q": "Here is the abstract of a paper I am preparing. Which papers from ICML 2025-2026, NeurIPS 2024-2025, or ICLR 2025-2026 should it cite? List 10 titles.\n\nThe pursuit of spatial intelligence fundamentally relies on access to large-scale, fine-grained 3D data. However, existing approaches predominantly construct spatial understanding benchmarks by generating question–answer (QA) pairs from a limited number of manually annotated datasets, rather than systematically annotating new large-scale 3D scenes from raw web data. As a result, their scalability is severely constrained, and model performance is further hindered by domain gaps inherent in these narrowly curated datasets. In this work, we propose \\textbf{Holi-Spatial}, the first fully automated, large-scale, spatially-aware multimodal dataset, constructed from raw video inputs without human intervention, using the proposed data curation pipeline. Holi-Spatial supports multi-level spatial supervision, ranging from geometrically accurate 3D Gaussian Splatting (3DGS) reconstructions with rendered depth maps to object-level and relational semantic annotations, together with corresponding spatial Question–Answer (QA) pairs. Following a principled and systematic pipeline, we further construct \\textbf{Holi-Spatial-4M}, the first large-scale, high-quality 3D semantic dataset, containing 12K optimized 3DGS scenes, 1.3M 2D masks, 320K 3D bounding boxes, 320K instance captions, 1.2M 3D grounding instances, and 1.2M spatial QA pairs spanning diverse geometric, relational, and semantic reasoning tasks. Holi-Spatial demonstrates exceptional performance in data curation quality, significantly outperforming existing feed-forward and per-scene optimized methods on datasets such as ScanNet, ScanNet++, and DL3DV. Furthermore, fine-tuning Vision-Language Models (VLMs) on spatial reasoning tasks using this dataset has also led to substantial improvements in model performance."
+  },
+  {
+   "id": "T6-03",
+   "type": "related",
+   "q": "Here is the abstract of a paper I am preparing. Which papers from ICML 2025-2026, NeurIPS 2024-2025, or ICLR 2025-2026 should it cite? List 10 titles.\n\nRecent reinforcement learning (RL) methods have substantially enhanced the planning capabilities of Large Language Models (LLMs), yet the theoretical basis for their effectiveness remains elusive. In this work, we investigate RL's benefits and limitations through a tractable graph-based abstraction, focusing on policy gradient (PG) and Q-learning methods. Our theoretical analyses reveal that supervised fine-tuning (SFT) may introduce co-occurrence-based spurious solutions, whereas RL achieves correct planning primarily through exploration, underscoring exploration’s role in enabling better generalization. However, we also show that PG suffers from diversity collapse, where output diversity decreases during training and persists even after perfect accuracy is attained. By contrast, Q-learning provides two key advantages: off-policy learning and diversity preservation at convergence. We further demonstrate that careful reward design is necessary to prevent Q-value bias in Q-learning. Finally, applying our framework to the real-world planning benchmark Blocksworld, we confirm that these behaviors manifest in practice."
+  },
+  {
+   "id": "T6-04",
+   "type": "related",
+   "q": "Here is the abstract of a paper I am preparing. Which papers from ICML 2025-2026, NeurIPS 2024-2025, or ICLR 2025-2026 should it cite? List 10 titles.\n\nDiffusion transformers exhibit remarkable video generation capability, yet their prohibitive computational and memory costs hinder practical deployment. Model quantization and attention sparsification are two promising directions for compression, but each alone suffers severe performance degradation under aggressive compression. Combining them promises compounded efficiency gains, but naive integration is ineffective. The sparsity-induced information loss exacerbates quantization noise, leading to amplified attention shifts. To address this, we propose **QuantSparse**, a unified framework that integrates model quantization with attention sparsification. Specifically, we introduce *Multi-Scale Salient Attention Distillation*, which leverages both global structural guidance and local salient supervision to mitigate quantization-induced bias. In addition, we develop *Second-Order Sparse Attention Reparameterization*, which exploits the temporal stability of second-order residuals to efficiently recover information lost under sparsity. Experiments on HunyuanVideo-13B demonstrate that QuantSparse achieves 20.88 PSNR, substantially outperforming the state-of-the-art quantization baseline Q-VDiT (16.85 PSNR), while simultaneously delivering a **3.68$\\times$** reduction in storage and **1.88$\\times$** acceleration in end-to-end inference."
+  }
+ ]
+}

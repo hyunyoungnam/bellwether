@@ -1,0 +1,27 @@
+{
+  "note": "Frozen question set for the layer-1 comparison. Ground truth lives in truth.json (make_truth.py); do not edit questions after the freeze commit.",
+  "questions": [
+    {"id": "T1-01", "type": "trend", "q": "Among ICML 2026 papers, which techniques for code generation grew the most compared with ICML 2025? Give the share of papers per 1,000 for both years and state how you computed it."},
+    {"id": "T1-02", "type": "trend", "q": "Did reinforcement learning with verifiable rewards become more common between NeurIPS 2024 and NeurIPS 2025? Give shares per 1,000 papers for each edition and how you counted."},
+    {"id": "T1-03", "type": "trend", "q": "Between ICLR 2025 and ICLR 2026, which methods for LLM inference efficiency (KV cache, speculative decoding, quantization) rose or fell? Give counts or shares and the method you used to count."},
+    {"id": "T1-04", "type": "trend", "q": "How did the share of diffusion-model papers change from NeurIPS 2024 to NeurIPS 2025 and ICML 2025 to ICML 2026? Report shares per 1,000 papers and your counting method."},
+    {"id": "T2-01", "type": "gap", "q": "In healthcare-related papers at NeurIPS 2025, which limitations do papers state most often, and which of those are rarely attacked by other papers' proposals? Quote the limitation sentences verbatim with the paper titles."},
+    {"id": "T2-02", "type": "gap", "q": "For autonomous driving papers across ICML/NeurIPS/ICLR 2025-2026, which failure modes are widely named in limitation statements but seldom addressed as a paper's main contribution? Quote the papers' own sentences."},
+    {"id": "T2-03", "type": "gap", "q": "Among papers on LLM agents at ICLR 2026, which limitations are named by many but attacked by few? Support each with a verbatim limitation sentence and its paper."},
+    {"id": "T2-04", "type": "gap", "q": "In drug discovery papers at ICML 2026, what stated limitations of prior work recur, and which of them does no paper in the same edition attempt to solve? Quote verbatim."},
+    {"id": "T3-01", "type": "exhaustive", "q": "List every ICLR 2026 accepted paper whose title or abstract contains the phrase \"flow matching\". Titles only, complete list.", "corpus": "iclr-2026", "phrase": "flow matching"},
+    {"id": "T3-02", "type": "exhaustive", "q": "List every ICML 2026 accepted paper whose title or abstract contains the phrase \"KV cache\". Titles only, complete list.", "corpus": "icml-2026", "phrase": "kv cache"},
+    {"id": "T3-03", "type": "exhaustive", "q": "List every NeurIPS 2025 accepted paper whose title or abstract contains the phrase \"mixture of experts\". Titles only, complete list.", "corpus": "neurips-2025", "phrase": "mixture of experts"},
+    {"id": "T3-04", "type": "exhaustive", "q": "List every ICLR 2026 accepted paper whose title or abstract contains the phrase \"diffusion policy\". Titles only, complete list.", "corpus": "iclr-2026", "phrase": "diffusion policy"},
+    {"id": "T4-01", "type": "paper", "q": "In its own words, what limitation of prior work does the paper \"{title}\" ({venue}) state? Quote the sentence verbatim.", "pick": {"corpus": "icml-2026", "index": 0}},
+    {"id": "T4-02", "type": "paper", "q": "In its own words, what limitation of prior work does the paper \"{title}\" ({venue}) state? Quote the sentence verbatim.", "pick": {"corpus": "neurips-2025", "index": 1}},
+    {"id": "T4-03", "type": "paper", "q": "In its own words, what limitation of prior work does the paper \"{title}\" ({venue}) state? Quote the sentence verbatim.", "pick": {"corpus": "iclr-2026", "index": 2}},
+    {"id": "T4-04", "type": "paper", "q": "In its own words, what limitation of prior work does the paper \"{title}\" ({venue}) state? Quote the sentence verbatim.", "pick": {"corpus": "iclr-2025", "index": 3}},
+    {"id": "T5-01", "type": "scope", "q": "How many NeurIPS 2026 accepted papers use diffusion models? Give the number."},
+    {"id": "T5-02", "type": "scope", "q": "List the NeurIPS 2026 accepted papers on protein design. Titles only."},
+    {"id": "T6-01", "type": "related", "q": "Here is the abstract of a paper I am preparing. Which papers from ICML 2025-2026, NeurIPS 2024-2025, or ICLR 2025-2026 should it cite? List 10 titles.\n\n{abstract}", "pick": {"corpus": "icml-2026", "index": 0}},
+    {"id": "T6-02", "type": "related", "q": "Here is the abstract of a paper I am preparing. Which papers from ICML 2025-2026, NeurIPS 2024-2025, or ICLR 2025-2026 should it cite? List 10 titles.\n\n{abstract}", "pick": {"corpus": "icml-2026", "index": 1}},
+    {"id": "T6-03", "type": "related", "q": "Here is the abstract of a paper I am preparing. Which papers from ICML 2025-2026, NeurIPS 2024-2025, or ICLR 2025-2026 should it cite? List 10 titles.\n\n{abstract}", "pick": {"corpus": "iclr-2026", "index": 2}},
+    {"id": "T6-04", "type": "related", "q": "Here is the abstract of a paper I am preparing. Which papers from ICML 2025-2026, NeurIPS 2024-2025, or ICLR 2025-2026 should it cite? List 10 titles.\n\n{abstract}", "pick": {"corpus": "iclr-2026", "index": 3}}
+  ]
+}

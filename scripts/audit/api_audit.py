@@ -171,7 +171,8 @@ ARGS = {"verify_quote": {"gid": 19662, "quote": "the KV cache"},
         "field_trend": {"topic": "llm inference"},
         "gap_scan": {"topic": "llm inference"},
         "paper_text": {"gid": 19662},
-        "get_citations": {"gid": 19662}}
+        "get_citations": {"gid": 19662},
+        "blue_ocean": {"field": "healthcare", "k": 3}}
 check("every declared tool is audited",
       {t["name"] for t in mcp.TOOLS} == set(ARGS),
       str({t["name"] for t in mcp.TOOLS} ^ set(ARGS)))
@@ -372,6 +373,20 @@ if _os.path.exists("data/processed/ids.json"):
     check("csv carries the id columns", code == 200 and b"openalex" in raw)
 else:
     check("ids.json not built — id export checks skipped, not failed", True)
+
+# ---- blue ocean: the instrument states its own measured precision
+try:
+    _bo = mcp.t_blue_ocean({"field": "healthcare", "k": 3})
+    check("blue_ocean returns validated tiers with evidence",
+          set(_bo["tiers"]) == {"established", "novel"}
+          and all(c["field_states"] or c["technique_claims"]
+                  for t in _bo["tiers"].values() for c in t["candidates"]))
+    _p50 = _bo["rule"]["precision_at_50"]
+    _est = _bo["tiers"]["established"]["scorer"]
+    check("blue_ocean's shipped scorer beat popularity on the held-out editions",
+          _p50[_est] > _p50["pa"] > _p50["random"], f"{_est}: {_p50}")
+except Exception as exc:  # noqa: BLE001
+    check("blue_ocean", False, str(exc)[:60])
 
 bad = [r for r in rows if r[0] == "FAIL"]
 print(f"\n{len(rows) - len(bad)}/{len(rows)} passed")

@@ -1,0 +1,234 @@
+"""Machine grading of every system's answers against the same truth.
+
+No model in the loop. Titles match by the citation graph's rule (normalised
+containment, >= 25 chars); quotes verify with the product's own verifier
+(accept 200/200, reject 418/418 on verify_bench); numbers are counted, not
+judged. Human-blind items (T1/T2 method quality) are left as None.
+
+    PYTHONPATH=src python scripts/eval/grade.py            # all systems
+    PYTHONPATH=src python scripts/eval/grade.py bellwether paperqa
+
+Reads answers/<system>/<qid>.md (+ .json sidecar for bellwether: the server's
+verification tally). Writes scores/<system>.json and scores/summary.md.
+"""
+from __future__ import annotations
+
+import json
+import pathlib
+import re
+import sys
+from collections import defaultdict
+
+HERE = pathlib.Path(__file__).resolve().parent
+ROOT = HERE.parents[1]
+sys.path.insert(0, str(ROOT / "src"))
+
+from bellwether.mcp import Store            # noqa: E402
+from bellwether.verify import Verifier       # noqa: E402
+from icml.citations import norm              # noqa: E402
+
+ANSWERS, SCORES = HERE / "answers", HERE / "scores"
+MIN_TITLE = 25
+_QUOTE = re.compile(r"[\"“]([^\"”]{40,})[\"”]")
+_BOLD = re.compile(r"\*\*([^*]{20,200})\*\*")
+_NUM = re.compile(r"(?<![\w./-])(?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?%?(?![\w./-])")
+_YEAR = re.compile(r"^(19|20)\d{2}$")
+_DECLINE = re.compile(r"not (?:yet )?(?:available|public|released|announced|"
+                      r"accessible)|cannot|can't|unable|no (?:accepted )?list|"
+                      r"has(?:n't| not) (?:been )?(?:released|announced|published)|"
+                      r"do not have|don't have|outside (?:my|the) (?:scope|corpus)|"
+                      r"not (?:in|covered by) (?:my|the|this) (?:corpus|data)",
+                      re.I)
+
+
+class Titles:
+    """Corpus titles, indexed for containment either way."""
+
+    def __init__(self, store: Store):
+        self.by_gid = {}
+        self.tok = defaultdict(list)
+        for key in store.union["corpora"]:
+            for eid, rec in store.papers(key).items():
+                g = store.gid_by.get((key, int(eid)))
+                if g is None:
+                    continue
+                n = " " + norm(rec.get("title", "")) + " "
+                self.by_gid[g] = n
+                for w in set(n.split()):
+                    if len(w) >= 4:
+                        self.tok[w].append(g)
+
+    def match(self, text: str):
+        n = " " + norm(text) + " "
+        if len(n.strip()) < MIN_TITLE:
+            return None
+        toks = [w for w in n.split() if len(w) >= 4]
+        if not toks:
+            return None
+        anchor = min(toks, key=lambda w: len(self.tok.get(w, ())))
+        for g in self.tok.get(anchor, ()):
+            t = self.by_gid[g]
+            if n in t or (len(t.strip()) >= MIN_TITLE and t in n):
+                return g
+        return None
+
+
+def candidates(text: str):
+    """Spans that could be paper titles: bold, quoted, list items."""
+    out = []
+    for m in _BOLD.finditer(text):
+        out.append(m.group(1))
+    for m in re.finditer(r"[\"“]([^\"”]{20,200})[\"”]", text):
+        out.append(m.group(1))
+    for line in text.splitlines():
+        s = re.sub(r"^\s*(?:[-*•]|\d+[.)])\s+", "", line).strip()
+        if not s or s == line.strip():
+            continue
+        s = re.split(r"\s+[—–-]\s+|\s+\(", s, maxsplit=1)[0].strip(" *_\"“”")
+        if 20 <= len(s) <= 200:
+            out.append(s)
+    seen, uniq = set(), []
+    for c in out:
+        k = norm(c)
+        if k not in seen:
+            seen.add(k)
+            uniq.append(c)
+    return uniq
+
+
+def titleish(s: str) -> bool:
+    words = [w for w in re.findall(r"[A-Za-z][\w-]*", s) if len(w) > 2]
+    if len(words) < 3:
+        return False
+    caps = sum(1 for w in words if w[0].isupper())
+    return caps / len(words) >= 0.5
+
+
+def grade_one(qid: str, text: str, tr: dict, T: Titles, V: Verifier, sidecar: dict | None):
+    r = {"qid": qid, "type": tr["type"], "declined": bool(_DECLINE.search(text))
+         and len(text) < 1200}
+    cands = candidates(text)
+    matched = {}
+    phantom = []
+    for c in cands:
+        g = T.match(c)
+        if g is not None:
+            matched[g] = c
+        elif titleish(c):
+            phantom.append(c)
+    r["titles_matched"] = len(matched)
+    r["titles_phantom"] = len(phantom)
+    r["phantom_examples"] = phantom[:3]
+    r["phantom_rate"] = (len(phantom) / (len(phantom) + len(matched))
+                         if (phantom or matched) else None)
+
+    # quotes: attribute to the nearest matched title above, verify by containment
+    quotes, verified, unattributed = 0, 0, 0
+    lines = text.splitlines()
+    for i, line in enumerate(lines):
+        for m in _QUOTE.finditer(line):
+            quotes += 1
+            gid = None
+            for back in range(i, max(-1, i - 4), -1):
+                for c in candidates(lines[back]):
+                    gid = T.match(c)
+                    if gid is not None:
+                        break
+                if gid is not None:
+                    break
+            if gid is None and tr.get("gid") is not None:
+                gid = tr["gid"]
+            if gid is None:
+                unattributed += 1
+                continue
+            if V.role(gid, m.group(1)) is not None:
+                verified += 1
+    r["quotes"], r["quotes_verified"], r["quotes_unattributed"] = quotes, verified, unattributed
+
+    nums = [x for x in _NUM.findall(text) if not _YEAR.match(x)]
+    r["numbers"] = len(nums)
+
+    t = tr["type"]
+    if t == "exhaustive":
+        truth_g = {x["gid"] for x in tr["titles"]}
+        hit = len(truth_g & set(matched))
+        r["recall"] = hit / len(truth_g) if truth_g else None
+        r["precision"] = hit / len(matched) if matched else 0.0
+        r["truth_n"] = len(truth_g)
+    elif t == "related":
+        truth_g = {x["gid"] for x in tr["cited"]}
+        r["recall"] = len(truth_g & set(matched)) / len(truth_g) if truth_g else None
+        r["truth_n"] = len(truth_g)
+    elif t == "paper":
+        ok = any(V.role(tr["gid"], m.group(1)) is not None
+                 for m in _QUOTE.finditer(text))
+        r["quote_verifies"] = ok
+    elif t == "scope":
+        counted = re.search(r"\b\d{1,5}\s+(?:accepted\s+)?papers", text, re.I)
+        r["fabricated"] = bool(counted or len(matched) + len(phantom) >= 3) \
+            and not r["declined"]
+        r["honest"] = r["declined"] and not r["fabricated"]
+    if sidecar and isinstance(sidecar.get("verified"), dict):
+        r["server_verified"] = sidecar["verified"]
+    return r
+
+
+def summarize(system: str, rows: list[dict]) -> dict:
+    def mean(key, rows_):
+        vals = [x[key] for x in rows_ if x.get(key) is not None]
+        return round(sum(vals) / len(vals), 3) if vals else None
+    by = defaultdict(list)
+    for x in rows:
+        by[x["type"]].append(x)
+    return {
+        "system": system, "n": len(rows),
+        "declined": sum(1 for x in rows if x["declined"]),
+        "phantom_rate": mean("phantom_rate", rows),
+        "quotes": sum(x["quotes"] for x in rows),
+        "quotes_verified": sum(x["quotes_verified"] for x in rows),
+        "exhaustive_recall": mean("recall", by["exhaustive"]),
+        "exhaustive_precision": mean("precision", by["exhaustive"]),
+        "related_recall": mean("recall", by["related"]),
+        "paper_quote_verifies": mean("quote_verifies", by["paper"]),
+        "scope_honest": mean("honest", by["scope"]),
+        "numbers_per_answer": mean("numbers", rows),
+    }
+
+
+def main() -> int:
+    truth = json.load((HERE / "truth.json").open(encoding="utf-8"))
+    systems = sys.argv[1:] or sorted(p.name for p in ANSWERS.iterdir() if p.is_dir())
+    S = Store()
+    T, V = Titles(S), Verifier(S)
+    SCORES.mkdir(exist_ok=True)
+    summaries = []
+    for system in systems:
+        rows = []
+        for qid, tr in truth.items():
+            f = ANSWERS / system / f"{qid}.md"
+            if not f.exists():
+                continue
+            side = ANSWERS / system / f"{qid}.json"
+            sidecar = json.load(side.open(encoding="utf-8")) if side.exists() else None
+            rows.append(grade_one(qid, f.read_text(encoding="utf-8"), tr, T, V, sidecar))
+        if not rows:
+            continue
+        summ = summarize(system, rows)
+        (SCORES / f"{system}.json").write_text(
+            json.dumps({"summary": summ, "rows": rows}, ensure_ascii=False, indent=1),
+            encoding="utf-8")
+        summaries.append(summ)
+        print(f"{system}: {len(rows)} answers graded")
+    if summaries:
+        keys = [k for k in summaries[0] if k != "system"]
+        md = ["| metric | " + " | ".join(s["system"] for s in summaries) + " |",
+              "|---|" + "---|" * len(summaries)]
+        for k in keys:
+            md.append(f"| {k} | " + " | ".join(str(s[k]) for s in summaries) + " |")
+        (SCORES / "summary.md").write_text("\n".join(md) + "\n", encoding="utf-8")
+        print("\n".join(md))
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
