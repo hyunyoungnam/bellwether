@@ -60,8 +60,13 @@ Bellwether only, the server's figure-verification tally.
 ## Confounders, stated
 
 - **Model.** Bellwether runs the user's claude CLI (subscription); PaperQA2
-  runs `claude-opus-5` via API; orx runs the same Claude harness. ChatGPT is
-  a different model — product-tier comparison only.
+  answers and plans with `claude-opus-5` via API and summarises evidence
+  chunks with `claude-haiku-4-5` (measured: Opus summarising ~100 chunks
+  per question cost 1.69 USD, Haiku 0.68; the summariser is a mechanical
+  step and PaperQA2 itself separates `summary_llm` from `llm`); orx runs
+  the same Claude harness. ChatGPT is a different model — product-tier
+  comparison only. An Opus-everywhere PaperQA2 run is a possible
+  robustness check, not the primary configuration.
 - **Evidence.** PaperQA2 gets exactly the per-paper text Bellwether's cards
   use (title, venue, abstract, limitation/key-change/result sentences), not
   the full texts; T4 answers requiring full text are noted.

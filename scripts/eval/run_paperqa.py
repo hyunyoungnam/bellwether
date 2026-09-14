@@ -33,7 +33,12 @@ import budget  # noqa: E402
 CORPUS = ROOT / "data" / "eval" / "pqa_corpus"
 INDEX = ROOT / "data" / "eval" / "pqa_index"
 OUT = HERE / "answers" / "paperqa"
-LLM = "anthropic/claude-opus-5"          # parity with the Bellwether agent's tier
+import os
+LLM = "anthropic/claude-opus-5"          # answering + agent: parity with Bellwether's tier
+# evidence summaries are the bulk of PaperQA2's calls (measured 1.69 USD per
+# question with Opus summarising ~100 chunks); the summariser is a
+# mechanical step, so it may run on a cheaper model — set explicitly
+SUMMARY_LLM = os.environ.get("WNAI_PQA_SUMMARY_LLM", LLM)
 EMBED = "st-BAAI/bge-small-en-v1.5"      # local; verify the prefix on first run
 
 
@@ -96,7 +101,7 @@ def _cache_sentence_transformers() -> None:
 def settings():
     _cache_sentence_transformers()
     from paperqa import Settings
-    s = Settings(llm=LLM, summary_llm=LLM, embedding=EMBED, temperature=0.0)
+    s = Settings(llm=LLM, summary_llm=SUMMARY_LLM, embedding=EMBED, temperature=0.0)
     # every model slot — the agent loop and parsing enrichment default to
     # gpt-4o and would fail (or bill OpenAI) silently otherwise
     s.agent.agent_llm = LLM
@@ -161,7 +166,7 @@ def main() -> int:
         # written synchronously; anything the callbacks saw beyond it is
         # flushed at exit
         budget.charge(LLM, usd=float(getattr(sess, "cost", 0) or 0), note=f"paperqa {q['id']}")
-        f.write_text(f"<!-- system: paperqa | llm: {LLM} | embed: {EMBED} | "
+        f.write_text(f"<!-- system: paperqa | llm: {LLM} | summary: {SUMMARY_LLM} | embed: {EMBED} | "
                      f"{time.strftime('%Y-%m-%d %H:%M')} | {time.time() - t0:.0f}s -->\n"
                      f"{text}\n", encoding="utf-8")
         print(f"{q['id']}: {len(text)} chars, {time.time() - t0:.0f}s | {budget.status()}")
