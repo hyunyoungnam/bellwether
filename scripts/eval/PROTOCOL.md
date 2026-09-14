@@ -15,7 +15,7 @@ questions outside scope are scored on *honesty about scope*, not on content.
 | id | system | what it isolates | how it runs |
 |---|---|---|---|
 | `bellwether` | this repo, `POST /chat` | the platform | `run_bellwether.py` (user's claude CLI login, no key) |
-| `claude-web` | the same signed-in `claude` CLI, same default model and 12-turn limit, Bellwether's MCP tools and verifier removed, built-in WebSearch/WebFetch allowed, run from an empty directory outside the repo | model fixed, platform removed — the cleanest ablation | `run_claude.py --profile web` (subscription, no key) |
+| `claude-web` | the same signed-in `claude` CLI, same default model, a 60-turn limit (Bellwether runs at 12: one of its tool calls returns a census, a web search returns ten links; at 12 the baseline failed 5 of 6 and a trend question measured 41 turns), Bellwether's MCP tools and verifier removed, built-in WebSearch/WebFetch allowed, run from an empty directory outside the repo | model fixed, platform removed — the cleanest ablation | `run_claude.py --profile web` (subscription, no key) |
 | `orx` | OpenResearch skill on the same CLI (`orx discover`/`orx paper` retrieval) | model fixed, gateway retrieval | **blocked on this network**: orx's Rust binary trusts only its bundled roots and cannot pass the TLS-inspecting gateway (SSL_CERT_FILE ignored); rerun elsewhere if wanted |
 | `paperqa` | PaperQA2 over the **same evidence** (title, abstract, extracted sentences per paper) | evidence fixed, harness varies | `run_paperqa.py` (API key, budget-capped) |
 | `scholarqa` | Ai2 ScholarQA (open pipeline, Semantic Scholar index) | possession vs gateway | `answers/scholarqa/<qid>.md` (needs S2 key; else the public app, pasted) |
@@ -112,3 +112,10 @@ every system identically, and is listed so a reader can judge it:
   also recognises "none of the … are …", "no titles can be listed", "is not
   among them". Each was a format the second system used and the grader
   had never seen.
+- 2026-09-14 (after the claude-web baseline) — markdown links and
+  "Sources:" lines are never title candidates (they were counted as
+  phantoms); a new column `quotes_in_corpus` asks whether a quoted sentence
+  exists in ANY corpus paper (engine search + containment), separating
+  "attributed to a nickname the grader cannot resolve" from "not a paper's
+  sentence". The baseline's turn cap is 60, Bellwether's 12 — stated as a
+  confounder rather than equalised, since at 12 the baseline failed 5 of 6.

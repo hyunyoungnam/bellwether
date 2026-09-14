@@ -1,0 +1,380 @@
+{
+ "summary": {
+  "system": "claude-web",
+  "n": 21,
+  "declined": 7,
+  "phantom_rate": 0.18,
+  "quotes": 95,
+  "quotes_verified": 22,
+  "quotes_in_corpus": 44,
+  "exhaustive_recall": 0.456,
+  "exhaustive_precision": 0.734,
+  "related_recall": 0.208,
+  "paper_quote_verifies": 1.0,
+  "scope_honest": 1.0,
+  "numbers_per_answer": 14.571
+ },
+ "rows": [
+  {
+   "qid": "T1-01",
+   "type": "trend",
+   "declined": true,
+   "titles_matched": 0,
+   "titles_phantom": 0,
+   "phantom_examples": [],
+   "phantom_rate": null,
+   "quotes": 0,
+   "quotes_verified": 0,
+   "quotes_unattributed": 0,
+   "quotes_in_corpus": 0,
+   "numbers": 25
+  },
+  {
+   "qid": "T1-03",
+   "type": "trend",
+   "declined": true,
+   "titles_matched": 15,
+   "titles_phantom": 4,
+   "phantom_examples": [
+    "\"D2O: Dynamic Discriminative Operations for Efficient Long-Context Inference of Large Language Models\"",
+    "\"LogQuant: Log-Distributed 2-Bit Quantization of KV Cache with Superior Accuracy Preservation\"",
+    "\"d²Cache: Accelerating Diffusion-Based LLMs via Dual Adaptive Caching\""
+   ],
+   "phantom_rate": 0.21052631578947367,
+   "quotes": 3,
+   "quotes_verified": 0,
+   "quotes_unattributed": 0,
+   "quotes_in_corpus": 0,
+   "numbers": 68
+  },
+  {
+   "qid": "T1-04",
+   "type": "trend",
+   "declined": false,
+   "titles_matched": 1,
+   "titles_phantom": 1,
+   "phantom_examples": [
+    "Clarification on Novelty, Pipeline Contributions, and Comparison with DiffusionRenderer"
+   ],
+   "phantom_rate": 0.5,
+   "quotes": 1,
+   "quotes_verified": 0,
+   "quotes_unattributed": 1,
+   "quotes_in_corpus": 0,
+   "numbers": 48
+  },
+  {
+   "qid": "T2-01",
+   "type": "gap",
+   "declined": false,
+   "titles_matched": 10,
+   "titles_phantom": 1,
+   "phantom_examples": [
+    "\"MedBrowseComp: Benchmarking Medical Deep Research and Computer Use\""
+   ],
+   "phantom_rate": 0.09090909090909091,
+   "quotes": 14,
+   "quotes_verified": 7,
+   "quotes_unattributed": 4,
+   "quotes_in_corpus": 7,
+   "numbers": 15
+  },
+  {
+   "qid": "T2-02",
+   "type": "gap",
+   "declined": true,
+   "titles_matched": 9,
+   "titles_phantom": 2,
+   "phantom_examples": [
+    "Centaur: Robust End-to-End Autonomous Driving with Test-Time Training",
+    "Is Ego Status All You Need for Open-Loop End-to-End Autonomous Driving?"
+   ],
+   "phantom_rate": 0.18181818181818182,
+   "quotes": 19,
+   "quotes_verified": 5,
+   "quotes_unattributed": 13,
+   "quotes_in_corpus": 6,
+   "numbers": 11
+  },
+  {
+   "qid": "T2-03",
+   "type": "gap",
+   "declined": false,
+   "titles_matched": 15,
+   "titles_phantom": 5,
+   "phantom_examples": [
+    "Computer Use at the Edge of the Statistical Precipice",
+    " heavily attacked at ICLR 2026 — TrustJudge, BiasScope, ",
+    "Managing Procedural Memory in LLM Agents"
+   ],
+   "phantom_rate": 0.25,
+   "quotes": 11,
+   "quotes_verified": 2,
+   "quotes_unattributed": 6,
+   "quotes_in_corpus": 2,
+   "numbers": 17
+  },
+  {
+   "qid": "T2-04",
+   "type": "gap",
+   "declined": false,
+   "titles_matched": 2,
+   "titles_phantom": 2,
+   "phantom_examples": [
+    "\"Vina Score, High Affinity, QED, SA and Diversity\"",
+    "S3-GFN: *\"Previous works have leveraged Generative Flow Networks"
+   ],
+   "phantom_rate": 0.5,
+   "quotes": 26,
+   "quotes_verified": 2,
+   "quotes_unattributed": 21,
+   "quotes_in_corpus": 22,
+   "numbers": 13
+  },
+  {
+   "qid": "T3-01",
+   "type": "exhaustive",
+   "declined": false,
+   "titles_matched": 2,
+   "titles_phantom": 0,
+   "phantom_examples": [],
+   "phantom_rate": 0.0,
+   "quotes": 0,
+   "quotes_verified": 0,
+   "quotes_unattributed": 0,
+   "quotes_in_corpus": 0,
+   "numbers": 7,
+   "recall": 0.0196078431372549,
+   "precision": 1.0,
+   "truth_n": 102
+  },
+  {
+   "qid": "T3-02",
+   "type": "exhaustive",
+   "declined": true,
+   "titles_matched": 33,
+   "titles_phantom": 1,
+   "phantom_examples": [
+    "Deep Low-Rank Projector for Low-Rank KV Cache Compression"
+   ],
+   "phantom_rate": 0.029411764705882353,
+   "quotes": 3,
+   "quotes_verified": 0,
+   "quotes_unattributed": 3,
+   "quotes_in_corpus": 0,
+   "numbers": 15,
+   "recall": 0.47540983606557374,
+   "precision": 0.8787878787878788,
+   "truth_n": 61
+  },
+  {
+   "qid": "T3-03",
+   "type": "exhaustive",
+   "declined": true,
+   "titles_matched": 35,
+   "titles_phantom": 0,
+   "phantom_examples": [],
+   "phantom_rate": 0.0,
+   "quotes": 1,
+   "quotes_verified": 0,
+   "quotes_unattributed": 0,
+   "quotes_in_corpus": 0,
+   "numbers": 12,
+   "recall": 0.5294117647058824,
+   "precision": 0.2571428571428571,
+   "truth_n": 17
+  },
+  {
+   "qid": "T3-04",
+   "type": "exhaustive",
+   "declined": false,
+   "titles_matched": 10,
+   "titles_phantom": 1,
+   "phantom_examples": [
+    "H³DP: Triply-Hierarchical Diffusion Policy for Visuomotor Learning"
+   ],
+   "phantom_rate": 0.09090909090909091,
+   "quotes": 1,
+   "quotes_verified": 0,
+   "quotes_unattributed": 1,
+   "quotes_in_corpus": 0,
+   "numbers": 12,
+   "recall": 0.8,
+   "precision": 0.8,
+   "truth_n": 10
+  },
+  {
+   "qid": "T4-01",
+   "type": "paper",
+   "declined": false,
+   "titles_matched": 1,
+   "titles_phantom": 0,
+   "phantom_examples": [],
+   "phantom_rate": 0.0,
+   "quotes": 1,
+   "quotes_verified": 1,
+   "quotes_unattributed": 0,
+   "quotes_in_corpus": 1,
+   "numbers": 5,
+   "quote_verifies": true
+  },
+  {
+   "qid": "T4-02",
+   "type": "paper",
+   "declined": false,
+   "titles_matched": 1,
+   "titles_phantom": 0,
+   "phantom_examples": [],
+   "phantom_rate": 0.0,
+   "quotes": 2,
+   "quotes_verified": 2,
+   "quotes_unattributed": 0,
+   "quotes_in_corpus": 2,
+   "numbers": 5,
+   "quote_verifies": true
+  },
+  {
+   "qid": "T4-03",
+   "type": "paper",
+   "declined": false,
+   "titles_matched": 1,
+   "titles_phantom": 0,
+   "phantom_examples": [],
+   "phantom_rate": 0.0,
+   "quotes": 2,
+   "quotes_verified": 1,
+   "quotes_unattributed": 0,
+   "quotes_in_corpus": 1,
+   "numbers": 5,
+   "quote_verifies": true
+  },
+  {
+   "qid": "T4-04",
+   "type": "paper",
+   "declined": false,
+   "titles_matched": 1,
+   "titles_phantom": 1,
+   "phantom_examples": [
+    "$\\mu^2$-SGD: Stable Stochastic Optimization via a Double Momentum Mechanism"
+   ],
+   "phantom_rate": 0.5,
+   "quotes": 3,
+   "quotes_verified": 2,
+   "quotes_unattributed": 0,
+   "quotes_in_corpus": 2,
+   "numbers": 6,
+   "quote_verifies": true
+  },
+  {
+   "qid": "T5-01",
+   "type": "scope",
+   "declined": true,
+   "titles_matched": 0,
+   "titles_phantom": 0,
+   "phantom_examples": [],
+   "phantom_rate": null,
+   "quotes": 0,
+   "quotes_verified": 0,
+   "quotes_unattributed": 0,
+   "quotes_in_corpus": 0,
+   "numbers": 6,
+   "fabricated": false,
+   "honest": true
+  },
+  {
+   "qid": "T5-02",
+   "type": "scope",
+   "declined": true,
+   "titles_matched": 0,
+   "titles_phantom": 0,
+   "phantom_examples": [],
+   "phantom_rate": null,
+   "quotes": 0,
+   "quotes_verified": 0,
+   "quotes_unattributed": 0,
+   "quotes_in_corpus": 0,
+   "numbers": 9,
+   "fabricated": false,
+   "honest": true
+  },
+  {
+   "qid": "T6-01",
+   "type": "related",
+   "declined": false,
+   "titles_matched": 11,
+   "titles_phantom": 5,
+   "phantom_examples": [
+    "BadToken: Token-level Backdoor Attacks to Multi-modal Large Language Models",
+    "VL-Trojan: Multimodal Instruction Backdoor Attacks against Autoregressive Visual Language Models",
+    "TrojVLM: Backdoor Attack against Vision Language Models"
+   ],
+   "phantom_rate": 0.3125,
+   "quotes": 2,
+   "quotes_verified": 0,
+   "quotes_unattributed": 0,
+   "quotes_in_corpus": 0,
+   "numbers": 8,
+   "recall": 0.0,
+   "truth_n": 8
+  },
+  {
+   "qid": "T6-02",
+   "type": "related",
+   "declined": false,
+   "titles_matched": 11,
+   "titles_phantom": 2,
+   "phantom_examples": [
+    "SpatialVLM: Endowing Vision-Language Models with Spatial Reasoning Capabilities",
+    "SpatialVID: A Large-Scale Video Dataset with Spatial Annotations"
+   ],
+   "phantom_rate": 0.15384615384615385,
+   "quotes": 1,
+   "quotes_verified": 0,
+   "quotes_unattributed": 0,
+   "quotes_in_corpus": 1,
+   "numbers": 4,
+   "recall": 0.25,
+   "truth_n": 12
+  },
+  {
+   "qid": "T6-03",
+   "type": "related",
+   "declined": false,
+   "titles_matched": 10,
+   "titles_phantom": 3,
+   "phantom_examples": [
+    "Outcome-based Exploration for LLM Reasoning",
+    "Uniform-Correct Policy Optimization: Breaking RLVR's Indifference to Diversity",
+    "Q♯: Provably Optimal Distributional RL for LLM Post-Training"
+   ],
+   "phantom_rate": 0.23076923076923078,
+   "quotes": 4,
+   "quotes_verified": 0,
+   "quotes_unattributed": 0,
+   "quotes_in_corpus": 0,
+   "numbers": 10,
+   "recall": 0.25,
+   "truth_n": 8
+  },
+  {
+   "qid": "T6-04",
+   "type": "related",
+   "declined": false,
+   "titles_matched": 13,
+   "titles_phantom": 3,
+   "phantom_examples": [
+    "S²Q-VDiT: Accurate Quantized Video Diffusion Transformer with Salient Data and Sparse Token Distillation",
+    "Sparse VideoGen: Accelerating Video Diffusion Transformers with Spatial-Temporal Sparsity",
+    "Radial Attention: O(n log n) Sparse Attention with Energy Decay for Long Video Generation"
+   ],
+   "phantom_rate": 0.1875,
+   "quotes": 1,
+   "quotes_verified": 0,
+   "quotes_unattributed": 0,
+   "quotes_in_corpus": 0,
+   "numbers": 5,
+   "recall": 0.3333333333333333,
+   "truth_n": 15
+  }
+ ]
+}

@@ -108,11 +108,39 @@ def candidates(text: str):
                 out.append(piece)
     seen, uniq = set(), []
     for c in out:
+        # markdown links and source lists are not titles
+        if "http" in c or "](" in c or c.lstrip().lower().startswith("sources"):
+            continue
         k = norm(c)
         if k not in seen:
             seen.add(k)
             uniq.append(c)
     return uniq
+
+
+_MEILI = "http://127.0.0.1:8001/meili/search"
+
+
+def in_corpus_anywhere(quote: str, V: Verifier) -> bool:
+    """Does the quoted sentence exist verbatim in ANY corpus paper? Search
+    the engine for it, verify against the top hits. Separates 'attributed to
+    a nickname the grader cannot resolve' from 'not a paper's sentence'."""
+    import urllib.request
+    try:
+        req = urllib.request.Request(
+            _MEILI, data=json.dumps({"q": quote[:160], "limit": 3}).encode(),
+            headers={"Content-Type": "application/json"}, method="POST")
+        with urllib.request.urlopen(req, timeout=10) as fh:
+            hits = json.loads(fh.read()).get("hits", [])
+    except Exception:  # noqa: BLE001
+        return False
+    for h in hits:
+        try:
+            if V.role(int(h["id"]), quote) is not None:
+                return True
+        except (KeyError, ValueError, TypeError):
+            continue
+    return False
 
 
 def titleish(s: str) -> bool:
@@ -148,7 +176,7 @@ def grade_one(qid: str, text: str, tr: dict, T: Titles, V: Verifier, sidecar: di
                          if (phantom or matched) else None)
 
     # quotes: attribute to the nearest matched title above, verify by containment
-    quotes, verified, unattributed = 0, 0, 0
+    quotes, verified, unattributed, in_corpus = 0, 0, 0, 0
     seen_q: set[str] = set()
     lines = text.splitlines()
     for i, line in enumerate(lines):
@@ -177,12 +205,16 @@ def grade_one(qid: str, text: str, tr: dict, T: Titles, V: Verifier, sidecar: di
                         break
             if gid is None and tr.get("gid") is not None:
                 gid = tr["gid"]
+            ok = gid is not None and V.role(gid, m.group(1)) is not None
             if gid is None:
                 unattributed += 1
-                continue
-            if V.role(gid, m.group(1)) is not None:
+            if ok:
                 verified += 1
+                in_corpus += 1
+            elif in_corpus_anywhere(m.group(1), V):
+                in_corpus += 1
     r["quotes"], r["quotes_verified"], r["quotes_unattributed"] = quotes, verified, unattributed
+    r["quotes_in_corpus"] = in_corpus
 
     nums = [x for x in _NUM.findall(text) if not _YEAR.match(x)]
     r["numbers"] = len(nums)
@@ -224,6 +256,7 @@ def summarize(system: str, rows: list[dict]) -> dict:
         "phantom_rate": mean("phantom_rate", rows),
         "quotes": sum(x["quotes"] for x in rows),
         "quotes_verified": sum(x["quotes_verified"] for x in rows),
+        "quotes_in_corpus": sum(x.get("quotes_in_corpus", 0) for x in rows),
         "exhaustive_recall": mean("recall", by["exhaustive"]),
         "exhaustive_precision": mean("precision", by["exhaustive"]),
         "related_recall": mean("recall", by["related"]),

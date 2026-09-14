@@ -6,6 +6,7 @@
   "phantom_rate": 0.008,
   "quotes": 24,
   "quotes_verified": 4,
+  "quotes_in_corpus": 11,
   "exhaustive_recall": 0.041,
   "exhaustive_precision": 0.396,
   "related_recall": 0.052,
@@ -25,6 +26,7 @@
    "quotes": 0,
    "quotes_verified": 0,
    "quotes_unattributed": 0,
+   "quotes_in_corpus": 0,
    "numbers": 17
   },
   {
@@ -38,6 +40,7 @@
    "quotes": 0,
    "quotes_verified": 0,
    "quotes_unattributed": 0,
+   "quotes_in_corpus": 0,
    "numbers": 15
   },
   {
@@ -53,6 +56,7 @@
    "quotes": 0,
    "quotes_verified": 0,
    "quotes_unattributed": 0,
+   "quotes_in_corpus": 0,
    "numbers": 22
   },
   {
@@ -66,6 +70,7 @@
    "quotes": 0,
    "quotes_verified": 0,
    "quotes_unattributed": 0,
+   "quotes_in_corpus": 0,
    "numbers": 15
   },
   {
@@ -79,6 +84,7 @@
    "quotes": 1,
    "quotes_verified": 0,
    "quotes_unattributed": 1,
+   "quotes_in_corpus": 0,
    "numbers": 15
   },
   {
@@ -92,6 +98,7 @@
    "quotes": 6,
    "quotes_verified": 0,
    "quotes_unattributed": 6,
+   "quotes_in_corpus": 3,
    "numbers": 17
   },
   {
@@ -105,6 +112,7 @@
    "quotes": 1,
    "quotes_verified": 0,
    "quotes_unattributed": 1,
+   "quotes_in_corpus": 1,
    "numbers": 19
   },
   {
@@ -118,6 +126,7 @@
    "quotes": 6,
    "quotes_verified": 0,
    "quotes_unattributed": 6,
+   "quotes_in_corpus": 2,
    "numbers": 20
   },
   {
@@ -131,6 +140,7 @@
    "quotes": 0,
    "quotes_verified": 0,
    "quotes_unattributed": 0,
+   "quotes_in_corpus": 0,
    "numbers": 15,
    "recall": 0.029411764705882353,
    "precision": 0.75,
@@ -147,6 +157,7 @@
    "quotes": 0,
    "quotes_verified": 0,
    "quotes_unattributed": 0,
+   "quotes_in_corpus": 0,
    "numbers": 13,
    "recall": 0.03278688524590164,
    "precision": 0.5,
@@ -163,6 +174,7 @@
    "quotes": 4,
    "quotes_verified": 2,
    "quotes_unattributed": 2,
+   "quotes_in_corpus": 2,
    "numbers": 9,
    "recall": 0.0,
    "precision": 0.0,
@@ -179,6 +191,7 @@
    "quotes": 1,
    "quotes_verified": 0,
    "quotes_unattributed": 1,
+   "quotes_in_corpus": 0,
    "numbers": 16,
    "recall": 0.1,
    "precision": 0.3333333333333333,
@@ -195,6 +208,7 @@
    "quotes": 2,
    "quotes_verified": 1,
    "quotes_unattributed": 0,
+   "quotes_in_corpus": 2,
    "numbers": 10,
    "quote_verifies": true
   },
@@ -209,6 +223,7 @@
    "quotes": 1,
    "quotes_verified": 1,
    "quotes_unattributed": 0,
+   "quotes_in_corpus": 1,
    "numbers": 7,
    "quote_verifies": true
   },
@@ -223,6 +238,7 @@
    "quotes": 2,
    "quotes_verified": 0,
    "quotes_unattributed": 0,
+   "quotes_in_corpus": 0,
    "numbers": 7,
    "quote_verifies": true
   },
@@ -237,6 +253,7 @@
    "quotes": 0,
    "quotes_verified": 0,
    "quotes_unattributed": 0,
+   "quotes_in_corpus": 0,
    "numbers": 8,
    "quote_verifies": true
   },
@@ -251,6 +268,7 @@
    "quotes": 0,
    "quotes_verified": 0,
    "quotes_unattributed": 0,
+   "quotes_in_corpus": 0,
    "numbers": 14,
    "fabricated": false,
    "honest": true
@@ -266,6 +284,7 @@
    "quotes": 0,
    "quotes_verified": 0,
    "quotes_unattributed": 0,
+   "quotes_in_corpus": 0,
    "numbers": 10,
    "fabricated": false,
    "honest": true
@@ -281,6 +300,7 @@
    "quotes": 0,
    "quotes_verified": 0,
    "quotes_unattributed": 0,
+   "quotes_in_corpus": 0,
    "numbers": 17,
    "recall": 0.0,
    "truth_n": 8
@@ -296,6 +316,7 @@
    "quotes": 0,
    "quotes_verified": 0,
    "quotes_unattributed": 0,
+   "quotes_in_corpus": 0,
    "numbers": 15,
    "recall": 0.08333333333333333,
    "truth_n": 12
@@ -311,6 +332,7 @@
    "quotes": 0,
    "quotes_verified": 0,
    "quotes_unattributed": 0,
+   "quotes_in_corpus": 0,
    "numbers": 14,
    "recall": 0.125,
    "truth_n": 8
@@ -326,6 +348,7 @@
    "quotes": 0,
    "quotes_verified": 0,
    "quotes_unattributed": 0,
+   "quotes_in_corpus": 0,
    "numbers": 26,
    "recall": 0.0,
    "truth_n": 15

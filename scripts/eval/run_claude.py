@@ -49,16 +49,32 @@ PROFILES = {
 NEUTRAL = pathlib.Path.home() / ".eval-baseline"
 
 
+# Bellwether's agent runs at 12 turns, but one of its tool calls returns a
+# census; a web search returns ten links. At 12 turns the web baseline
+# failed 5 of its first 6 questions (max_turns), and a trend question
+# measured 41 turns to finish — the cap was measuring itself, not the
+# model. The baseline gets 60 and the difference is stated in PROTOCOL.md.
+MAX_TURNS = 60
+
+
 def ask(q: str, profile: dict, timeout: int) -> dict:
     NEUTRAL.mkdir(exist_ok=True)
-    cmd = ["claude", "-p", q, "--output-format", "json", "--max-turns", "12",
+    cmd = ["claude", "-p", q, "--output-format", "json", "--max-turns", str(MAX_TURNS),
            "--no-session-persistence", "--strict-mcp-config",
            "--allowedTools", *profile["allowed"],
            "--append-system-prompt", profile["system"]]
     out = subprocess.run(cmd, cwd=str(NEUTRAL), capture_output=True,
                          text=True, timeout=timeout, stdin=subprocess.DEVNULL)
     if out.returncode != 0:
-        return {"error": (out.stderr or out.stdout or "agent failed")[-400:]}
+        # keep the whole thing: the subtype (max_turns, usage limit, crash)
+        # is in the JSON, and a 400-char tail never shows it
+        try:
+            d = json.loads(out.stdout[out.stdout.find("{"):])
+            why = f"{d.get('subtype')}: {d.get('errors')} (turns {d.get('num_turns')})"
+        except Exception:  # noqa: BLE001
+            why = (out.stderr or out.stdout or "agent failed (no output)")[-300:]
+        return {"error": why, "stdout": out.stdout, "stderr": out.stderr,
+                "returncode": out.returncode}
     try:
         d = json.loads(out.stdout)
     except ValueError:
@@ -86,7 +102,10 @@ def main() -> int:
         t0 = time.time()
         r = ask(q["q"], prof, a.timeout)
         if "error" in r:
-            print(f"{q['id']}: ERROR {r['error'][:120]}")
+            print(f"{q['id']}: ERROR {r['error'][:160]}")
+            (out_dir / f"{q['id']}.err.json").write_text(
+                json.dumps({k: r.get(k) for k in ("error", "returncode", "stdout", "stderr")},
+                           ensure_ascii=False), encoding="utf-8")
             continue
         model = (r["raw"].get("modelUsage") or {})
         f.write_text(f"<!-- system: claude-{a.profile} | tools: {','.join(prof['allowed'])} | "
