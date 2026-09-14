@@ -86,7 +86,7 @@ Reproduce: `PYTHONPATH=src python -m icml.blue_ocean --eval`
 
 ## Pre-registration
 
-`data/processed/blue_ocean.json` built over all six editions is the
+`data/processed/blue_ocean.json` built over all six editions is the (tracked copy: scripts/eval/preregistered/blue_ocean_neurips2026.json — top-50 per tier + sha256 of the full file)
 **frozen prediction for NeurIPS 2026**: when its accepted list is collected,
 score both tiers' top-50 against the cells NeurIPS 2026 fills, with `pa` and
 `random` as the same baselines. The commit that lands this file is the

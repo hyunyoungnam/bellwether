@@ -1,0 +1,478 @@
+{
+ "note": "Pre-registered prediction: (field, technique) pairs no paper in the six editions has combined, expected to be filled by NeurIPS 2026 accepted papers. Score each tier's top-50 against the cells NeurIPS 2026 fills, with pa and random as baselines, using icml.blue_ocean unchanged. Frozen before the NeurIPS 2026 accepted list is public.",
+ "frozen_on": "2026-09-14",
+ "full_file_sha256": "c062a87a07f33518772ffa728bd29c3694222c8e6b307029a3bb05920c88596b",
+ "editions": [
+  "neurips-2024",
+  "icml-2025",
+  "neurips-2025",
+  "iclr-2025",
+  "icml-2026",
+  "iclr-2026"
+ ],
+ "validation_retrospective": {
+  "fields": 30,
+  "techniques": 378,
+  "empty_cells": 10569,
+  "filled_in_2026": 195,
+  "base_rate": 0.0185,
+  "precision_at": {
+   "random": {
+    "10": 0.0,
+    "25": 0.0,
+    "50": 0.0,
+    "100": 0.01
+   },
+   "pa": {
+    "10": 0.3,
+    "25": 0.24,
+    "50": 0.22,
+    "100": 0.22
+   },
+   "cf": {
+    "10": 0.2,
+    "25": 0.24,
+    "50": 0.18,
+    "100": 0.16
+   },
+   "lim": {
+    "10": 0.2,
+    "25": 0.32,
+    "50": 0.3,
+    "100": 0.22
+   },
+   "lim_cf": {
+    "10": 0.4,
+    "25": 0.36,
+    "50": 0.3,
+    "100": 0.26
+   },
+   "lim_spec": {
+    "10": 0.1,
+    "25": 0.12,
+    "50": 0.12,
+    "100": 0.07
+   }
+  },
+  "average_precision": {
+   "random": 0.0197,
+   "pa": 0.1168,
+   "cf": 0.0788,
+   "lim": 0.1005,
+   "lim_cf": 0.1123,
+   "lim_spec": 0.0491
+  }
+ },
+ "tiers": {
+  "established": {
+   "scorer": "lim_cf",
+   "top50": [
+    [
+     "healthcare",
+     "vision language action model"
+    ],
+    [
+     "healthcare",
+     "imitation learning"
+    ],
+    [
+     "healthcare",
+     "conditional variational autoencoder"
+    ],
+    [
+     "healthcare",
+     "conditional diffusion model"
+    ],
+    [
+     "autonomous driving",
+     "optimal transport"
+    ],
+    [
+     "healthcare",
+     "vision transformer"
+    ],
+    [
+     "healthcare",
+     "adversarial training"
+    ],
+    [
+     "autonomous driving",
+     "graph neural network"
+    ],
+    [
+     "robotics",
+     "attention mechanism"
+    ],
+    [
+     "robotics",
+     "preference optimization"
+    ],
+    [
+     "robotics",
+     "gaussian process"
+    ],
+    [
+     "autonomous driving",
+     "foundation model"
+    ],
+    [
+     "healthcare",
+     "data augmentation"
+    ],
+    [
+     "healthcare",
+     "diffusion policy"
+    ],
+    [
+     "healthcare",
+     "discrete diffusion"
+    ],
+    [
+     "drug discovery",
+     "autoencoder"
+    ],
+    [
+     "autonomous driving",
+     "low rank adaptation"
+    ],
+    [
+     "robotics",
+     "generative flow network"
+    ],
+    [
+     "healthcare",
+     "next-token prediction"
+    ],
+    [
+     "robotics",
+     "neural radiance field"
+    ],
+    [
+     "robotics",
+     "test-time adaptation"
+    ],
+    [
+     "robotics",
+     "supervised learning"
+    ],
+    [
+     "neuroscience",
+     "neural ordinary differential equation"
+    ],
+    [
+     "healthcare",
+     "inverse reinforcement learning"
+    ],
+    [
+     "robotics",
+     "recurrent neural network"
+    ],
+    [
+     "healthcare",
+     "multi layer perception"
+    ],
+    [
+     "autonomous driving",
+     "in-context learning"
+    ],
+    [
+     "drug discovery",
+     "mixture of expert"
+    ],
+    [
+     "healthcare",
+     "segment anything model"
+    ],
+    [
+     "robotics",
+     "vit"
+    ],
+    [
+     "autonomous driving",
+     "conformal prediction"
+    ],
+    [
+     "drug discovery",
+     "attention mechanism"
+    ],
+    [
+     "drug discovery",
+     "deep reinforcement learning"
+    ],
+    [
+     "neuroscience",
+     "vision language model"
+    ],
+    [
+     "healthcare",
+     "distillation"
+    ],
+    [
+     "healthcare",
+     "pseudo-labeling"
+    ],
+    [
+     "robotics",
+     "meta-learning"
+    ],
+    [
+     "healthcare",
+     "joint embedding predictive architecture"
+    ],
+    [
+     "healthcare",
+     "bayesian optimization"
+    ],
+    [
+     "drug discovery",
+     "self-supervised learning"
+    ],
+    [
+     "robotics",
+     "masked autoencoder"
+    ],
+    [
+     "healthcare",
+     "adversarial learning"
+    ],
+    [
+     "healthcare",
+     "world model"
+    ],
+    [
+     "drug discovery",
+     "convolutional neural network"
+    ],
+    [
+     "robotics",
+     "latent diffusion model"
+    ],
+    [
+     "neuroscience",
+     "autoregressive model"
+    ],
+    [
+     "drug discovery",
+     "foundation model"
+    ],
+    [
+     "autonomous driving",
+     "latent diffusion model"
+    ],
+    [
+     "robotics",
+     "deep learning"
+    ],
+    [
+     "robotics",
+     "self-attention"
+    ]
+   ]
+  },
+  "novel": {
+   "scorer": "lim_spec",
+   "top50": [
+    [
+     "weather forecasting",
+     "radar"
+    ],
+    [
+     "privacy",
+     "dp-sgd"
+    ],
+    [
+     "privacy",
+     "local differential privacy"
+    ],
+    [
+     "privacy",
+     "laplace approximation"
+    ],
+    [
+     "privacy",
+     "fully homomorphic encryption"
+    ],
+    [
+     "scientific discovery",
+     "encoder-decoder architecture"
+    ],
+    [
+     "climate science",
+     "tabpfn"
+    ],
+    [
+     "imaging",
+     "simulation-based inference"
+    ],
+    [
+     "neuroscience",
+     "artificial neural network"
+    ],
+    [
+     "large language model safety",
+     "text to video model"
+    ],
+    [
+     "computational chemistry",
+     "continuous normalizing flow"
+    ],
+    [
+     "healthcare",
+     "self-distillation"
+    ],
+    [
+     "neuroscience",
+     "self-attention mechanism"
+    ],
+    [
+     "autonomous driving",
+     "structure-from-motion"
+    ],
+    [
+     "music generation",
+     "wan2.1"
+    ],
+    [
+     "healthcare",
+     "simulation-based inference"
+    ],
+    [
+     "neuroscience",
+     "multi-head self-attention"
+    ],
+    [
+     "recommender systems",
+     "causal mediation analysis"
+    ],
+    [
+     "privacy",
+     "text to video model"
+    ],
+    [
+     "neuroscience",
+     "layer normalization"
+    ],
+    [
+     "scientific discovery",
+     "chatbot arena"
+    ],
+    [
+     "healthcare",
+     "random forest"
+    ],
+    [
+     "protein design",
+     "discrete diffusion model"
+    ],
+    [
+     "privacy",
+     "fisher information matrix"
+    ],
+    [
+     "education",
+     "matrix factorization"
+    ],
+    [
+     "computer graphics",
+     "score distillation sampling"
+    ],
+    [
+     "ai safety",
+     "flux.1"
+    ],
+    [
+     "computer graphics",
+     "structure-from-motion"
+    ],
+    [
+     "speech processing",
+     "muon"
+    ],
+    [
+     "software engineering",
+     "pytorch"
+    ],
+    [
+     "neuromorphic computing",
+     "structured pruning"
+    ],
+    [
+     "medical imaging",
+     "llava-1.5"
+    ],
+    [
+     "large language model safety",
+     "gans"
+    ],
+    [
+     "machine learning security",
+     "dp-sgd"
+    ],
+    [
+     "artificial intelligence safety",
+     "text to video model"
+    ],
+    [
+     "computer graphics",
+     "multi-view diffusion model"
+    ],
+    [
+     "drug discovery",
+     "boltzmann generators"
+    ],
+    [
+     "privacy",
+     "differential privacy"
+    ],
+    [
+     "recommender systems",
+     "sglang"
+    ],
+    [
+     "machine learning security",
+     "fully homomorphic encryption"
+    ],
+    [
+     "multi-agent systems",
+     "randomized smoothing"
+    ],
+    [
+     "ai safety",
+     "text to video model"
+    ],
+    [
+     "protein design",
+     "reward shaping"
+    ],
+    [
+     "computational biology",
+     "proxy model"
+    ],
+    [
+     "drug discovery",
+     "encoder-decoder architecture"
+    ],
+    [
+     "machine learning security",
+     "flux.1"
+    ],
+    [
+     "computer graphics",
+     "distribution correction estimation"
+    ],
+    [
+     "quantum computing",
+     "relu activation"
+    ],
+    [
+     "audio processing",
+     "random features"
+    ],
+    [
+     "information retrieval",
+     "text encoder"
+    ]
+   ]
+  }
+ }
+}
