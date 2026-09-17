@@ -172,7 +172,17 @@ ARGS = {"verify_quote": {"gid": 19662, "quote": "the KV cache"},
         "gap_scan": {"topic": "llm inference"},
         "paper_text": {"gid": 19662},
         "get_citations": {"gid": 19662},
-        "blue_ocean": {"field": "healthcare", "k": 3}}
+        "blue_ocean": {"field": "healthcare", "k": 3},
+        "paper_resources": {"gid": 19662},
+        "benchmark_info": {"name": "GSM8K"}}
+# the MCP server mirrors taxonomy.dataset_key (the icml package is not
+# installed with the serving layer); the two folds must agree or a benchmark
+# the site links would be one the agent cannot find
+from icml.taxonomy import dataset_key as _dk_site   # noqa: E402
+_fold_ok = all(_dk_site(n) == mcp.dataset_fold(n) for n in
+               ["GSM8K", "MATH-500", "the LIBERO benchmark", "AIME '24", "CIFAR 10",
+                "HumanEval+", "ImageNet 256x256", "MS-COCO dataset", "AlpacaEval 2.0"])
+check("mcp.dataset_fold mirrors taxonomy.dataset_key", _fold_ok)
 check("every declared tool is audited",
       {t["name"] for t in mcp.TOOLS} == set(ARGS),
       str({t["name"] for t in mcp.TOOLS} ^ set(ARGS)))
@@ -351,7 +361,8 @@ if _spf:
     with open(_spf[0], encoding="utf-8") as fh:
         _sp = json.load(fh)
     _row0 = next(iter(_sp.values()))
-    check("spans rows carry the context slot", len(_row0) == 9,
+    # slots: n L K R c1 D cg cl cx rs — the paper's own links joined as slot 9 (2026-09-17)
+    check("spans rows carry the context slot", len(_row0) == 10,
           f"slot count {len(_row0)}")
 with open("reports/index.html", encoding="utf-8") as fh:
     _page = fh.read()

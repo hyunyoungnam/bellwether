@@ -27,7 +27,10 @@ import re
 # tool -> the kind of argument it takes
 RECOMPUTABLE = {"field_trend": "topic", "gap_scan": "topic",
                 "topic_papers": "topic", "field_cards": "topic",
-                "get_citations": "gid", "get_paper": "gid"}
+                "get_citations": "gid", "get_paper": "gid",
+                # links and counts read from resources.json / the registry —
+                # no engine, no ranking, the same answer every time
+                "paper_resources": "gid", "benchmark_info": "name"}
 
 # Ids are not figures. A gid is a five-digit number that would make almost any
 # claimed count match something, so paper lists never enter the pool.
@@ -112,10 +115,8 @@ def recompute(tool: str, arg: str, cache: dict, run=None) -> list[float] | None:
         cache[key] = None
         return None
     try:
-        if kind == "gid":
-            out = fn({"gid": int(arg)})
-        else:
-            out = fn({"topic": arg})
+        # the kind is the tool's argument name; only gid is numeric
+        out = fn({kind: int(arg) if kind == "gid" else arg})
         vals = None if (isinstance(out, dict) and out.get("error")) else pool(out)
     except Exception:                     # noqa: BLE001 — an unresolvable arg
         vals = None

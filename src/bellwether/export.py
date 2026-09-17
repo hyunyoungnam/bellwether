@@ -67,6 +67,9 @@ def _fields(store: Store, gid: int) -> dict:
         "result_claim": R or "",
         "proposes": join(t.get("p")), "builds_on": join(t.get("b")),
         "tasks": join(t.get("t")), "data": join(t.get("d")),
+        "links": store.resources_of(gid),
+        "benchmark_urls": [f"{b['name']} {b['where']}" for b in
+                           store.benchmarks_of(gid) if b.get("where")],
     }
 
 
@@ -105,7 +108,10 @@ def bibtex(gids: list[int], store: Store | None = None) -> str:
 CSV_COLS = ["gid", "title", "venue", "year", "authors", "url",
             "arxiv", "doi", "openalex", "s2",
             "proposes", "builds_on", "data", "tasks",
-            "limitation", "key_change", "result_claim"]
+            "limitation", "key_change", "result_claim",
+            # printed in the paper (code/data/model) and our checked mapping
+            # of the benchmarks named in the abstract to where they live
+            "code_url", "data_url", "model_url", "benchmark_urls"]
 
 
 def as_csv(gids: list[int], store: Store | None = None) -> str:
@@ -126,7 +132,11 @@ def as_csv(gids: list[int], store: Store | None = None) -> str:
                     (f'https://www.semanticscholar.org/paper/{x["s2"]}'
                      if x.get("s2") else ""),
                     f["proposes"], f["builds_on"], f["data"], f["tasks"],
-                    f["limitation"], f["key_change"], f["result_claim"]])
+                    f["limitation"], f["key_change"], f["result_claim"],
+                    "; ".join(x["url"] for x in f["links"].get("code", [])),
+                    "; ".join(x["url"] for x in f["links"].get("data", [])),
+                    "; ".join(x["url"] for x in f["links"].get("model", [])),
+                    "; ".join(f["benchmark_urls"])])
     return buf.getvalue()
 
 

@@ -25,9 +25,12 @@ shot(){ local mark; mark=$(wc -l < "$LOG" 2>/dev/null || echo 0)
     # through localhost forwarding; the verdict still lands in the server log
     local EDGE="/mnt/c/Program Files (x86)/Microsoft/Edge/Application/msedge.exe"
     [ -x "$EDGE" ] || EDGE="/mnt/c/Program Files/Microsoft/Edge/Application/msedge.exe"
+    # Edge cannot write to a \\wsl.localhost path (measured 2026-09-17: exit 0,
+    # no file); it writes to a Windows folder, and the shot is moved back in
     "$EDGE" --headless=new --disable-gpu --timeout=420000 --window-size="$2" \
-      --screenshot="$(wslpath -w "$PWD/reports/.preview")\\audit-$1.png" \
+      --screenshot="C:\\Users\\Public\\bw-audit-$1.png" \
       "$BASE/.preview/$1.html" >/dev/null 2>&1
+    mv -f "/mnt/c/Users/Public/bw-audit-$1.png" "$PWD/reports/.preview/audit-$1.png" 2>/dev/null
   fi
   # each harness posts its verdict to the server log; the shot is the detail
   tail -n +$((mark+1)) "$LOG" 2>/dev/null | grep '^\[audit\]' || echo "  (no verdict — see the shot)"

@@ -51,6 +51,33 @@ def _papers_file(key: str) -> Path:
     return PROCESSED / f"papers_{venue}_{year}.jsonl"
 
 
+# Mirror of icml.taxonomy.dataset_key — the serving layer ships without the
+# pipeline package. Keep the two in step; scripts/audit/api_audit.py checks
+# that they agree on a fixed sample.
+_re_ds_lead = re.compile(r"^(the|a)\s+")
+_re_ds_tail = re.compile(r"\s+(benchmark|dataset|corpus|suite)s?$")
+_re_ds_keep = re.compile(r"[^a-z0-9+]")
+
+
+def dataset_fold(name: str) -> str:
+    s = (name or "").lower()
+    s = _re_ds_lead.sub("", s)
+    s = _re_ds_tail.sub("", s)
+    return _re_ds_keep.sub("", s)
+
+
+def _meta_public(m: dict | None) -> dict | None:
+    """GitHub / Hub facts as fetched, dated. Reported, never ranked on."""
+    if not m:
+        return None
+    if m.get("gone"):
+        return {"status": "not found", "checked": m.get("at")}
+    out = {k: m[k] for k in ("stars", "pushed", "license", "archived",
+                            "downloads", "likes", "modified", "gated") if k in m}
+    out["checked"] = m.get("at")
+    return out
+
+
 class Store:
     """Lazy, cached access to the processed corpus. Read-only."""
 
@@ -197,6 +224,76 @@ class Store:
             self._c["bo"] = self._json(p) if p.exists() else {}
         return self._c["bo"]
 
+    # ---- the paper's own links, and where a benchmark lives ----------------
+    @property
+    def resources(self) -> dict:
+        """gid(str) -> {code, data, model, page, mentions} from resources.json:
+        URLs printed in the paper with the sentence that states them."""
+        try:
+            return self._json(PROCESSED / "resources.json")
+        except FileNotFoundError:
+            return {"papers": {}, "coverage": {}}
+
+    def resources_of(self, gid: int) -> dict:
+        r = self.resources["papers"].get(str(gid)) or {}
+        out = {}
+        for kind in ("code", "data", "model", "page"):
+            out[kind] = [{"url": it["u"], "repo": it["r"],
+                          "evidence": it.get("s"), "meta": _meta_public(it.get("m"))}
+                         for it in r.get(kind, [])]
+        return out
+
+    @property
+    def registry(self) -> dict:
+        """config/benchmarks.json -> {fold key: entry}. OUR mapping; every id
+        was checked against the Hub / GitHub API (entry['ok'])."""
+        ck = "registry"
+        if ck not in self._c:
+            by_key: dict[str, dict] = {}
+            entries: list[dict] = []
+            try:
+                reg = json.loads((ROOT / "config" / "benchmarks.json").read_text(encoding="utf-8"))
+                entries = reg["benchmarks"]
+                for e in entries:
+                    for surface in [e["name"], *e.get("aliases", [])]:
+                        by_key.setdefault(dataset_fold(surface), e)
+            except (FileNotFoundError, KeyError, json.JSONDecodeError):
+                pass
+            self._c[ck] = {"entries": entries, "by_key": by_key}
+        return self._c[ck]
+
+    def benchmark_where(self, name: str) -> dict | None:
+        """The registry's location for one benchmark name, or None."""
+        e = self.registry["by_key"].get(dataset_fold(name))
+        if not e:
+            return None
+        ok = e.get("ok") or {}
+        if e.get("hf") and ok.get("hf"):
+            where, kind = f"https://huggingface.co/datasets/{e['hf']}", "huggingface"
+        elif e.get("gh") and ok.get("gh"):
+            where, kind = f"https://github.com/{e['gh']}", "github"
+        elif e.get("url"):
+            where, kind = e["url"], "web"
+        else:
+            where, kind = None, None
+        return {"name": e["name"], "where": where, "host": kind, "kind": e.get("kind"),
+                "hf": e.get("hf") if ok.get("hf") else None,
+                "gh": e.get("gh") if ok.get("gh") else None}
+
+    def benchmarks_of(self, gid: int) -> list[dict]:
+        """Benchmarks the abstract names (card_terms `d`), each with our
+        location when the registry has one — a name without one stays a name."""
+        key, eid = self.where(gid)
+        out, seen = [], set()
+        for n in self.terms(key, eid).get("d") or []:
+            k = dataset_fold(n)
+            if not k or k in seen:
+                continue
+            seen.add(k)
+            w = self.benchmark_where(n) or {"name": n, "where": None, "host": None}
+            out.append({"as_written": n, **w})
+        return out
+
     @property
     def ext_ids(self) -> dict:
         """gid (str) -> {arxiv, doi, s2, oa} — icml.ids, exact matches only."""
@@ -313,6 +410,11 @@ def t_paper(a: dict) -> dict:
     out["citations"] = {"cites_in_corpus": len(S.cites_out.get(gid, ())),
                         "cited_by_in_corpus": len(S.cites_in.get(gid, ())),
                         "note": S.cite_note}
+    rs = S.resources_of(gid)
+    out["resources"] = {k: [x["url"] for x in v] for k, v in rs.items() if v}
+    out["resources"]["note"] = ("URLs printed in the paper itself; empty means the "
+                                "paper's text on file prints none. paper_resources "
+                                "gives the evidence sentence and repo facts.")
     return out
 
 
@@ -705,6 +807,86 @@ def t_blue_ocean(a: dict) -> dict:
     return out
 
 
+def t_paper_resources(a: dict) -> dict:
+    """Where this paper's own artifacts live, and where its benchmarks live."""
+    gid = int(a["gid"])
+    r = S.rec(gid)
+    if r is None:
+        return {"error": f"no record for gid {gid}"}
+    key, _ = S.where(gid)
+    cov = S.resources.get("coverage", {}).get(key, {})
+    ft = gid in set(S.resources.get("fulltext_gids", ())) if S.resources.get("fulltext_gids") else None
+    out = S.brief(gid)
+    out.update(S.resources_of(gid))
+    out["benchmarks"] = S.benchmarks_of(gid)
+    out["full_text_on_file"] = ft
+    out["note"] = ("code/data/model/page: URLs printed in the paper, each with the "
+                   "paper's own sentence as evidence and dated GitHub/Hub facts "
+                   f"(stars, downloads) to report, never to rank. Links exist only "
+                   f"where full text is on file ({cov.get('fulltext', '?')} of "
+                   f"{cov.get('papers', '?')} papers in this corpus); no link is not "
+                   "evidence of no code. benchmarks: names the abstract states, with "
+                   "OUR API-checked mapping of where each lives (config/benchmarks.json); "
+                   "where=null means the name has no confirmed location.")
+    return out
+
+
+def t_benchmark_info(a: dict) -> dict:
+    """One benchmark: where it lives (our mapping) and which papers use it."""
+    name = (a.get("name") or "").strip()
+    if not name:
+        return {"error": "pass name"}
+    k = dataset_fold(name)
+    if not k:
+        return {"error": f"'{name}' folds to nothing"}
+    w = S.benchmark_where(name)
+    e = S.registry["by_key"].get(k)
+    keys = {k} | ({dataset_fold(x) for x in [e["name"], *e.get("aliases", [])]} if e else set())
+    limit = min(int(a.get("limit", 20)), 100)
+    per: dict[str, int] = {}
+    gids: list[int] = []
+    try:
+        ct = S._json(PROCESSED / "card_terms.json")
+    except FileNotFoundError:
+        ct = {}
+    for key in S.union["corpora"]:
+        n = 0
+        for eid, t in ct.get(key, {}).items():
+            if any(dataset_fold(d) in keys for d in (t.get("d") or [])):
+                n += 1
+                g = S.gid_by.get((key, int(eid)))
+                if g is not None:
+                    gids.append(g)
+        per[key] = n
+    gids.sort(key=lambda g: -int(S.where(g)[0].rsplit("-", 1)[1]))
+    meta = None
+    if e:
+        try:
+            cache = {}
+            for line in open(INTERIM / "resolve_cache.jsonl", encoding="utf-8"):
+                rr = json.loads(line)
+                cache[rr["k"]] = rr["m"]
+            for field, kind in (("hf", "hfd"), ("gh", "gh")):
+                if e.get(field) and cache.get(f"{kind}:{e[field]}"):
+                    meta = _meta_public(cache[f"{kind}:{e[field]}"])
+                    break
+        except FileNotFoundError:
+            pass
+    return {"name": w["name"] if w else name, "as_asked": name,
+            "aliases": e.get("aliases", []) if e else [],
+            "kind": e.get("kind") if e else None,
+            "where": w["where"] if w else None, "host": w["host"] if w else None,
+            "facts": meta,
+            "total": len(gids), "by_corpus": per,
+            "results": [S.brief(g) for g in gids[:limit]],
+            "truncated": len(gids) > limit,
+            "note": ("counts are papers whose ABSTRACT names this benchmark (abstract "
+                     "pass, uniform across corpora); a paper that tests on it without "
+                     "naming it in the abstract is not counted. where: our mapping, "
+                     "checked against the Hub / GitHub API; null means no confirmed "
+                     "location, not that none exists.")}
+
+
 def t_citations(a: dict) -> dict:
     gid = int(a["gid"])
 
@@ -834,6 +1016,24 @@ TOOLS = [
          "field": {"type": "string", "description":
                    "application domain, e.g. healthcare, robotics, drug discovery"},
          "k": {"type": "integer", "description": "candidates per tier (<= 25)"}}}},
+    {"name": "paper_resources",
+     "description": "Where a paper's own artifacts live — code, released data, "
+                    "model weights, project page — as URLs printed in the paper "
+                    "with the evidence sentence and dated GitHub/Hub facts (stars, "
+                    "license, downloads: report, never rank). Plus the benchmarks "
+                    "its abstract names, each with our API-checked location.",
+     "fn": t_paper_resources,
+     "inputSchema": {"type": "object", "required": ["gid"], "properties": {
+         "gid": _GID}}},
+    {"name": "benchmark_info",
+     "description": "One benchmark or dataset by name (GSM8K, LIBERO, MATH-500): "
+                    "where it lives (Hugging Face / GitHub / homepage, our checked "
+                    "mapping), and which papers across the six editions name it "
+                    "in their abstract, counted per corpus.",
+     "fn": t_benchmark_info,
+     "inputSchema": {"type": "object", "required": ["name"], "properties": {
+         "name": {"type": "string"},
+         "limit": {"type": "integer", "default": 20, "maximum": 100}}}},
     {"name": "get_citations",
      "description": "Which of our corpus papers this paper cites, and which "
                     "cite it (edges within the six editions only). Where the "

@@ -1,0 +1,3298 @@
+{
+  "_note": "OUR mapping from benchmark names as papers write them to where the artifact lives. Authored, like DOMAIN_FAMILIES: the names are data-derived (the extracted `datasets` field), the locations are ours and are marked as such in the interface. Every hf/gh id is checked against the Hub / GitHub API by `python3 -m icml.resources --registry`; an id that fails the check carries ok:false and shows no link. Matching is by taxonomy.dataset_key over name + aliases. not_a_dataset lists model names the extractor files under datasets; they never become benchmark chips with links.",
+  "checked": "2026-09-17",
+  "not_a_dataset": [
+    "llama",
+    "llama-2",
+    "llama-3",
+    "llama 2",
+    "llama 3",
+    "llama-3.1",
+    "llama-3-8b",
+    "qwen",
+    "qwen2",
+    "qwen2.5",
+    "qwen3",
+    "mistral",
+    "mistral-7b",
+    "gpt-2",
+    "gpt2",
+    "gpt-4",
+    "gpt-4o",
+    "gpt-3.5",
+    "bert",
+    "roberta",
+    "t5",
+    "vit",
+    "clip",
+    "resnet",
+    "deepseek",
+    "deepseek-r1",
+    "gemma",
+    "phi",
+    "phi-3",
+    "stable diffusion",
+    "sdxl",
+    "llava",
+    "claude",
+    "gemini",
+    "chair"
+  ],
+  "benchmarks": [
+    {
+      "name": "ImageNet-1k",
+      "aliases": [
+        "imagenet",
+        "imagenet-1k",
+        "imagenet1k",
+        "ilsvrc-2012",
+        "ilsvrc 2012",
+        "imagenet 256x256",
+        "imagenet-256",
+        "imagenet 64x64",
+        "imagenet-64",
+        "imagenet 128x128",
+        "imagenet-512",
+        "imagenet 512x512"
+      ],
+      "kind": "dataset",
+      "hf": "ILSVRC/imagenet-1k",
+      "url": "https://www.image-net.org",
+      "ok": {
+        "hf": true
+      }
+    },
+    {
+      "name": "Tiny ImageNet",
+      "aliases": [
+        "tinyimagenet",
+        "tiny-imagenet",
+        "tiny imagenet"
+      ],
+      "kind": "dataset",
+      "hf": "zh-plus/tiny-imagenet",
+      "ok": {
+        "hf": true
+      }
+    },
+    {
+      "name": "ImageNet-C",
+      "aliases": [
+        "imagenet-c"
+      ],
+      "kind": "benchmark",
+      "gh": "hendrycks/robustness",
+      "ok": {
+        "gh": true
+      }
+    },
+    {
+      "name": "ImageNet-R",
+      "aliases": [
+        "imagenet-r"
+      ],
+      "kind": "benchmark",
+      "gh": "hendrycks/imagenet-r",
+      "ok": {
+        "gh": true
+      }
+    },
+    {
+      "name": "CIFAR-10",
+      "aliases": [
+        "cifar-10",
+        "cifar10",
+        "cifar 10"
+      ],
+      "kind": "dataset",
+      "hf": "uoft-cs/cifar10",
+      "url": "https://www.cs.toronto.edu/~kriz/cifar.html",
+      "ok": {
+        "hf": true
+      }
+    },
+    {
+      "name": "CIFAR-100",
+      "aliases": [
+        "cifar-100",
+        "cifar100",
+        "cifar 100"
+      ],
+      "kind": "dataset",
+      "hf": "uoft-cs/cifar100",
+      "url": "https://www.cs.toronto.edu/~kriz/cifar.html",
+      "ok": {
+        "hf": true
+      }
+    },
+    {
+      "name": "MNIST",
+      "aliases": [
+        "mnist"
+      ],
+      "kind": "dataset",
+      "hf": "ylecun/mnist",
+      "ok": {
+        "hf": true
+      }
+    },
+    {
+      "name": "Fashion-MNIST",
+      "aliases": [
+        "fashion-mnist",
+        "fashionmnist",
+        "fashion mnist"
+      ],
+      "kind": "dataset",
+      "hf": "zalando-datasets/fashion_mnist",
+      "gh": "zalandoresearch/fashion-mnist",
+      "ok": {
+        "hf": true,
+        "gh": true
+      }
+    },
+    {
+      "name": "SVHN",
+      "aliases": [
+        "svhn"
+      ],
+      "kind": "dataset",
+      "hf": "ufldl-stanford/svhn",
+      "ok": {
+        "hf": true
+      }
+    },
+    {
+      "name": "STL-10",
+      "aliases": [
+        "stl-10",
+        "stl10"
+      ],
+      "kind": "dataset",
+      "hf": "tanganke/stl10",
+      "url": "https://cs.stanford.edu/~acoates/stl10/",
+      "ok": {
+        "hf": true
+      }
+    },
+    {
+      "name": "CelebA",
+      "aliases": [
+        "celeba"
+      ],
+      "kind": "dataset",
+      "hf": "nielsr/CelebA-faces",
+      "url": "https://mmlab.ie.cuhk.edu.hk/projects/CelebA.html",
+      "ok": {
+        "hf": true
+      }
+    },
+    {
+      "name": "CelebA-HQ",
+      "aliases": [
+        "celeba-hq",
+        "celebahq"
+      ],
+      "kind": "dataset",
+      "gh": "tkarras/progressive_growing_of_gans",
+      "ok": {
+        "gh": true
+      }
+    },
+    {
+      "name": "FFHQ",
+      "aliases": [
+        "ffhq"
+      ],
+      "kind": "dataset",
+      "gh": "NVlabs/ffhq-dataset",
+      "ok": {
+        "gh": true
+      }
+    },
+    {
+      "name": "COCO",
+      "aliases": [
+        "coco",
+        "ms-coco",
+        "mscoco",
+        "ms coco",
+        "coco 2017",
+        "coco2017",
+        "coco 2014"
+      ],
+      "kind": "dataset",
+      "hf": "detection-datasets/coco",
+      "gh": "cocodataset/cocoapi",
+      "url": "https://cocodataset.org",
+      "ok": {
+        "hf": true,
+        "gh": true
+      }
+    },
+    {
+      "name": "Flickr30k",
+      "aliases": [
+        "flickr30k",
+        "flickr 30k"
+      ],
+      "kind": "dataset",
+      "hf": "nlphuji/flickr30k",
+      "ok": {
+        "hf": true
+      }
+    },
+    {
+      "name": "Pascal VOC",
+      "aliases": [
+        "pascal voc",
+        "voc",
+        "pascal voc 2012",
+        "voc2012"
+      ],
+      "kind": "dataset",
+      "url": "http://host.robots.ox.ac.uk/pascal/VOC/",
+      "ok": {}
+    },
+    {
+      "name": "ADE20K",
+      "aliases": [
+        "ade20k"
+      ],
+      "kind": "dataset",
+      "gh": "CSAILVision/ADE20K",
+      "url": "https://ade20k.csail.mit.edu",
+      "ok": {
+        "gh": true
+      }
+    },
+    {
+      "name": "Cityscapes",
+      "aliases": [
+        "cityscapes"
+      ],
+      "kind": "dataset",
+      "url": "https://www.cityscapes-dataset.com",
+      "ok": {}
+    },
+    {
+      "name": "LVIS",
+      "aliases": [
+        "lvis"
+      ],
+      "kind": "dataset",
+      "url": "https://www.lvisdataset.org",
+      "ok": {}
+    },
+    {
+      "name": "RefCOCO",
+      "aliases": [
+        "refcoco",
+        "refcoco+",
+        "refcocog"
+      ],
+      "kind": "dataset",
+      "hf": "lmms-lab-encoder/RefCOCO",
+      "gh": "lichengunc/refer",
+      "ok": {
+        "hf": true,
+        "gh": true
+      }
+    },
+    {
+      "name": "DomainNet",
+      "aliases": [
+        "domainnet"
+      ],
+      "kind": "dataset",
+      "url": "https://ai.bu.edu/M3SDA/",
+      "ok": {}
+    },
+    {
+      "name": "UCF101",
+      "aliases": [
+        "ucf101",
+        "ucf-101"
+      ],
+      "kind": "dataset",
+      "url": "https://www.crcv.ucf.edu/data/UCF101.php",
+      "ok": {}
+    },
+    {
+      "name": "Kinetics-400",
+      "aliases": [
+        "kinetics-400",
+        "kinetics400",
+        "kinetics"
+      ],
+      "kind": "dataset",
+      "url": "https://github.com/cvdfoundation/kinetics-dataset",
+      "ok": {}
+    },
+    {
+      "name": "Ego4D",
+      "aliases": [
+        "ego4d"
+      ],
+      "kind": "dataset",
+      "gh": "facebookresearch/Ego4d",
+      "url": "https://ego4d-data.org",
+      "ok": {
+        "gh": true
+      }
+    },
+    {
+      "name": "RealEstate10K",
+      "aliases": [
+        "realestate10k"
+      ],
+      "kind": "dataset",
+      "url": "https://google.github.io/realestate10k/",
+      "ok": {}
+    },
+    {
+      "name": "LAION-400M",
+      "aliases": [
+        "laion-400m",
+        "laion400m",
+        "laion"
+      ],
+      "kind": "dataset",
+      "hf": "laion/relaion400m",
+      "url": "https://laion.ai",
+      "ok": {
+        "hf": true
+      }
+    },
+    {
+      "name": "LAION-5B",
+      "aliases": [
+        "laion-5b",
+        "laion5b"
+      ],
+      "kind": "dataset",
+      "url": "https://laion.ai/blog/laion-5b/",
+      "ok": {}
+    },
+    {
+      "name": "CC3M",
+      "aliases": [
+        "cc3m",
+        "conceptual captions"
+      ],
+      "kind": "dataset",
+      "hf": "pixparse/cc3m-wds",
+      "gh": "google-research-datasets/conceptual-captions",
+      "ok": {
+        "hf": true,
+        "gh": true
+      }
+    },
+    {
+      "name": "CC12M",
+      "aliases": [
+        "cc12m"
+      ],
+      "kind": "dataset",
+      "hf": "pixparse/cc12m-wds",
+      "gh": "google-research-datasets/conceptual-12m",
+      "ok": {
+        "hf": true,
+        "gh": true
+      }
+    },
+    {
+      "name": "GenEval",
+      "aliases": [
+        "geneval"
+      ],
+      "kind": "benchmark",
+      "gh": "djghosh13/geneval",
+      "ok": {
+        "gh": true
+      }
+    },
+    {
+      "name": "T2I-CompBench",
+      "aliases": [
+        "t2i-compbench",
+        "t2i-compbench++"
+      ],
+      "kind": "benchmark",
+      "gh": "Karine-Huang/T2I-CompBench",
+      "ok": {
+        "gh": true
+      }
+    },
+    {
+      "name": "DPG-Bench",
+      "aliases": [
+        "dpg-bench",
+        "dpg bench"
+      ],
+      "kind": "benchmark",
+      "gh": "TencentQQGYLab/ELLA",
+      "ok": {
+        "gh": true
+      }
+    },
+    {
+      "name": "VBench",
+      "aliases": [
+        "vbench"
+      ],
+      "kind": "benchmark",
+      "gh": "Vchitect/VBench",
+      "ok": {
+        "gh": true
+      }
+    },
+    {
+      "name": "MJHQ-30K",
+      "aliases": [
+        "mjhq-30k",
+        "mjhq30k"
+      ],
+      "kind": "benchmark",
+      "hf": "playgroundai/MJHQ-30K",
+      "ok": {
+        "hf": true
+      }
+    },
+    {
+      "name": "nuScenes",
+      "aliases": [
+        "nuscenes"
+      ],
+      "kind": "dataset",
+      "gh": "nutonomy/nuscenes-devkit",
+      "url": "https://www.nuscenes.org",
+      "ok": {
+        "gh": true
+      }
+    },
+    {
+      "name": "nuPlan",
+      "aliases": [
+        "nuplan"
+      ],
+      "kind": "dataset",
+      "gh": "motional/nuplan-devkit",
+      "url": "https://www.nuscenes.org/nuplan",
+      "ok": {
+        "gh": true
+      }
+    },
+    {
+      "name": "KITTI",
+      "aliases": [
+        "kitti"
+      ],
+      "kind": "dataset",
+      "url": "https://www.cvlibs.net/datasets/kitti/",
+      "ok": {}
+    },
+    {
+      "name": "SemanticKITTI",
+      "aliases": [
+        "semantickitti",
+        "semantic kitti"
+      ],
+      "kind": "dataset",
+      "url": "http://www.semantic-kitti.org",
+      "ok": {}
+    },
+    {
+      "name": "Waymo Open Dataset",
+      "aliases": [
+        "waymo",
+        "waymo open dataset",
+        "waymo open"
+      ],
+      "kind": "dataset",
+      "gh": "waymo-research/waymo-open-dataset",
+      "url": "https://waymo.com/open",
+      "ok": {
+        "gh": true
+      }
+    },
+    {
+      "name": "Argoverse 2",
+      "aliases": [
+        "argoverse 2",
+        "argoverse2",
+        "argoverse"
+      ],
+      "kind": "dataset",
+      "gh": "argoverse/av2-api",
+      "url": "https://www.argoverse.org",
+      "ok": {
+        "gh": true
+      }
+    },
+    {
+      "name": "Bench2Drive",
+      "aliases": [
+        "bench2drive"
+      ],
+      "kind": "benchmark",
+      "gh": "Thinklab-SJTU/Bench2Drive",
+      "ok": {
+        "gh": true
+      }
+    },
+    {
+      "name": "NAVSIM",
+      "aliases": [
+        "navsim"
+      ],
+      "kind": "benchmark",
+      "gh": "autonomousvision/navsim",
+      "ok": {
+        "gh": true
+      }
+    },
+    {
+      "name": "CARLA",
+      "aliases": [
+        "carla"
+      ],
+      "kind": "simulator",
+      "gh": "carla-simulator/carla",
+      "ok": {
+        "gh": true
+      }
+    },
+    {
+      "name": "ScanNet",
+      "aliases": [
+        "scannet"
+      ],
+      "kind": "dataset",
+      "gh": "ScanNet/ScanNet",
+      "url": "http://www.scan-net.org",
+      "ok": {
+        "gh": true
+      }
+    },
+    {
+      "name": "ScanNet++",
+      "aliases": [
+        "scannet++",
+        "scannetpp"
+      ],
+      "kind": "dataset",
+      "url": "https://kaldir.vc.in.tum.de/scannetpp/",
+      "ok": {}
+    },
+    {
+      "name": "ScanObjectNN",
+      "aliases": [
+        "scanobjectnn"
+      ],
+      "kind": "dataset",
+      "url": "https://hkust-vgd.github.io/scanobjectnn/",
+      "ok": {}
+    },
+    {
+      "name": "ModelNet40",
+      "aliases": [
+        "modelnet40",
+        "modelnet"
+      ],
+      "kind": "dataset",
+      "url": "https://modelnet.cs.princeton.edu",
+      "ok": {}
+    },
+    {
+      "name": "ShapeNet",
+      "aliases": [
+        "shapenet"
+      ],
+      "kind": "dataset",
+      "url": "https://shapenet.org",
+      "ok": {}
+    },
+    {
+      "name": "S3DIS",
+      "aliases": [
+        "s3dis"
+      ],
+      "kind": "dataset",
+      "url": "http://buildingparser.stanford.edu/dataset.html",
+      "ok": {}
+    },
+    {
+      "name": "Replica",
+      "aliases": [
+        "replica"
+      ],
+      "kind": "dataset",
+      "gh": "facebookresearch/Replica-Dataset",
+      "ok": {
+        "gh": true
+      }
+    },
+    {
+      "name": "DTU",
+      "aliases": [
+        "dtu"
+      ],
+      "kind": "dataset",
+      "url": "https://roboimagedata.compute.dtu.dk/",
+      "ok": {}
+    },
+    {
+      "name": "Objaverse",
+      "aliases": [
+        "objaverse",
+        "objaverse-xl"
+      ],
+      "kind": "dataset",
+      "hf": "allenai/objaverse",
+      "url": "https://objaverse.allenai.org",
+      "ok": {
+        "hf": true
+      }
+    },
+    {
+      "name": "GSM8K",
+      "aliases": [
+        "gsm8k",
+        "gsm-8k"
+      ],
+      "kind": "benchmark",
+      "hf": "openai/gsm8k",
+      "ok": {
+        "hf": true
+      }
+    },
+    {
+      "name": "MATH",
+      "aliases": [
+        "math",
+        "hendrycks math",
+        "math benchmark"
+      ],
+      "kind": "benchmark",
+      "hf": "EleutherAI/hendrycks_math",
+      "gh": "hendrycks/math",
+      "ok": {
+        "hf": true,
+        "gh": true
+      }
+    },
+    {
+      "name": "MATH-500",
+      "aliases": [
+        "math500",
+        "math-500",
+        "math 500"
+      ],
+      "kind": "benchmark",
+      "hf": "HuggingFaceH4/MATH-500",
+      "ok": {
+        "hf": true
+      }
+    },
+    {
+      "name": "AIME 2024",
+      "aliases": [
+        "aime",
+        "aime24",
+        "aime 24",
+        "aime2024",
+        "aime 2024",
+        "aime'24"
+      ],
+      "kind": "benchmark",
+      "hf": "math-ai/aime24",
+      "ok": {
+        "hf": true
+      }
+    },
+    {
+      "name": "AIME 2025",
+      "aliases": [
+        "aime25",
+        "aime 25",
+        "aime2025",
+        "aime 2025",
+        "aime'25"
+      ],
+      "kind": "benchmark",
+      "hf": "math-ai/aime25",
+      "ok": {
+        "hf": true
+      }
+    },
+    {
+      "name": "AMC 2023",
+      "aliases": [
+        "amc",
+        "amc23",
+        "amc 23",
+        "amc 2023",
+        "amc2023"
+      ],
+      "kind": "benchmark",
+      "hf": "math-ai/amc23",
+      "ok": {
+        "hf": true
+      }
+    },
+    {
+      "name": "Minerva Math",
+      "aliases": [
+        "minerva math",
+        "minerva"
+      ],
+      "kind": "benchmark",
+      "hf": "math-ai/minervamath",
+      "ok": {
+        "hf": true
+      }
+    },
+    {
+      "name": "OlympiadBench",
+      "aliases": [
+        "olympiadbench",
+        "olympiad bench"
+      ],
+      "kind": "benchmark",
+      "hf": "Hothan/OlympiadBench",
+      "gh": "OpenBMB/OlympiadBench",
+      "ok": {
+        "hf": true,
+        "gh": true
+      }
+    },
+    {
+      "name": "Omni-MATH",
+      "aliases": [
+        "omni-math",
+        "omnimath"
+      ],
+      "kind": "benchmark",
+      "hf": "KbsdJames/Omni-MATH",
+      "ok": {
+        "hf": true
+      }
+    },
+    {
+      "name": "HMMT 2025",
+      "aliases": [
+        "hmmt",
+        "hmmt25",
+        "hmmt 2025",
+        "hmmt feb 2025"
+      ],
+      "kind": "benchmark",
+      "hf": "MathArena/hmmt_feb_2025",
+      "ok": {
+        "hf": true
+      }
+    },
+    {
+      "name": "miniF2F",
+      "aliases": [
+        "minif2f",
+        "minif2f-test",
+        "mini-f2f"
+      ],
+      "kind": "benchmark",
+      "gh": "openai/miniF2F",
+      "ok": {
+        "gh": true
+      }
+    },
+    {
+      "name": "ProofNet",
+      "aliases": [
+        "proofnet"
+      ],
+      "kind": "benchmark",
+      "hf": "hoskinson-center/proofnet",
+      "ok": {
+        "hf": true
+      }
+    },
+    {
+      "name": "PutnamBench",
+      "aliases": [
+        "putnambench",
+        "putnam bench"
+      ],
+      "kind": "benchmark",
+      "gh": "trishullab/PutnamBench",
+      "ok": {
+        "gh": true
+      }
+    },
+    {
+      "name": "DeepScaleR",
+      "aliases": [
+        "deepscaler",
+        "deepscaler-preview-dataset"
+      ],
+      "kind": "dataset",
+      "hf": "agentica-org/DeepScaleR-Preview-Dataset",
+      "ok": {
+        "hf": true
+      }
+    },
+    {
+      "name": "OpenR1-Math",
+      "aliases": [
+        "openr1-math",
+        "openr1-math-220k",
+        "open-r1 math"
+      ],
+      "kind": "dataset",
+      "hf": "open-r1/OpenR1-Math-220k",
+      "ok": {
+        "hf": true
+      }
+    },
+    {
+      "name": "NuminaMath",
+      "aliases": [
+        "numinamath",
+        "numinamath-cot",
+        "numina math"
+      ],
+      "kind": "dataset",
+      "hf": "AI-MO/NuminaMath-CoT",
+      "ok": {
+        "hf": true
+      }
+    },
+    {
+      "name": "DAPO-Math-17k",
+      "aliases": [
+        "dapo-math-17k",
+        "dapo-math",
+        "dapo"
+      ],
+      "kind": "dataset",
+      "hf": "BytedTsinghua-SIA/DAPO-Math-17k",
+      "ok": {
+        "hf": true
+      }
+    },
+    {
+      "name": "Countdown",
+      "aliases": [
+        "countdown",
+        "countdown-tasks-3to4",
+        "countdown task"
+      ],
+      "kind": "dataset",
+      "hf": "Jiayi-Pan/Countdown-Tasks-3to4",
+      "ok": {
+        "hf": true
+      }
+    },
+    {
+      "name": "MMLU",
+      "aliases": [
+        "mmlu"
+      ],
+      "kind": "benchmark",
+      "hf": "cais/mmlu",
+      "ok": {
+        "hf": true
+      }
+    },
+    {
+      "name": "MMLU-Pro",
+      "aliases": [
+        "mmlu-pro",
+        "mmlu pro"
+      ],
+      "kind": "benchmark",
+      "hf": "TIGER-Lab/MMLU-Pro",
+      "ok": {
+        "hf": true
+      }
+    },
+    {
+      "name": "GPQA",
+      "aliases": [
+        "gpqa",
+        "gpqa diamond",
+        "gpqa-diamond",
+        "gpqa-d"
+      ],
+      "kind": "benchmark",
+      "hf": "Idavidrein/gpqa",
+      "ok": {
+        "hf": true
+      }
+    },
+    {
+      "name": "HLE",
+      "aliases": [
+        "hle",
+        "humanity's last exam",
+        "humanity's last exam (hle)"
+      ],
+      "kind": "benchmark",
+      "hf": "cais/hle",
+      "ok": {
+        "hf": true
+      }
+    },
+    {
+      "name": "BBH",
+      "aliases": [
+        "bbh",
+        "big-bench hard",
+        "bigbench hard",
+        "big-bench-hard"
+      ],
+      "kind": "benchmark",
+      "hf": "lukaemon/bbh",
+      "gh": "suzgunmirac/BIG-Bench-Hard",
+      "ok": {
+        "hf": true,
+        "gh": true
+      }
+    },
+    {
+      "name": "ARC-Challenge",
+      "aliases": [
+        "arc-challenge",
+        "arc-c",
+        "ai2 arc",
+        "arc-easy",
+        "arc-e"
+      ],
+      "kind": "benchmark",
+      "hf": "allenai/ai2_arc",
+      "ok": {
+        "hf": true
+      }
+    },
+    {
+      "name": "HellaSwag",
+      "aliases": [
+        "hellaswag"
+      ],
+      "kind": "benchmark",
+      "hf": "Rowan/hellaswag",
+      "ok": {
+        "hf": true
+      }
+    },
+    {
+      "name": "WinoGrande",
+      "aliases": [
+        "winogrande"
+      ],
+      "kind": "benchmark",
+      "hf": "allenai/winogrande",
+      "ok": {
+        "hf": true
+      }
+    },
+    {
+      "name": "PIQA",
+      "aliases": [
+        "piqa"
+      ],
+      "kind": "benchmark",
+      "hf": "ybisk/piqa",
+      "ok": {
+        "hf": true
+      }
+    },
+    {
+      "name": "BoolQ",
+      "aliases": [
+        "boolq"
+      ],
+      "kind": "benchmark",
+      "hf": "google/boolq",
+      "ok": {
+        "hf": true
+      }
+    },
+    {
+      "name": "CommonsenseQA",
+      "aliases": [
+        "commonsenseqa",
+        "csqa"
+      ],
+      "kind": "benchmark",
+      "hf": "tau/commonsense_qa",
+      "ok": {
+        "hf": true
+      }
+    },
+    {
+      "name": "OpenBookQA",
+      "aliases": [
+        "openbookqa",
+        "obqa"
+      ],
+      "kind": "benchmark",
+      "hf": "allenai/openbookqa",
+      "ok": {
+        "hf": true
+      }
+    },
+    {
+      "name": "TruthfulQA",
+      "aliases": [
+        "truthfulqa"
+      ],
+      "kind": "benchmark",
+      "hf": "truthfulqa/truthful_qa",
+      "ok": {
+        "hf": true
+      }
+    },
+    {
+      "name": "IFEval",
+      "aliases": [
+        "ifeval"
+      ],
+      "kind": "benchmark",
+      "hf": "google/IFEval",
+      "ok": {
+        "hf": true
+      }
+    },
+    {
+      "name": "GLUE",
+      "aliases": [
+        "glue"
+      ],
+      "kind": "benchmark",
+      "hf": "nyu-mll/glue",
+      "ok": {
+        "hf": true
+      }
+    },
+    {
+      "name": "SuperGLUE",
+      "aliases": [
+        "superglue"
+      ],
+      "kind": "benchmark",
+      "hf": "aps/super_glue",
+      "ok": {
+        "hf": true
+      }
+    },
+    {
+      "name": "SQuAD",
+      "aliases": [
+        "squad",
+        "squad v1.1",
+        "squad 1.1"
+      ],
+      "kind": "benchmark",
+      "hf": "rajpurkar/squad",
+      "ok": {
+        "hf": true
+      }
+    },
+    {
+      "name": "SQuAD 2.0",
+      "aliases": [
+        "squad 2.0",
+        "squad2.0",
+        "squadv2",
+        "squad v2"
+      ],
+      "kind": "benchmark",
+      "hf": "rajpurkar/squad_v2",
+      "ok": {
+        "hf": true
+      }
+    },
+    {
+      "name": "TriviaQA",
+      "aliases": [
+        "triviaqa"
+      ],
+      "kind": "benchmark",
+      "hf": "mandarjoshi/trivia_qa",
+      "ok": {
+        "hf": true
+      }
+    },
+    {
+      "name": "Natural Questions",
+      "aliases": [
+        "natural questions",
+        "nq",
+        "nq-open",
+        "natural questions (nq)"
+      ],
+      "kind": "benchmark",
+      "hf": "google-research-datasets/natural_questions",
+      "ok": {
+        "hf": true
+      }
+    },
+    {
+      "name": "HotpotQA",
+      "aliases": [
+        "hotpotqa",
+        "hotpot qa"
+      ],
+      "kind": "benchmark",
+      "hf": "hotpotqa/hotpot_qa",
+      "ok": {
+        "hf": true
+      }
+    },
+    {
+      "name": "2WikiMultiHopQA",
+      "aliases": [
+        "2wikimultihopqa",
+        "2wikimqa",
+        "2wiki"
+      ],
+      "kind": "benchmark",
+      "gh": "Alab-NII/2wikimultihop",
+      "ok": {
+        "gh": true
+      }
+    },
+    {
+      "name": "MuSiQue",
+      "aliases": [
+        "musique"
+      ],
+      "kind": "benchmark",
+      "hf": "dgslibisey/MuSiQue",
+      "gh": "StonyBrookNLP/musique",
+      "ok": {
+        "hf": true,
+        "gh": true
+      }
+    },
+    {
+      "name": "StrategyQA",
+      "aliases": [
+        "strategyqa"
+      ],
+      "kind": "benchmark",
+      "hf": "ChilleD/StrategyQA",
+      "ok": {
+        "hf": true
+      }
+    },
+    {
+      "name": "MS MARCO",
+      "aliases": [
+        "ms marco",
+        "msmarco",
+        "ms-marco"
+      ],
+      "kind": "benchmark",
+      "hf": "microsoft/ms_marco",
+      "ok": {
+        "hf": true
+      }
+    },
+    {
+      "name": "BEIR",
+      "aliases": [
+        "beir"
+      ],
+      "kind": "benchmark",
+      "gh": "beir-cellar/beir",
+      "ok": {
+        "gh": true
+      }
+    },
+    {
+      "name": "MTEB",
+      "aliases": [
+        "mteb"
+      ],
+      "kind": "benchmark",
+      "gh": "embeddings-benchmark/mteb",
+      "ok": {
+        "gh": true
+      }
+    },
+    {
+      "name": "HumanEval",
+      "aliases": [
+        "humaneval",
+        "human-eval",
+        "human eval"
+      ],
+      "kind": "benchmark",
+      "hf": "openai/openai_humaneval",
+      "gh": "openai/human-eval",
+      "ok": {
+        "hf": true,
+        "gh": true
+      }
+    },
+    {
+      "name": "MBPP",
+      "aliases": [
+        "mbpp"
+      ],
+      "kind": "benchmark",
+      "hf": "google-research-datasets/mbpp",
+      "ok": {
+        "hf": true
+      }
+    },
+    {
+      "name": "EvalPlus",
+      "aliases": [
+        "humaneval+",
+        "mbpp+",
+        "evalplus"
+      ],
+      "kind": "benchmark",
+      "gh": "evalplus/evalplus",
+      "ok": {
+        "gh": true
+      }
+    },
+    {
+      "name": "LiveCodeBench",
+      "aliases": [
+        "livecodebench",
+        "live code bench"
+      ],
+      "kind": "benchmark",
+      "hf": "livecodebench/code_generation_lite",
+      "gh": "LiveCodeBench/LiveCodeBench",
+      "ok": {
+        "hf": true,
+        "gh": true
+      }
+    },
+    {
+      "name": "BigCodeBench",
+      "aliases": [
+        "bigcodebench"
+      ],
+      "kind": "benchmark",
+      "hf": "bigcode/bigcodebench",
+      "gh": "bigcode-project/bigcodebench",
+      "ok": {
+        "hf": true,
+        "gh": true
+      }
+    },
+    {
+      "name": "APPS",
+      "aliases": [
+        "apps"
+      ],
+      "kind": "benchmark",
+      "hf": "codeparrot/apps",
+      "ok": {
+        "hf": true
+      }
+    },
+    {
+      "name": "CodeContests",
+      "aliases": [
+        "codecontests",
+        "code contests"
+      ],
+      "kind": "benchmark",
+      "hf": "deepmind/code_contests",
+      "ok": {
+        "hf": true
+      }
+    },
+    {
+      "name": "DS-1000",
+      "aliases": [
+        "ds-1000",
+        "ds1000"
+      ],
+      "kind": "benchmark",
+      "hf": "xlangai/DS-1000",
+      "ok": {
+        "hf": true
+      }
+    },
+    {
+      "name": "CRUXEval",
+      "aliases": [
+        "cruxeval"
+      ],
+      "kind": "benchmark",
+      "hf": "cruxeval-org/cruxeval",
+      "gh": "facebookresearch/cruxeval",
+      "ok": {
+        "hf": true,
+        "gh": true
+      }
+    },
+    {
+      "name": "SWE-bench",
+      "aliases": [
+        "swe-bench",
+        "swebench",
+        "swe bench"
+      ],
+      "kind": "benchmark",
+      "hf": "princeton-nlp/SWE-bench",
+      "gh": "SWE-bench/SWE-bench",
+      "ok": {
+        "hf": true,
+        "gh": true
+      }
+    },
+    {
+      "name": "SWE-bench Verified",
+      "aliases": [
+        "swe-bench verified",
+        "swe-bench-verified",
+        "swebench verified"
+      ],
+      "kind": "benchmark",
+      "hf": "princeton-nlp/SWE-bench_Verified",
+      "ok": {
+        "hf": true
+      }
+    },
+    {
+      "name": "SWE-bench Lite",
+      "aliases": [
+        "swe-bench lite",
+        "swe-bench-lite"
+      ],
+      "kind": "benchmark",
+      "hf": "princeton-nlp/SWE-bench_Lite",
+      "ok": {
+        "hf": true
+      }
+    },
+    {
+      "name": "Spider",
+      "aliases": [
+        "spider",
+        "spider 1.0"
+      ],
+      "kind": "benchmark",
+      "hf": "xlangai/spider",
+      "ok": {
+        "hf": true
+      }
+    },
+    {
+      "name": "BIRD",
+      "aliases": [
+        "bird",
+        "bird-sql",
+        "bird benchmark"
+      ],
+      "kind": "benchmark",
+      "gh": "AlibabaResearch/DAMO-ConvAI",
+      "url": "https://bird-bench.github.io",
+      "ok": {
+        "gh": true
+      }
+    },
+    {
+      "name": "Aider Polyglot",
+      "aliases": [
+        "aider polyglot",
+        "aider"
+      ],
+      "kind": "benchmark",
+      "gh": "Aider-AI/aider",
+      "ok": {
+        "gh": true
+      }
+    },
+    {
+      "name": "Terminal-Bench",
+      "aliases": [
+        "terminal-bench",
+        "terminalbench"
+      ],
+      "kind": "benchmark",
+      "gh": "harbor-framework/terminal-bench-1",
+      "ok": {
+        "gh": true
+      }
+    },
+    {
+      "name": "LongBench",
+      "aliases": [
+        "longbench"
+      ],
+      "kind": "benchmark",
+      "hf": "zai-org/LongBench",
+      "gh": "THUDM/LongBench",
+      "ok": {
+        "hf": true,
+        "gh": true
+      }
+    },
+    {
+      "name": "LongBench v2",
+      "aliases": [
+        "longbench v2",
+        "longbench-v2",
+        "longbench2"
+      ],
+      "kind": "benchmark",
+      "hf": "zai-org/LongBench-v2",
+      "ok": {
+        "hf": true
+      }
+    },
+    {
+      "name": "RULER",
+      "aliases": [
+        "ruler"
+      ],
+      "kind": "benchmark",
+      "gh": "NVIDIA/RULER",
+      "ok": {
+        "gh": true
+      }
+    },
+    {
+      "name": "Needle-in-a-Haystack",
+      "aliases": [
+        "needle-in-a-haystack",
+        "needle in a haystack",
+        "niah"
+      ],
+      "kind": "benchmark",
+      "gh": "gkamradt/needle-in-a-haystack",
+      "ok": {
+        "gh": true
+      }
+    },
+    {
+      "name": "InfiniteBench",
+      "aliases": [
+        "infinitebench",
+        "infinite bench",
+        "∞bench"
+      ],
+      "kind": "benchmark",
+      "hf": "xinrongzhang2022/InfiniteBench",
+      "gh": "OpenBMB/InfiniteBench",
+      "ok": {
+        "hf": true,
+        "gh": true
+      }
+    },
+    {
+      "name": "BABILong",
+      "aliases": [
+        "babilong"
+      ],
+      "kind": "benchmark",
+      "hf": "RMT-team/babilong",
+      "ok": {
+        "hf": true
+      }
+    },
+    {
+      "name": "ZeroSCROLLS",
+      "aliases": [
+        "zeroscrolls",
+        "zero scrolls"
+      ],
+      "kind": "benchmark",
+      "hf": "tau/zero_scrolls",
+      "ok": {
+        "hf": true
+      }
+    },
+    {
+      "name": "PG-19",
+      "aliases": [
+        "pg-19",
+        "pg19"
+      ],
+      "kind": "dataset",
+      "hf": "deepmind/pg19",
+      "ok": {
+        "hf": true
+      }
+    },
+    {
+      "name": "MT-Bench",
+      "aliases": [
+        "mt-bench",
+        "mtbench",
+        "mt bench"
+      ],
+      "kind": "benchmark",
+      "hf": "lmsys/mt_bench_human_judgments",
+      "gh": "lm-sys/FastChat",
+      "ok": {
+        "hf": true,
+        "gh": true
+      }
+    },
+    {
+      "name": "AlpacaEval",
+      "aliases": [
+        "alpacaeval",
+        "alpacaeval 2",
+        "alpacaeval 2.0",
+        "alpacaeval2",
+        "alpaca eval",
+        "alpacaeval-2"
+      ],
+      "kind": "benchmark",
+      "hf": "tatsu-lab/alpaca_eval",
+      "gh": "tatsu-lab/alpaca_eval",
+      "ok": {
+        "hf": true,
+        "gh": true
+      }
+    },
+    {
+      "name": "Arena-Hard",
+      "aliases": [
+        "arena-hard",
+        "arena hard",
+        "arenahard",
+        "arena-hard-auto"
+      ],
+      "kind": "benchmark",
+      "gh": "lmarena/arena-hard-auto",
+      "ok": {
+        "gh": true
+      }
+    },
+    {
+      "name": "Chatbot Arena",
+      "aliases": [
+        "chatbot arena",
+        "lmsys arena",
+        "lmarena"
+      ],
+      "kind": "benchmark",
+      "hf": "lmarena-ai/arena-human-preference-55k",
+      "url": "https://lmarena.ai",
+      "ok": {
+        "hf": true
+      }
+    },
+    {
+      "name": "WildBench",
+      "aliases": [
+        "wildbench"
+      ],
+      "kind": "benchmark",
+      "hf": "allenai/WildBench",
+      "ok": {
+        "hf": true
+      }
+    },
+    {
+      "name": "UltraFeedback",
+      "aliases": [
+        "ultrafeedback",
+        "ultrafeedback binarized"
+      ],
+      "kind": "dataset",
+      "hf": "openbmb/UltraFeedback",
+      "ok": {
+        "hf": true
+      }
+    },
+    {
+      "name": "HH-RLHF",
+      "aliases": [
+        "hh-rlhf",
+        "anthropic hh",
+        "hh rlhf",
+        "anthropic hh-rlhf"
+      ],
+      "kind": "dataset",
+      "hf": "Anthropic/hh-rlhf",
+      "ok": {
+        "hf": true
+      }
+    },
+    {
+      "name": "PKU-SafeRLHF",
+      "aliases": [
+        "pku-saferlhf",
+        "saferlhf",
+        "safe-rlhf",
+        "pku saferlhf"
+      ],
+      "kind": "dataset",
+      "hf": "PKU-Alignment/PKU-SafeRLHF",
+      "ok": {
+        "hf": true
+      }
+    },
+    {
+      "name": "RewardBench",
+      "aliases": [
+        "rewardbench",
+        "reward bench"
+      ],
+      "kind": "benchmark",
+      "hf": "allenai/reward-bench",
+      "gh": "allenai/reward-bench",
+      "ok": {
+        "hf": true,
+        "gh": true
+      }
+    },
+    {
+      "name": "Alpaca",
+      "aliases": [
+        "alpaca"
+      ],
+      "kind": "dataset",
+      "hf": "tatsu-lab/alpaca",
+      "ok": {
+        "hf": true
+      }
+    },
+    {
+      "name": "LMSYS-Chat-1M",
+      "aliases": [
+        "lmsys-chat-1m",
+        "lmsys chat"
+      ],
+      "kind": "dataset",
+      "hf": "lmsys/lmsys-chat-1m",
+      "ok": {
+        "hf": true
+      }
+    },
+    {
+      "name": "ShareGPT",
+      "aliases": [
+        "sharegpt"
+      ],
+      "kind": "dataset",
+      "hf": "anon8231489123/ShareGPT_Vicuna_unfiltered",
+      "ok": {
+        "hf": true
+      }
+    },
+    {
+      "name": "Tulu 3 SFT",
+      "aliases": [
+        "tulu 3",
+        "tulu3",
+        "tulu-3"
+      ],
+      "kind": "dataset",
+      "hf": "allenai/tulu-3-sft-mixture",
+      "ok": {
+        "hf": true
+      }
+    },
+    {
+      "name": "AdvBench",
+      "aliases": [
+        "advbench"
+      ],
+      "kind": "benchmark",
+      "hf": "walledai/AdvBench",
+      "gh": "llm-attacks/llm-attacks",
+      "ok": {
+        "hf": true,
+        "gh": true
+      }
+    },
+    {
+      "name": "HarmBench",
+      "aliases": [
+        "harmbench"
+      ],
+      "kind": "benchmark",
+      "gh": "centerforaisafety/HarmBench",
+      "ok": {
+        "gh": true
+      }
+    },
+    {
+      "name": "JailbreakBench",
+      "aliases": [
+        "jailbreakbench",
+        "jbb"
+      ],
+      "kind": "benchmark",
+      "hf": "JailbreakBench/JBB-Behaviors",
+      "gh": "JailbreakBench/jailbreakbench",
+      "ok": {
+        "hf": true,
+        "gh": true
+      }
+    },
+    {
+      "name": "WMDP",
+      "aliases": [
+        "wmdp"
+      ],
+      "kind": "benchmark",
+      "hf": "cais/wmdp",
+      "ok": {
+        "hf": true
+      }
+    },
+    {
+      "name": "MUSE",
+      "aliases": [
+        "muse",
+        "muse benchmark",
+        "muse-news",
+        "muse-books"
+      ],
+      "kind": "benchmark",
+      "hf": "muse-bench/MUSE-News",
+      "gh": "swj0419/muse_bench",
+      "ok": {
+        "hf": true,
+        "gh": true
+      }
+    },
+    {
+      "name": "TOFU",
+      "aliases": [
+        "tofu"
+      ],
+      "kind": "benchmark",
+      "hf": "locuslab/TOFU",
+      "gh": "locuslab/tofu",
+      "ok": {
+        "hf": true,
+        "gh": true
+      }
+    },
+    {
+      "name": "RealToxicityPrompts",
+      "aliases": [
+        "realtoxicityprompts",
+        "real toxicity prompts"
+      ],
+      "kind": "benchmark",
+      "hf": "allenai/real-toxicity-prompts",
+      "ok": {
+        "hf": true
+      }
+    },
+    {
+      "name": "ToxiGen",
+      "aliases": [
+        "toxigen"
+      ],
+      "kind": "dataset",
+      "hf": "toxigen/toxigen-data",
+      "ok": {
+        "hf": true
+      }
+    },
+    {
+      "name": "XSTest",
+      "aliases": [
+        "xstest"
+      ],
+      "kind": "benchmark",
+      "hf": "walledai/XSTest",
+      "ok": {
+        "hf": true
+      }
+    },
+    {
+      "name": "BBQ",
+      "aliases": [
+        "bbq"
+      ],
+      "kind": "benchmark",
+      "hf": "heegyu/bbq",
+      "gh": "nyu-mll/BBQ",
+      "ok": {
+        "hf": true,
+        "gh": true
+      }
+    },
+    {
+      "name": "MMMU",
+      "aliases": [
+        "mmmu"
+      ],
+      "kind": "benchmark",
+      "hf": "MMMU/MMMU",
+      "ok": {
+        "hf": true
+      }
+    },
+    {
+      "name": "MathVista",
+      "aliases": [
+        "mathvista"
+      ],
+      "kind": "benchmark",
+      "hf": "AI4Math/MathVista",
+      "ok": {
+        "hf": true
+      }
+    },
+    {
+      "name": "MathVerse",
+      "aliases": [
+        "mathverse"
+      ],
+      "kind": "benchmark",
+      "hf": "AI4Math/MathVerse",
+      "ok": {
+        "hf": true
+      }
+    },
+    {
+      "name": "MathVision",
+      "aliases": [
+        "mathvision",
+        "math-vision",
+        "math-v"
+      ],
+      "kind": "benchmark",
+      "hf": "MathLLMs/MathVision",
+      "ok": {
+        "hf": true
+      }
+    },
+    {
+      "name": "MMBench",
+      "aliases": [
+        "mmbench"
+      ],
+      "kind": "benchmark",
+      "hf": "lmms-lab-encoder/MMBench",
+      "gh": "open-compass/MMBench",
+      "ok": {
+        "hf": true,
+        "gh": true
+      }
+    },
+    {
+      "name": "MME",
+      "aliases": [
+        "mme"
+      ],
+      "kind": "benchmark",
+      "hf": "lmms-lab-encoder/MME",
+      "ok": {
+        "hf": true
+      }
+    },
+    {
+      "name": "MMStar",
+      "aliases": [
+        "mmstar"
+      ],
+      "kind": "benchmark",
+      "hf": "Lin-Chen/MMStar",
+      "ok": {
+        "hf": true
+      }
+    },
+    {
+      "name": "SEED-Bench",
+      "aliases": [
+        "seed-bench",
+        "seedbench"
+      ],
+      "kind": "benchmark",
+      "hf": "lmms-lab-encoder/SEED-Bench",
+      "ok": {
+        "hf": true
+      }
+    },
+    {
+      "name": "POPE",
+      "aliases": [
+        "pope"
+      ],
+      "kind": "benchmark",
+      "hf": "lmms-lab-encoder/POPE",
+      "gh": "RUCAIBox/POPE",
+      "ok": {
+        "hf": true,
+        "gh": true
+      }
+    },
+    {
+      "name": "HallusionBench",
+      "aliases": [
+        "hallusionbench"
+      ],
+      "kind": "benchmark",
+      "hf": "lmms-lab-encoder/HallusionBench",
+      "ok": {
+        "hf": true
+      }
+    },
+    {
+      "name": "TextVQA",
+      "aliases": [
+        "textvqa"
+      ],
+      "kind": "benchmark",
+      "hf": "lmms-lab-encoder/textvqa",
+      "ok": {
+        "hf": true
+      }
+    },
+    {
+      "name": "VQAv2",
+      "aliases": [
+        "vqav2",
+        "vqa v2",
+        "vqa-v2"
+      ],
+      "kind": "benchmark",
+      "hf": "HuggingFaceM4/VQAv2",
+      "ok": {
+        "hf": true
+      }
+    },
+    {
+      "name": "GQA",
+      "aliases": [
+        "gqa"
+      ],
+      "kind": "benchmark",
+      "hf": "lmms-lab-encoder/GQA",
+      "ok": {
+        "hf": true
+      }
+    },
+    {
+      "name": "DocVQA",
+      "aliases": [
+        "docvqa"
+      ],
+      "kind": "benchmark",
+      "hf": "lmms-lab-encoder/DocVQA",
+      "ok": {
+        "hf": true
+      }
+    },
+    {
+      "name": "ChartQA",
+      "aliases": [
+        "chartqa"
+      ],
+      "kind": "benchmark",
+      "hf": "HuggingFaceM4/ChartQA",
+      "ok": {
+        "hf": true
+      }
+    },
+    {
+      "name": "ScienceQA",
+      "aliases": [
+        "scienceqa"
+      ],
+      "kind": "benchmark",
+      "hf": "derek-thomas/ScienceQA",
+      "ok": {
+        "hf": true
+      }
+    },
+    {
+      "name": "AI2D",
+      "aliases": [
+        "ai2d"
+      ],
+      "kind": "benchmark",
+      "hf": "lmms-lab-encoder/ai2d",
+      "ok": {
+        "hf": true
+      }
+    },
+    {
+      "name": "OCRBench",
+      "aliases": [
+        "ocrbench"
+      ],
+      "kind": "benchmark",
+      "hf": "echo840/OCRBench",
+      "ok": {
+        "hf": true
+      }
+    },
+    {
+      "name": "Video-MME",
+      "aliases": [
+        "video-mme",
+        "videomme",
+        "video mme"
+      ],
+      "kind": "benchmark",
+      "hf": "lmms-eval/Video-MME",
+      "ok": {
+        "hf": true
+      }
+    },
+    {
+      "name": "LongVideoBench",
+      "aliases": [
+        "longvideobench"
+      ],
+      "kind": "benchmark",
+      "hf": "longvideobench/LongVideoBench",
+      "ok": {
+        "hf": true
+      }
+    },
+    {
+      "name": "MLVU",
+      "aliases": [
+        "mlvu"
+      ],
+      "kind": "benchmark",
+      "hf": "MLVU/MVLU",
+      "gh": "JUNJIE99/MLVU",
+      "ok": {
+        "hf": true,
+        "gh": true
+      }
+    },
+    {
+      "name": "LVBench",
+      "aliases": [
+        "lvbench"
+      ],
+      "kind": "benchmark",
+      "hf": "AIWinter/LVBench",
+      "gh": "zai-org/LVBench",
+      "ok": {
+        "hf": true,
+        "gh": true
+      }
+    },
+    {
+      "name": "EgoSchema",
+      "aliases": [
+        "egoschema"
+      ],
+      "kind": "benchmark",
+      "hf": "lmms-eval/egoschema",
+      "ok": {
+        "hf": true
+      }
+    },
+    {
+      "name": "VSI-Bench",
+      "aliases": [
+        "vsi-bench",
+        "vsibench"
+      ],
+      "kind": "benchmark",
+      "hf": "nyu-visionx/VSI-Bench",
+      "ok": {
+        "hf": true
+      }
+    },
+    {
+      "name": "MSRVTT",
+      "aliases": [
+        "msrvtt",
+        "msr-vtt"
+      ],
+      "kind": "dataset",
+      "url": "https://www.microsoft.com/en-us/research/publication/msr-vtt-a-large-video-description-dataset-for-bridging-video-and-language/",
+      "ok": {}
+    },
+    {
+      "name": "GAIA",
+      "aliases": [
+        "gaia"
+      ],
+      "kind": "benchmark",
+      "hf": "gaia-benchmark/GAIA",
+      "ok": {
+        "hf": true
+      }
+    },
+    {
+      "name": "WebArena",
+      "aliases": [
+        "webarena"
+      ],
+      "kind": "benchmark",
+      "gh": "web-arena-x/webarena",
+      "ok": {
+        "gh": true
+      }
+    },
+    {
+      "name": "VisualWebArena",
+      "aliases": [
+        "visualwebarena"
+      ],
+      "kind": "benchmark",
+      "gh": "web-arena-x/visualwebarena",
+      "ok": {
+        "gh": true
+      }
+    },
+    {
+      "name": "WebShop",
+      "aliases": [
+        "webshop"
+      ],
+      "kind": "benchmark",
+      "gh": "princeton-nlp/WebShop",
+      "ok": {
+        "gh": true
+      }
+    },
+    {
+      "name": "Mind2Web",
+      "aliases": [
+        "mind2web"
+      ],
+      "kind": "benchmark",
+      "hf": "osunlp/Mind2Web",
+      "gh": "OSU-NLP-Group/Mind2Web",
+      "ok": {
+        "hf": true,
+        "gh": true
+      }
+    },
+    {
+      "name": "OSWorld",
+      "aliases": [
+        "osworld"
+      ],
+      "kind": "benchmark",
+      "gh": "xlang-ai/OSWorld",
+      "ok": {
+        "gh": true
+      }
+    },
+    {
+      "name": "AndroidWorld",
+      "aliases": [
+        "androidworld",
+        "android world"
+      ],
+      "kind": "benchmark",
+      "gh": "google-research/android_world",
+      "ok": {
+        "gh": true
+      }
+    },
+    {
+      "name": "ALFWorld",
+      "aliases": [
+        "alfworld"
+      ],
+      "kind": "benchmark",
+      "gh": "alfworld/alfworld",
+      "ok": {
+        "gh": true
+      }
+    },
+    {
+      "name": "ScienceWorld",
+      "aliases": [
+        "scienceworld"
+      ],
+      "kind": "benchmark",
+      "gh": "allenai/ScienceWorld",
+      "ok": {
+        "gh": true
+      }
+    },
+    {
+      "name": "AgentBench",
+      "aliases": [
+        "agentbench"
+      ],
+      "kind": "benchmark",
+      "gh": "THUDM/AgentBench",
+      "ok": {
+        "gh": true
+      }
+    },
+    {
+      "name": "tau-bench",
+      "aliases": [
+        "tau-bench",
+        "τ-bench",
+        "taubench",
+        "tau bench",
+        "τ²-bench",
+        "tau2-bench"
+      ],
+      "kind": "benchmark",
+      "gh": "sierra-research/tau-bench",
+      "ok": {
+        "gh": true
+      }
+    },
+    {
+      "name": "ToolBench",
+      "aliases": [
+        "toolbench"
+      ],
+      "kind": "benchmark",
+      "gh": "OpenBMB/ToolBench",
+      "ok": {
+        "gh": true
+      }
+    },
+    {
+      "name": "BFCL",
+      "aliases": [
+        "bfcl",
+        "berkeley function calling leaderboard"
+      ],
+      "kind": "benchmark",
+      "gh": "ShishirPatil/gorilla",
+      "ok": {
+        "gh": true
+      }
+    },
+    {
+      "name": "BrowseComp",
+      "aliases": [
+        "browsecomp"
+      ],
+      "kind": "benchmark",
+      "gh": "openai/simple-evals",
+      "ok": {
+        "gh": true
+      }
+    },
+    {
+      "name": "SimpleQA",
+      "aliases": [
+        "simpleqa"
+      ],
+      "kind": "benchmark",
+      "hf": "basicv8vc/SimpleQA",
+      "gh": "openai/simple-evals",
+      "ok": {
+        "hf": true,
+        "gh": true
+      }
+    },
+    {
+      "name": "FEVER",
+      "aliases": [
+        "fever"
+      ],
+      "kind": "benchmark",
+      "hf": "fever/fever",
+      "ok": {
+        "hf": true
+      }
+    },
+    {
+      "name": "LoCoMo",
+      "aliases": [
+        "locomo"
+      ],
+      "kind": "benchmark",
+      "gh": "snap-research/locomo",
+      "ok": {
+        "gh": true
+      }
+    },
+    {
+      "name": "TheoremQA",
+      "aliases": [
+        "theoremqa"
+      ],
+      "kind": "benchmark",
+      "hf": "TIGER-Lab/TheoremQA",
+      "ok": {
+        "hf": true
+      }
+    },
+    {
+      "name": "SciQ",
+      "aliases": [
+        "sciq"
+      ],
+      "kind": "benchmark",
+      "hf": "allenai/sciq",
+      "ok": {
+        "hf": true
+      }
+    },
+    {
+      "name": "MedQA",
+      "aliases": [
+        "medqa",
+        "medqa-usmle"
+      ],
+      "kind": "benchmark",
+      "hf": "bigbio/med_qa",
+      "ok": {
+        "hf": true
+      }
+    },
+    {
+      "name": "PubMedQA",
+      "aliases": [
+        "pubmedqa"
+      ],
+      "kind": "benchmark",
+      "hf": "qiaojin/PubMedQA",
+      "ok": {
+        "hf": true
+      }
+    },
+    {
+      "name": "MedMCQA",
+      "aliases": [
+        "medmcqa"
+      ],
+      "kind": "benchmark",
+      "hf": "openlifescienceai/medmcqa",
+      "ok": {
+        "hf": true
+      }
+    },
+    {
+      "name": "MIMIC-IV",
+      "aliases": [
+        "mimic-iv",
+        "mimic iv",
+        "mimic-4"
+      ],
+      "kind": "dataset",
+      "url": "https://physionet.org/content/mimiciv/",
+      "ok": {}
+    },
+    {
+      "name": "MIMIC-III",
+      "aliases": [
+        "mimic-iii",
+        "mimic iii",
+        "mimic-3"
+      ],
+      "kind": "dataset",
+      "url": "https://physionet.org/content/mimiciii/",
+      "ok": {}
+    },
+    {
+      "name": "CNN/DailyMail",
+      "aliases": [
+        "cnn/dailymail",
+        "cnn-dailymail",
+        "cnn/dm",
+        "cnn dailymail"
+      ],
+      "kind": "dataset",
+      "hf": "abisee/cnn_dailymail",
+      "ok": {
+        "hf": true
+      }
+    },
+    {
+      "name": "XSum",
+      "aliases": [
+        "xsum"
+      ],
+      "kind": "dataset",
+      "hf": "EdinburghNLP/xsum",
+      "ok": {
+        "hf": true
+      }
+    },
+    {
+      "name": "WikiText",
+      "aliases": [
+        "wikitext",
+        "wikitext2",
+        "wikitext-2",
+        "wikitext-103",
+        "wikitext103"
+      ],
+      "kind": "dataset",
+      "hf": "Salesforce/wikitext",
+      "ok": {
+        "hf": true
+      }
+    },
+    {
+      "name": "OpenWebText",
+      "aliases": [
+        "openwebtext"
+      ],
+      "kind": "dataset",
+      "hf": "Skylion007/openwebtext",
+      "ok": {
+        "hf": true
+      }
+    },
+    {
+      "name": "C4",
+      "aliases": [
+        "c4"
+      ],
+      "kind": "dataset",
+      "hf": "allenai/c4",
+      "ok": {
+        "hf": true
+      }
+    },
+    {
+      "name": "The Pile",
+      "aliases": [
+        "the pile",
+        "pile"
+      ],
+      "kind": "dataset",
+      "hf": "EleutherAI/pile",
+      "ok": {
+        "hf": true
+      }
+    },
+    {
+      "name": "FineWeb",
+      "aliases": [
+        "fineweb"
+      ],
+      "kind": "dataset",
+      "hf": "HuggingFaceFW/fineweb",
+      "ok": {
+        "hf": true
+      }
+    },
+    {
+      "name": "FineWeb-Edu",
+      "aliases": [
+        "fineweb-edu"
+      ],
+      "kind": "dataset",
+      "hf": "HuggingFaceFW/fineweb-edu",
+      "ok": {
+        "hf": true
+      }
+    },
+    {
+      "name": "RedPajama",
+      "aliases": [
+        "redpajama",
+        "redpajama-v2",
+        "redpajama-1t"
+      ],
+      "kind": "dataset",
+      "hf": "togethercomputer/RedPajama-Data-1T",
+      "ok": {
+        "hf": true
+      }
+    },
+    {
+      "name": "SlimPajama",
+      "aliases": [
+        "slimpajama"
+      ],
+      "kind": "dataset",
+      "hf": "cerebras/SlimPajama-627B",
+      "ok": {
+        "hf": true
+      }
+    },
+    {
+      "name": "DCLM",
+      "aliases": [
+        "dclm",
+        "dclm-baseline"
+      ],
+      "kind": "dataset",
+      "hf": "mlfoundations/dclm-baseline-1.0",
+      "ok": {
+        "hf": true
+      }
+    },
+    {
+      "name": "Dolma",
+      "aliases": [
+        "dolma"
+      ],
+      "kind": "dataset",
+      "hf": "allenai/dolma",
+      "ok": {
+        "hf": true
+      }
+    },
+    {
+      "name": "Wikipedia",
+      "aliases": [
+        "wikipedia"
+      ],
+      "kind": "dataset",
+      "hf": "wikimedia/wikipedia",
+      "ok": {
+        "hf": true
+      }
+    },
+    {
+      "name": "BookCorpus",
+      "aliases": [
+        "bookcorpus"
+      ],
+      "kind": "dataset",
+      "hf": "bookcorpus/bookcorpus",
+      "ok": {
+        "hf": true
+      }
+    },
+    {
+      "name": "D4RL",
+      "aliases": [
+        "d4rl"
+      ],
+      "kind": "benchmark",
+      "gh": "Farama-Foundation/D4RL",
+      "ok": {
+        "gh": true
+      }
+    },
+    {
+      "name": "OGBench",
+      "aliases": [
+        "ogbench"
+      ],
+      "kind": "benchmark",
+      "gh": "seohongpark/ogbench",
+      "ok": {
+        "gh": true
+      }
+    },
+    {
+      "name": "MuJoCo",
+      "aliases": [
+        "mujoco"
+      ],
+      "kind": "simulator",
+      "gh": "google-deepmind/mujoco",
+      "ok": {
+        "gh": true
+      }
+    },
+    {
+      "name": "DeepMind Control Suite",
+      "aliases": [
+        "deepmind control suite",
+        "dm control",
+        "dmcontrol",
+        "dmc",
+        "deepmind control",
+        "dm_control",
+        "dmc suite"
+      ],
+      "kind": "benchmark",
+      "gh": "google-deepmind/dm_control",
+      "ok": {
+        "gh": true
+      }
+    },
+    {
+      "name": "Atari",
+      "aliases": [
+        "atari",
+        "atari 100k",
+        "atari-100k",
+        "atari games",
+        "atari 2600",
+        "ale"
+      ],
+      "kind": "benchmark",
+      "gh": "Farama-Foundation/Arcade-Learning-Environment",
+      "ok": {
+        "gh": true
+      }
+    },
+    {
+      "name": "Procgen",
+      "aliases": [
+        "procgen"
+      ],
+      "kind": "benchmark",
+      "gh": "openai/procgen",
+      "ok": {
+        "gh": true
+      }
+    },
+    {
+      "name": "MiniGrid",
+      "aliases": [
+        "minigrid"
+      ],
+      "kind": "benchmark",
+      "gh": "Farama-Foundation/Minigrid",
+      "ok": {
+        "gh": true
+      }
+    },
+    {
+      "name": "Crafter",
+      "aliases": [
+        "crafter"
+      ],
+      "kind": "benchmark",
+      "gh": "danijar/crafter",
+      "ok": {
+        "gh": true
+      }
+    },
+    {
+      "name": "MineDojo",
+      "aliases": [
+        "minedojo",
+        "minecraft"
+      ],
+      "kind": "benchmark",
+      "gh": "MineDojo/MineDojo",
+      "ok": {
+        "gh": true
+      }
+    },
+    {
+      "name": "Meta-World",
+      "aliases": [
+        "meta-world",
+        "metaworld",
+        "meta world"
+      ],
+      "kind": "benchmark",
+      "gh": "Farama-Foundation/Metaworld",
+      "ok": {
+        "gh": true
+      }
+    },
+    {
+      "name": "Gymnasium",
+      "aliases": [
+        "gymnasium",
+        "openai gym",
+        "gym"
+      ],
+      "kind": "benchmark",
+      "gh": "Farama-Foundation/Gymnasium",
+      "ok": {
+        "gh": true
+      }
+    },
+    {
+      "name": "SMAC",
+      "aliases": [
+        "smac",
+        "starcraft multi-agent challenge"
+      ],
+      "kind": "benchmark",
+      "gh": "oxwhirl/smac",
+      "ok": {
+        "gh": true
+      }
+    },
+    {
+      "name": "SMACv2",
+      "aliases": [
+        "smacv2",
+        "smac v2"
+      ],
+      "kind": "benchmark",
+      "gh": "oxwhirl/smacv2",
+      "ok": {
+        "gh": true
+      }
+    },
+    {
+      "name": "Overcooked",
+      "aliases": [
+        "overcooked",
+        "overcooked-ai"
+      ],
+      "kind": "benchmark",
+      "gh": "HumanCompatibleAI/overcooked_ai",
+      "ok": {
+        "gh": true
+      }
+    },
+    {
+      "name": "Melting Pot",
+      "aliases": [
+        "melting pot",
+        "meltingpot"
+      ],
+      "kind": "benchmark",
+      "gh": "google-deepmind/meltingpot",
+      "ok": {
+        "gh": true
+      }
+    },
+    {
+      "name": "HumanoidBench",
+      "aliases": [
+        "humanoidbench"
+      ],
+      "kind": "benchmark",
+      "gh": "carlosferrazza/humanoid-bench",
+      "ok": {
+        "gh": true
+      }
+    },
+    {
+      "name": "LIBERO",
+      "aliases": [
+        "libero"
+      ],
+      "kind": "benchmark",
+      "gh": "Lifelong-Robot-Learning/LIBERO",
+      "ok": {
+        "gh": true
+      }
+    },
+    {
+      "name": "CALVIN",
+      "aliases": [
+        "calvin"
+      ],
+      "kind": "benchmark",
+      "gh": "mees/calvin",
+      "ok": {
+        "gh": true
+      }
+    },
+    {
+      "name": "RLBench",
+      "aliases": [
+        "rlbench"
+      ],
+      "kind": "benchmark",
+      "gh": "stepjam/RLBench",
+      "ok": {
+        "gh": true
+      }
+    },
+    {
+      "name": "SimplerEnv",
+      "aliases": [
+        "simplerenv",
+        "simpler-env",
+        "simpler"
+      ],
+      "kind": "benchmark",
+      "gh": "simpler-env/SimplerEnv",
+      "ok": {
+        "gh": true
+      }
+    },
+    {
+      "name": "robomimic",
+      "aliases": [
+        "robomimic"
+      ],
+      "kind": "benchmark",
+      "gh": "ARISE-Initiative/robomimic",
+      "ok": {
+        "gh": true
+      }
+    },
+    {
+      "name": "RoboCasa",
+      "aliases": [
+        "robocasa"
+      ],
+      "kind": "benchmark",
+      "gh": "robocasa/robocasa",
+      "ok": {
+        "gh": true
+      }
+    },
+    {
+      "name": "ManiSkill",
+      "aliases": [
+        "maniskill",
+        "maniskill2",
+        "maniskill3"
+      ],
+      "kind": "benchmark",
+      "gh": "mani-skill/ManiSkill",
+      "ok": {
+        "gh": true
+      }
+    },
+    {
+      "name": "Open X-Embodiment",
+      "aliases": [
+        "open x-embodiment",
+        "oxe",
+        "open-x embodiment"
+      ],
+      "kind": "dataset",
+      "gh": "google-deepmind/open_x_embodiment",
+      "ok": {
+        "gh": true
+      }
+    },
+    {
+      "name": "BridgeData V2",
+      "aliases": [
+        "bridgedata v2",
+        "bridge v2",
+        "bridgedata",
+        "bridge data"
+      ],
+      "kind": "dataset",
+      "url": "https://rail-berkeley.github.io/bridgedata/",
+      "ok": {}
+    },
+    {
+      "name": "DROID",
+      "aliases": [
+        "droid"
+      ],
+      "kind": "dataset",
+      "url": "https://droid-dataset.github.io",
+      "ok": {}
+    },
+    {
+      "name": "Habitat",
+      "aliases": [
+        "habitat"
+      ],
+      "kind": "simulator",
+      "gh": "facebookresearch/habitat-lab",
+      "ok": {
+        "gh": true
+      }
+    },
+    {
+      "name": "Isaac Gym",
+      "aliases": [
+        "isaac gym",
+        "isaacgym",
+        "isaac lab",
+        "isaaclab"
+      ],
+      "kind": "simulator",
+      "gh": "isaac-sim/IsaacLab",
+      "ok": {
+        "gh": true
+      }
+    },
+    {
+      "name": "QM9",
+      "aliases": [
+        "qm9"
+      ],
+      "kind": "dataset",
+      "hf": "yairschiff/qm9",
+      "url": "http://quantum-machine.org/datasets/",
+      "ok": {
+        "hf": true
+      }
+    },
+    {
+      "name": "MD17",
+      "aliases": [
+        "md17",
+        "rmd17"
+      ],
+      "kind": "dataset",
+      "url": "http://quantum-machine.org/datasets/",
+      "ok": {}
+    },
+    {
+      "name": "ZINC",
+      "aliases": [
+        "zinc",
+        "zinc250k",
+        "zinc 250k"
+      ],
+      "kind": "dataset",
+      "url": "https://zinc.docking.org",
+      "ok": {}
+    },
+    {
+      "name": "MoleculeNet",
+      "aliases": [
+        "moleculenet"
+      ],
+      "kind": "benchmark",
+      "gh": "deepchem/deepchem",
+      "url": "https://moleculenet.org",
+      "ok": {
+        "gh": true
+      }
+    },
+    {
+      "name": "OGB",
+      "aliases": [
+        "ogb",
+        "open graph benchmark",
+        "ogbn-arxiv",
+        "ogbg-molhiv",
+        "ogbn-products"
+      ],
+      "kind": "benchmark",
+      "gh": "snap-stanford/ogb",
+      "url": "https://ogb.stanford.edu",
+      "ok": {
+        "gh": true
+      }
+    },
+    {
+      "name": "PDBBind",
+      "aliases": [
+        "pdbbind"
+      ],
+      "kind": "dataset",
+      "url": "http://www.pdbbind.org.cn",
+      "ok": {}
+    },
+    {
+      "name": "CrossDocked2020",
+      "aliases": [
+        "crossdocked2020",
+        "crossdocked",
+        "crossdock2020"
+      ],
+      "kind": "dataset",
+      "gh": "gnina/models",
+      "url": "https://bits.csb.pitt.edu/files/crossdock2020/",
+      "ok": {
+        "gh": true
+      }
+    },
+    {
+      "name": "GEOM-Drugs",
+      "aliases": [
+        "geom-drugs",
+        "geom drugs",
+        "geom"
+      ],
+      "kind": "dataset",
+      "gh": "learningmatter-mit/geom",
+      "ok": {
+        "gh": true
+      }
+    },
+    {
+      "name": "Materials Project",
+      "aliases": [
+        "materials project",
+        "mp-20",
+        "mp20"
+      ],
+      "kind": "dataset",
+      "url": "https://materialsproject.org",
+      "ok": {}
+    },
+    {
+      "name": "Cora",
+      "aliases": [
+        "cora",
+        "cora citation"
+      ],
+      "kind": "dataset",
+      "url": "https://relational.fel.cvut.cz/dataset/CORA",
+      "ok": {}
+    },
+    {
+      "name": "Planetoid",
+      "aliases": [
+        "citeseer",
+        "pubmed",
+        "planetoid"
+      ],
+      "kind": "dataset",
+      "gh": "kimiyoung/planetoid",
+      "ok": {
+        "gh": true
+      }
+    },
+    {
+      "name": "UCI",
+      "aliases": [
+        "uci",
+        "uci datasets",
+        "uci repository",
+        "uci benchmark"
+      ],
+      "kind": "dataset",
+      "url": "https://archive.ics.uci.edu",
+      "ok": {}
+    },
+    {
+      "name": "OpenML",
+      "aliases": [
+        "openml",
+        "openml-cc18"
+      ],
+      "kind": "dataset",
+      "url": "https://www.openml.org",
+      "ok": {}
+    },
+    {
+      "name": "TabZilla",
+      "aliases": [
+        "tabzilla"
+      ],
+      "kind": "benchmark",
+      "gh": "naszilla/tabzilla",
+      "ok": {
+        "gh": true
+      }
+    },
+    {
+      "name": "ETT",
+      "aliases": [
+        "ett",
+        "etth1",
+        "etth2",
+        "ettm1",
+        "ettm2"
+      ],
+      "kind": "dataset",
+      "gh": "zhouhaoyi/ETDataset",
+      "ok": {
+        "gh": true
+      }
+    },
+    {
+      "name": "Monash Forecasting",
+      "aliases": [
+        "monash",
+        "monash forecasting repository"
+      ],
+      "kind": "dataset",
+      "url": "https://forecastingdata.org",
+      "ok": {}
+    },
+    {
+      "name": "UEA/UCR archive",
+      "aliases": [
+        "ucr",
+        "uea",
+        "ucr archive",
+        "uea archive"
+      ],
+      "kind": "dataset",
+      "url": "https://www.timeseriesclassification.com",
+      "ok": {}
+    },
+    {
+      "name": "LibriSpeech",
+      "aliases": [
+        "librispeech"
+      ],
+      "kind": "dataset",
+      "hf": "openslr/librispeech_asr",
+      "ok": {
+        "hf": true
+      }
+    },
+    {
+      "name": "AudioSet",
+      "aliases": [
+        "audioset"
+      ],
+      "kind": "dataset",
+      "url": "https://research.google.com/audioset/",
+      "ok": {}
+    },
+    {
+      "name": "VTAB-1k",
+      "aliases": [
+        "vtab-1k",
+        "vtab"
+      ],
+      "kind": "benchmark",
+      "gh": "google-research/task_adaptation",
+      "ok": {
+        "gh": true
+      }
+    },
+    {
+      "name": "DTD",
+      "aliases": [
+        "dtd"
+      ],
+      "kind": "dataset",
+      "hf": "tanganke/dtd",
+      "ok": {
+        "hf": true
+      }
+    },
+    {
+      "name": "Oxford Pets",
+      "aliases": [
+        "oxford pets",
+        "oxford-iiit pets",
+        "oxford-iiit pet",
+        "oxfordpets"
+      ],
+      "kind": "dataset",
+      "hf": "timm/oxford-iiit-pet",
+      "ok": {
+        "hf": true
+      }
+    },
+    {
+      "name": "Caltech-101",
+      "aliases": [
+        "caltech-101",
+        "caltech101"
+      ],
+      "kind": "dataset",
+      "url": "https://data.caltech.edu/records/mzrjq-6wc02",
+      "ok": {}
+    },
+    {
+      "name": "Sudoku",
+      "aliases": [
+        "sudoku",
+        "sudoku-extreme"
+      ],
+      "kind": "dataset",
+      "hf": "sapientinc/sudoku-extreme",
+      "ok": {
+        "hf": true
+      }
+    },
+    {
+      "name": "ARC-AGI",
+      "aliases": [
+        "arc-agi",
+        "arc agi",
+        "arc-agi-1",
+        "arc-agi-2",
+        "abstraction and reasoning corpus"
+      ],
+      "kind": "benchmark",
+      "gh": "fchollet/ARC-AGI",
+      "url": "https://arcprize.org",
+      "ok": {
+        "gh": true
+      }
+    },
+    {
+      "name": "Game of 24",
+      "aliases": [
+        "game of 24",
+        "game-of-24",
+        "24 game"
+      ],
+      "kind": "benchmark",
+      "gh": "princeton-nlp/tree-of-thought-llm",
+      "ok": {
+        "gh": true
+      }
+    },
+    {
+      "name": "BLiMP",
+      "aliases": [
+        "blimp"
+      ],
+      "kind": "benchmark",
+      "hf": "nyu-mll/blimp",
+      "ok": {
+        "hf": true
+      }
+    },
+    {
+      "name": "LAMBADA",
+      "aliases": [
+        "lambada"
+      ],
+      "kind": "benchmark",
+      "hf": "EleutherAI/lambada_openai",
+      "ok": {
+        "hf": true
+      }
+    },
+    {
+      "name": "XD-Violence",
+      "aliases": [
+        "xd-violence"
+      ],
+      "kind": "dataset",
+      "url": "https://roc-ng.github.io/XD-Violence/",
+      "ok": {}
+    },
+    {
+      "name": "UCF-Crime",
+      "aliases": [
+        "ucf-crime",
+        "ucf crime"
+      ],
+      "kind": "dataset",
+      "url": "https://www.crcv.ucf.edu/projects/real-world/",
+      "ok": {}
+    },
+    {
+      "name": "Waterbirds",
+      "aliases": [
+        "waterbirds"
+      ],
+      "kind": "dataset",
+      "gh": "kohpangwei/group_DRO",
+      "ok": {
+        "gh": true
+      }
+    },
+    {
+      "name": "WILDS",
+      "aliases": [
+        "wilds"
+      ],
+      "kind": "benchmark",
+      "gh": "p-lambda/wilds",
+      "ok": {
+        "gh": true
+      }
+    },
+    {
+      "name": "CIFAR-10-C",
+      "aliases": [
+        "cifar-10-c",
+        "cifar10-c",
+        "cifar-10c"
+      ],
+      "kind": "benchmark",
+      "gh": "hendrycks/robustness",
+      "ok": {
+        "gh": true
+      }
+    },
+    {
+      "name": "CIFAR10-DVS",
+      "aliases": [
+        "cifar10-dvs"
+      ],
+      "kind": "dataset",
+      "url": "https://figshare.com/articles/dataset/CIFAR10-DVS_New/4724671",
+      "ok": {}
+    },
+    {
+      "name": "N-MNIST",
+      "aliases": [
+        "n-mnist"
+      ],
+      "kind": "dataset",
+      "url": "https://www.garrickorchard.com/datasets/n-mnist",
+      "ok": {}
+    }
+  ]
+}

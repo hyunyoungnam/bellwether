@@ -61,7 +61,7 @@ async function run(){
 
   head('the set as a table');
   const vw=v=>[...D().querySelectorAll('[data-vw]')].find(b=>b.dataset.vw===v);
-  line(all('[data-vw]').length===4,'the set offers four views',
+  line(all('[data-vw]').length===5,'the set offers five views',
        all('[data-vw]').map(b=>b.textContent).join('/'));
   vw('table').click(); await sleep(900);
   const rows=all('.tbl tbody tr');
@@ -99,6 +99,46 @@ async function run(){
   W().localStorage.removeItem('bw_marks');
   vw('cards').click(); await sleep(600);
   line(!!q('.p'),'the switch goes back to cards');
+
+  head('where to get it');
+  // the paper's own printed links, and our checked mapping of benchmark names
+  vw('cards').click(); await sleep(600);
+  const cb=q('#codebtn');
+  line(!!cb,'the set offers a "code available" toggle',cb&&cb.textContent);
+  line(/full text on file for \d+ of \d+/.test((q('.sccode')||{}).textContent||''),
+       'with its denominator stated beside it',(q('.sccode')||{}).textContent);
+  const nAll=W().BW.set.length;
+  cb.click(); await sleep(900);
+  const nCode=W().BW.set.length;
+  line(nCode>0&&nCode<nAll,'toggling it narrows the set to papers printing a code link',nCode+' of '+nAll);
+  line(!!q('[data-fc="c"]'),'and the filter shows as a removable chip');
+  line(W().BW.set.every(i=>W().BW.P[i].x&1),'every paper left carries the flag');
+  // open the first card: its terms row carries the link, the sentence on hover
+  q('.p').click(); await sleep(1200);
+  const rl=q('.p .tm.rl a');
+  line(!!rl,'an open card shows the code link in its terms row',rl&&rl.textContent);
+  line(rl&&/github\.com|huggingface\.co|gitlab|zenodo|github\.io/.test(rl.href),'pointing at the repository',rl&&rl.href);
+  line(rl&&(rl.title||'').length>10,'with the paper\'s own sentence on hover',rl&&rl.title.slice(0,80));
+  q('[data-fc="c"]').click(); await sleep(900);
+  line(W().BW.set.length===nAll,'removing the chip restores the set',W().BW.set.length+'');
+  const bl=q('.p a.bl');
+  line(!!bl,'a benchmark name in a card links to where it lives',bl&&bl.textContent);
+  line(bl&&/our mapping/.test(bl.title),'and the hover says the mapping is ours',bl&&bl.title);
+  vw('bench').click(); await sleep(900);
+  const brows=all('.bnt tbody tr');
+  line(brows.length>0,'the benchmarks view lists one row per benchmark the set names',brows.length+' rows');
+  line(all('.bnt thead th').length===3,'benchmark / papers in this set / where it lives',
+       all('.bnt thead th').map(e=>e.textContent.trim()).join(' / '));
+  line(all('.bnt tbody a.bl').length>0,'with checked locations where the registry has one',
+       all('.bnt tbody a.bl').length+' of '+brows.length);
+  line(/name a benchmark in their abstract/.test((q('.tbcov')||{}).textContent||''),
+       'and the coverage line says what was counted',(q('.tbcov')||{}).textContent);
+  const c1=+brows[0].querySelector('td.num').firstChild.textContent, c2=+brows[brows.length-1].querySelector('td.num').firstChild.textContent;
+  line(c1>=c2,'rows are ordered by recurrence in the set, never by a merit score');
+  brows[0].querySelector('[data-bd]').click(); await sleep(900);
+  line(W().BW.st.ds!==null&&W().BW.set.length===c1,'a benchmark row narrows the set to the papers naming it',W().BW.set.length+' = '+c1);
+  q('[data-fc="b"]').click(); await sleep(700);
+  line(W().BW.set.length===nAll,'and its chip removes it again');
 
   head('the set as a map');
   vw('map').click(); await sleep(2500);

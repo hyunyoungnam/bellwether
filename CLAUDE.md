@@ -425,6 +425,70 @@ against.
 
 ---
 
+## Problem 4 — Where to get it (added 2026-09-17)
+
+A researcher building a model wants two things the abstract never says:
+**this paper's code / released data / weights**, and **where the benchmark it
+tested on can be fetched**. Two facts, two sources, and the boundary matters.
+
+**The paper's own links are extracted, not looked up.** `icml.resources`
+runs regexes over the parsed full text (no model, no GPU — a URL is a string
+and the sentence around it is cut, never written) and keeps a link as the
+paper's OWN when the sentence says so: an availability phrase ("code is
+available at"), "our", a first-page footnote of footnote shape, or a repo
+named after the proposed method. Everything else (a baseline's repo, a tool)
+is a `mention` and never shown as the paper's. Measured on 23,426 full texts
+across six editions: **8,076 papers (34%) print a code link**; ICML 2026
+1,557 of 4,738 full texts. The evidence sentence rides with the URL
+(`resources.json`, then spans slot 9) and shows on hover.
+
+**Where a benchmark lives is OUR mapping, and says so.** `config/benchmarks.json`
+maps the extracted names (`taxonomy.dataset_key` fold over name + aliases) to
+a Hub dataset id, a GitHub repo, or a homepage — 270 entries, authored like
+`DOMAIN_FAMILIES`. Every id is checked against the Hub / GitHub API
+(`--registry`); an id that fails carries `ok:false` and the name shows with
+no link. Hover on any such link reads "our mapping". `not_a_dataset` lists
+model names the extractor filed under datasets (llama, qwen, gpt-2); they
+leave the data lists entirely.
+
+**Decisions (owner, 2026-09-17):**
+- **A "code available" filter exists**, with its denominator printed beside
+  it ("full text on file for N of M"): the link is a full-text fact, so the
+  29% without a preprint are absent from the filtered set, and a paper with
+  no link is not a paper with no code. The flag is bit 1 of `P[i].x`; bit
+  16 is "full text on file".
+- **GitHub stars and Hub downloads are shown as facts and are never a sort
+  axis.** They are fetched once (`--resolve`, `gh auth token` gives 5,000
+  requests/hour), dated, cached in `data/interim/resolve_cache.jsonl`, and a
+  404 is recorded as "not found (date)", never hidden.
+- The benchmarks view (fifth view of a set) counts the ABSTRACT pass only
+  (`k0`), orders by recurrence within the set like STANDS ON, and every row
+  narrows the set. Nothing counts, sorts or filters on the full-text link
+  except the disclosed toggle above.
+
+Agent side: `paper_resources(gid)` and `benchmark_info(name)` (both
+recomputable for figure checks); `get_paper` carries the URLs. Exports add
+`code_url / data_url / model_url / benchmark_urls`.
+
+Traps found building it:
+- **Python 3.13+ sets `VERIFY_X509_STRICT`**, which rejects api.github.com
+  and huggingface.co chains for a missing Authority Key Identifier while curl
+  accepts them. `resources._SSL` clears the flag; the chain is still verified.
+- **PDF text glues footnotes together** ("…available here: URL 4URL 5URL"),
+  so one availability phrase vouched for three repositories, and wraps URLs
+  after `github.com/` or `owner/`. Footnote numbers glued to a URL start a
+  new sentence; the wraps are repaired before matching (ICML 2025 code links
+  664 → 999).
+- **"provided" and "found" are not availability verbs** — "in accordance
+  with the setup provided in EleutherAI/w2s" made someone else's repo the
+  paper's data release. Only available / released / open-sourced / hosted /
+  "found at" count, and adopt / follow / baseline / "provided in" veto.
+- **Hub and GitHub rename** (THUDM → zai-org, lmms-lab → lmms-lab-encoder):
+  the API follows redirects, so the check passes while the registry names a
+  ghost. `--registry` prints every rename; apply it to the file.
+
+---
+
 ## Guardrails
 
 1. **Show what is different; never claim what is important.** Differences are
@@ -489,6 +553,7 @@ the whole corpus.
 | 6 | `.venv/bin/python -m icml.landscape` | embeddings + layout (cached `.npy`) |
 | 7 | `.venv/bin/python -m icml.topics` | `topics.json` — level-3 multi-label tags |
 | 8 | `.venv/bin/python -m icml.embed` | union embeddings + `neighbors_union.json` + `embed_union.json` — "more like this" across every active corpus (42% of nearest neighbors cross corpora; per-corpus lists could not return those). `union.json` defines **gid**, the only global paper key (now 25,068 vectors across five corpora; 76% of nearest neighbors cross corpora) — `event_id` collides across venues and tracks |
+| 8b | `python3 -m icml.resources` (+ `--resolve`, `--registry`) | `resources.json` — the papers' own code/data/model links with evidence; GitHub/Hub facts; registry check |
 | 9 | `.venv/bin/python -m icml.site --dist` | `reports/index.html` + uploadable `dist/` |
 
 **Earlier years, for trends only** (added 2026-08-13). One year cannot say what is

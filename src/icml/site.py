@@ -616,6 +616,59 @@ def build_payload(span_source: str) -> dict:
         n = detex(name).strip()
         return data.id(ds_disp.get(dataset_key(n), n))
 
+    # ---- the paper's own links (icml.resources) and where benchmarks live ----
+    # Links are URLs printed in the paper's full text; coverage is full-text
+    # coverage and is carried per paper (bit 16) so every count can state it.
+    # Benchmark locations are OUR registry (config/benchmarks.json), API-checked;
+    # a name without a confirmed location stays a plain name.
+    from .resources import OUT as RES_OUT, load_registry, _load_cache as _res_cache
+    res_doc = load_json(RES_OUT) if RES_OUT.exists() else {}
+    res_of: dict[str, dict] = res_doc.get("papers", {})
+    ft_gids = set(res_doc.get("fulltext_gids", ()))
+    try:
+        registry = load_registry()
+    except FileNotFoundError:
+        registry = {"entries": [], "by_key": {}, "not_a_dataset": set()}
+    res_meta_cache = _res_cache()
+
+    def not_ds(name: str) -> bool:
+        # model names the extractor filed under datasets (llama, qwen, gpt-2)
+        return dataset_key(detex(name).strip()) in registry["not_a_dataset"]
+
+    def meta_c(m: dict | None) -> dict | None:
+        if not m:
+            return None
+        if m.get("gone"):
+            return {"gone": 1, "at": m.get("at")}
+        if "stars" in m:
+            return {"s": m.get("stars"), "p": m.get("pushed"), "l": m.get("license"),
+                    "a": 1 if m.get("archived") else 0, "at": m.get("at")}
+        if "downloads" in m:
+            return {"dl": m.get("downloads"), "lk": m.get("likes"), "md": m.get("modified"),
+                    "gt": 1 if m.get("gated") else 0, "at": m.get("at")}
+        if m.get("gated"):
+            return {"gt": 1, "at": m.get("at")}
+        return None
+
+    _RES_BIT = {"code": 1, "data": 2, "model": 4, "page": 8}
+
+    def res_bits(g: int) -> int:
+        b = 16 if g in ft_gids else 0
+        r = res_of.get(str(g))
+        if r:
+            for kind, bit in _RES_BIT.items():
+                if r.get(kind):
+                    b |= bit
+        return b
+
+    def res_links(g: int):
+        r = res_of.get(str(g))
+        if not r:
+            return None
+        out = [[kind[0], it["u"], it["r"], (it.get("s") or "")[:200], meta_c(it.get("m"))]
+               for kind in ("code", "data", "model", "page") for it in r.get(kind, [])]
+        return out or None
+
     rows = []
     # The highlight flag is the venue's own decision distinction, in the
     # venue's own vocabulary: spotlight where the corpus declares spotlights
@@ -665,11 +718,11 @@ def build_payload(span_source: str) -> dict:
             "p": [meth.id(detex(m["name"])) for m in methods if m.get("role") == "proposed"][:4],
             "u": [meth.id(detex(m["name"])) for m in methods if m.get("role") == "building-block"][:5],
             "v": [meth.id(detex(m["name"])) for m in methods if m.get("role") == "baseline"][:4],
-            "k": [ds_id(x["name"]) for x in (f.get("datasets") or [])][:5],
+            "k": [ds_id(x["name"]) for x in (f.get("datasets") or []) if not not_ds(x["name"])][:5],
             "s": [task.id(detex(x["name"])) for x in (f.get("tasks") or [])][:3],
             # abstract-pass-only twins of k/s — the ONLY fields countable
             # across papers or years; k/s above are display, marked "full text"
-            "k0": [ds_id(x["name"]) for x in abs_of.get(eid, ((),(),()))[1]][:5],
+            "k0": [ds_id(x["name"]) for x in abs_of.get(eid, ((),(),()))[1] if not not_ds(x["name"])][:5],
             "s0": [task.id(detex(x["name"])) for x in abs_of.get(eid, ((),(),()))[2]][:3],
             "n": spans,
             "L": edit_span(f.get("limitation") or "")[:SPAN_CHARS],
@@ -683,6 +736,10 @@ def build_payload(span_source: str) -> dict:
             "au": (p.get("authors") or [])[:1],
             "na": p.get("n_authors") or len(p.get("authors") or []),
             "f": 1 if src_of.get(eid) == "fulltext" else 0,
+            # bit 1 code, 2 data, 4 model, 8 page (the paper's own printed
+            # links), 16 full text on file — the denominator of every count
+            "x": res_bits(eid),
+            "rs": res_links(eid),
         })
 
 
@@ -1288,9 +1345,32 @@ def build_payload(span_source: str) -> dict:
         fresh.sort(key=lambda x: -x["b"])
         digest["fresh"] = fresh[:10]
 
+    # ---- where each benchmark lives: registry entry per data-vocab id ----
+    bench_links: dict[int, list] = {}
+    for di, dn in enumerate(data.items):
+        e = registry["by_key"].get(dataset_key(dn))
+        if not e:
+            continue
+        ok = e.get("ok") or {}
+        if e.get("hf") and ok.get("hf"):
+            url, host, m = f"https://huggingface.co/datasets/{e['hf']}", "hf", res_meta_cache.get(f"hfd:{e['hf']}")
+        elif e.get("gh") and ok.get("gh"):
+            url, host, m = f"https://github.com/{e['gh']}", "gh", res_meta_cache.get(f"gh:{e['gh']}")
+        elif e.get("url"):
+            url, host, m = e["url"], "web", None
+        else:
+            continue
+        bench_links[di] = [e["name"], url, host, meta_c(m)]
+
     return {
         "papers": rows,
         "digest": digest,
+        # OUR mapping of benchmark names to where they live, API-checked; the
+        # interface labels it as ours wherever it shows
+        "bl": bench_links,
+        "dsph": [di for di, dn in enumerate(data.items) if is_placeholder(dn)],
+        "res": {"cov": res_doc.get("coverage", {}), "built": res_doc.get("built"),
+                "resolved": res_doc.get("resolved"), "nreg": len(registry["entries"])},
         "vocab": {"m": meth.items, "d": data.items, "t": task.items},
         "terms": terms,
         "lims": lims,
@@ -1538,6 +1618,33 @@ color:#4a4943;line-height:1.6}
 letter-spacing:.07em;margin-right:5px}
 .tm.new b{color:#9a7a00}
 .tm.eff b{color:#1d6ea8}
+/* a benchmark that links out: the name is the paper's, the link is ours */
+a.bl{color:inherit;text-decoration:none;border-bottom:1px dotted rgba(0,0,0,.35)}
+a.bl:hover{color:var(--acc);border-bottom-color:var(--acc)}
+a.bl i{font-style:normal;font-size:9px;margin-left:2px;opacity:.55}
+/* the paper's own printed links */
+.tm.rl a{color:var(--ink);text-decoration:none;border-bottom:1px solid rgba(0,0,0,.25);font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11.5px}
+.tm.rl a:hover{color:var(--acc);border-bottom-color:var(--acc)}
+.tm.rl a i{font-style:normal;font-size:9px;margin-left:2px;opacity:.55}
+.tm.rl small{color:var(--mut);margin-left:6px;font-size:10.5px}
+.chipw{display:inline-flex;align-items:center;white-space:nowrap}
+.blc{font-size:10px;color:var(--mut);text-decoration:none;margin:0 2px 0 3px}
+.bnt td.wh em.cn{font-style:normal;color:var(--mut);margin-right:4px}
+.blc:hover{color:var(--acc)}
+.sccode{margin-top:8px;display:flex;align-items:center;gap:8px}
+.sccode button{font:inherit;font-size:11.5px;padding:2px 8px;border-radius:20px;cursor:pointer;
+border:1px solid var(--ring);background:var(--bg);color:var(--ink)}
+.sccode button b{font-weight:600;color:var(--mut);margin-left:5px}
+.sccode button.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+.sccode button.on b{color:#ddd}
+.sccode small{color:var(--mut);font-size:10.5px}
+.bnt td.num{white-space:nowrap;font-variant-numeric:tabular-nums}
+.bnt td.num small{color:var(--mut);margin-left:6px}
+.bnt td.wh{font-size:11.5px}
+.bnt td.wh small{display:block;color:var(--mut);font-size:10.5px}
+.bnt th em{font-style:normal;font-weight:400;text-transform:none;letter-spacing:0;color:var(--mut);margin-left:4px}
+.bnt col.b0{width:34%}.bnt col.b1{width:18%}
+.tbl .dim{color:var(--dim)}
 /* cited-in: the citing papers' sentences, verbatim — located, not judged */
 .ctx{margin:12px 0 2px;border-top:1px dashed rgba(0,0,0,.12);padding-top:9px}
 .cxh{font-weight:600;color:#8a8981;font-size:10px;text-transform:uppercase;letter-spacing:.07em}
@@ -2059,7 +2166,7 @@ body.haspanel #cmp{margin-right:max(0px,calc(352px - (100vw - 1266px)/2))}
 <script>
 const $=s=>document.querySelector(s);
 const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-const V=D.vocab, P=D.papers, T=D.topics, MK=D.mk||[];
+const V=D.vocab, P=D.papers, T=D.topics, MK=D.mk||[], BL=D.bl||{}, DSPH=new Set(D.dsph||[]), RES=D.res||{cov:{}};
 const mname=i=>V.m[i], dname=i=>V.d[i], tname=i=>V.t[i];
 
 // Display-only shortening: the universally-known acronyms, applied at render
@@ -2196,7 +2303,7 @@ function papersWithWord(w){
 // Papers are shown only once the reader has asked for some. Listing all 6,637 on
 // arrival is the problem this product exists to remove, not a neutral default.
 const MAX_SHOWN=80, NEIGHBOURS_SHOWN=5;
-const st={corp:null,q:[],qraw:'',anc:null,pick:null,topics:new Set(),fams:new Set(),sel:null,panel:null,ds:null,meth:null,mfam:null,view:'cards',tsort:null,hidex:false,box:null,lim:null,role:null};
+const st={corp:null,q:[],qraw:'',anc:null,pick:null,topics:new Set(),fams:new Set(),sel:null,panel:null,ds:null,meth:null,mfam:null,view:'cards',tsort:null,hidex:false,box:null,lim:null,role:null,code:false};
 // The claim the reader clicked to get here — the door's face, carried to the
 // destination so "why am I looking at this set?" never needs remembering.
 let STORY=null;
@@ -2205,7 +2312,7 @@ let LAST_SET=[];
 // A conference pick alone is NOT a selection. Picking "ICML 2026" leaves 6,637
 // papers, which is the problem this product exists to remove — the reader still
 // has to say what their field is.
-const chosen=()=>st.q.length||st.topics.size||st.fams.size||st.ds!==null||st.meth!==null||st.mfam!==null||st.lim!==null||st.anc!==null||st.pick!==null;
+const chosen=()=>st.q.length||st.topics.size||st.fams.size||st.ds!==null||st.meth!==null||st.mfam!==null||st.lim!==null||st.anc!==null||st.pick!==null||st.code;
 
 // How strongly each literal hit matches — used to pick seeds, so the centroid is
 // built from the papers the query is actually about, not the weakest 700.
@@ -2304,6 +2411,7 @@ function baseSet(skip){
     const p=P[i];
     if(st.corp!==null&&st.corp>=0&&p.cy!==st.corp)continue;
     if(skip!=='ds'&&st.ds!==null&&!p.k0.includes(st.ds))continue;
+    if(skip!=='code'&&st.code&&!(p.x&1))continue;
     if(skip!=='meth'&&!methPass(p))continue;
     if(skip!=='topics'&&!facetPass(p,false))continue;
     if(skip!=='domains'&&!facetPass(p,true))continue;
@@ -2355,6 +2463,7 @@ function match(i,hits,corp){
   const cc=corp===undefined?st.corp:corp;
   if(cc!==null&&cc>=0&&p.cy!==cc)return false;
   if(st.ds!==null&&!p.k0.includes(st.ds))return false;
+  if(st.code&&!(p.x&1))return false;              // the paper prints a code link
   if(!methPass(p))return false;
   // Within a facet the picks are OR — two topics widen the set. ACROSS facets
   // they are AND: "reasoning" plus "healthcare" means reasoning applied to
@@ -2512,11 +2621,15 @@ function card(i,full){
   // The extracted terms are part of the summary, not a footnote under it.
   const term=(lab,v,cls)=>v?`<span class="tm ${cls}"><b>${lab}</b>${hl(v)}</span>`:'';
   const src='';
+  const dl=dlinks(p.k);
   const terms=[term('proposes',names(p.p,mname),'new'),
                term('builds on',names(p.u,mname),''),
                term('compared with',names(p.v,mname),''),
-               term('data',names(p.k,dname),'eff'),
-               term('tasks',names(p.s,tname),'')].filter(Boolean).join('')+src;
+               dl?`<span class="tm eff"><b>data</b>${dl}</span>`:'',
+               term('tasks',names(p.s,tname),''),
+               // the paper's own printed links: code / data / model / page,
+               // the sentence that states each on hover
+               rlinks(sx?sx[9]:null)].filter(Boolean).join('')+src;
 
   // One name: the corresponding author when the paper printed one, else the
   // first. "et al." stands for the rest rather than listing eight names.
@@ -3328,7 +3441,8 @@ function railSetCard(res,vset){
   }
   const chips=(map,kind,name)=>[...map.entries()].filter(([,c])=>c>=2)
     .sort((a,b)=>b[1]-a[1]).slice(0,4)
-    .map(([id,c])=>`<button class="scchip" data-ck="${kind}" data-cid="${id}" title="${esc(name(id))}">${esc(disp(name(id)))}${kind==='m'&&MK[id]?'<em class="mtag">model</em>':''}<b>${c}</b></button>`).join('');
+    .map(([id,c])=>`<span class="chipw"><button class="scchip" data-ck="${kind}" data-cid="${id}" title="${esc(name(id))}">${esc(disp(name(id)))}${kind==='m'&&MK[id]?'<em class="mtag">model</em>':''}<b>${c}</b></button>`+
+      (kind==='d'&&BL[id]?`<a class="blc" href="${esc(BL[id][1])}" target="_blank" rel="noopener" title="${esc(blTitle(BL[id]))}">↗</a>`:'')+`</span>`).join('');
   const dch=chips(dk,'d',dname), mch=chips(mk,'m',i=>MV[i]);
   const nf=res.filter(i=>P[i].f).length;
   const tiers='';
@@ -3338,6 +3452,7 @@ function railSetCard(res,vset){
   // remove handler but never a chip to click
   if(st.qraw)fch.push(['q','“'+st.qraw+'”']);
   if(st.box)fch.push(['z','picked on the map: '+st.box.size]);
+  if(st.code)fch.push(['c','code available']);
   if(V2.k)fch.push(['k',V2.k]);
   if(V2.d)fch.push(['d','for '+V2.d]);
   if(V2.u)fch.push(['u','built on '+V2.u]);
@@ -3350,8 +3465,15 @@ function railSetCard(res,vset){
     ?`<div class="scchips" style="margin-bottom:8px">`+fch.map(([ax,l])=>
        `<button class="scchip on2" data-fc="${ax}" title="${esc(l)}">${esc(disp(l))} ×</button>`).join('')+`</div>`
     :'';
+  // "code available": a filter on a full-text fact, so its denominator is
+  // stated beside it — papers without a preprint show no link, which is not
+  // evidence they have none.
+  const B=st.code?baseSet('code'):res;
+  const nB=st.code?B.size:res.length;
+  let nc=0,nft=0; for(const i of B){ if(P[i].x&1)nc++; if(P[i].x&16)nft++; }
+  const codeRow=nft?`<div class="sccode"><button id="codebtn" class="${st.code?'on':''}" title="papers whose full text prints a code link">code available<b>${nc}</b></button><small>full text on file for ${nft} of ${nB}</small></div>`:'';
   return `<div class="setcard"><div class="rh">This set</div>`+fchips+
-    `<div class="scn">${res.length.toLocaleString()}<small>papers</small></div>`+tiers+
+    `<div class="scn">${res.length.toLocaleString()}<small>papers</small></div>`+tiers+codeRow+
     `<div class="scyr">${yrows}</div>`+
     (sib.length>1?`<div class="scsub">the same pick, in each edition — share of that year</div>`:'')+
     (dch?`<div class="rh" style="margin-top:11px">Tested on <em>in this set</em></div><div class="scchips">${dch}</div>`:'')+
@@ -3360,7 +3482,7 @@ function railSetCard(res,vset){
     // Three ways to look at the same set: one card each, one ROW each (the
     // extracted fields side by side, which is how a set is compared), or the
     // subgroups the embeddings support. Never a fourth ordering by merit.
-    `<div class="vsw">`+[['cards','papers'],['table','table'],['map','map'],['groups','subgroups']]
+    `<div class="vsw">`+[['cards','papers'],['table','table'],['bench','benchmarks'],['map','map'],['groups','subgroups']]
       .map(([v,l])=>`<button data-vw="${v}" class="${st.view===v?'on':''}">${l}</button>`).join('')+
     `</div>`+markBarHTML(res)+
     // A selection that cannot leave is a dead end: .bib for the reference
@@ -3422,6 +3544,8 @@ function wireRtr(rt){
     CMP=null; st.view=el.dataset.vw; render();});
   const hx=rt.querySelector('#hidex');
   if(hx)hx.onclick=()=>{ st.hidex=!st.hidex; render(); };
+  const cb=rt.querySelector('#codebtn');
+  if(cb)cb.onclick=()=>{ CMP=null; st.code=!st.code; render(); };
   rt.querySelectorAll('[data-ex]').forEach(el=>el.onclick=async()=>{
     const was=el.textContent; el.textContent='…';
     try{
@@ -3443,6 +3567,7 @@ function wireRtr(rt){
     else if(ax==='p')st.pick=null;
     else if(ax==='q'){ st.q=[]; st.qraw=''; const q2=$('#q'); if(q2)q2.value=''; }
     else if(ax==='z')st.box=null;
+    else if(ax==='c')st.code=false;
     else clearSlot(ax);
     render();});
   rt.querySelectorAll('[data-ck]').forEach(el=>el.onclick=()=>{
@@ -3601,6 +3726,12 @@ function render(){
   // to narrow, and the count above says how much is not on screen.
   const extraShown=extra.slice(0, res.length>=MAX_SHOWN?0:Math.min(extra.length,MAX_SHOWN-res.length));
   ensureSpans(new Set([...show,...extraShown].map(i=>P[i].cy)));
+  if(st.view==='bench'){
+    $('#results').innerHTML=renderBench(res);
+    $('#results').querySelectorAll('[data-bd]').forEach(el=>el.onclick=()=>{
+      CMP=null; st.ds=+el.dataset.bd; st.view='cards'; render();});
+    return;
+  }
   if(st.view==='table'){
     $('#results').innerHTML=renderTable(res,show)
       +(res.length>show.length
@@ -3917,7 +4048,7 @@ function clearPicks(){
   st.q=[]; st.qraw=''; const q=$('#q'); if(q)q.value='';
   st.sel=null; st.view='cards'; st.tsort=null;
   st.topics.clear(); st.fams.clear(); st.meth=null; st.mfam=null; st.ds=null;
-  st.lim=null; st.anc=null; st.pick=null; STORY=null; CMP=null; EXP.clear(); closePanel();
+  st.lim=null; st.anc=null; st.pick=null; st.code=false; STORY=null; CMP=null; EXP.clear(); closePanel();
 }
 function applyChgRow(k,id){
   // the row handlers set STORY right beside the pick — clearing the picks
@@ -3975,6 +4106,27 @@ function wireChanged(){
 
 // the same name list the cards print, shared with the table below
 const names=(arr,fn)=>(arr||[]).map(x=>abbr(fn(x))).join(', ');
+// Where a benchmark lives — OUR mapping (config/benchmarks.json), said so on
+// hover. The name stays the paper's; only the link is ours. Repo facts are
+// facts: stars and downloads are shown, and nothing here sorts on them.
+const fmtN=n=>n==null?'':n>=1e6?(n/1e6).toFixed(1)+'M':n>=1e3?(n/1e3).toFixed(n>=1e4?0:1)+'k':String(n);
+const hostName=h=>h==='hf'?'Hugging Face':h==='gh'?'GitHub':'homepage';
+function facts(m){
+  if(!m)return '';
+  if(m.gone)return ` · not found (${m.at||''})`;
+  if(m.s!=null)return ` · ★ ${fmtN(m.s)}${m.l?' · '+m.l:''}${m.p?' · pushed '+m.p:''}${m.a?' · archived':''}`;
+  if(m.dl!=null)return ` · ${fmtN(m.dl)} downloads${m.lk!=null?' · ♥ '+fmtN(m.lk):''}${m.gt?' · gated':''}`;
+  if(m.gt)return ' · gated';
+  return '';
+}
+const blTitle=b=>`${b[0]} · ${hostName(b[2])} · our mapping${facts(b[3])}`;
+const dlinks=arr=>(arr||[]).map(id=>{
+  const b=BL[id], nm=hl(abbr(dname(id)));
+  return b?`<a class="bl" href="${esc(b[1])}" target="_blank" rel="noopener" title="${esc(blTitle(b))}" onclick="event.stopPropagation()">${nm}<i>↗</i></a>`:nm;
+}).join(', ');
+const RKIND={c:'code',d:'data',m:'model',p:'page'};
+const rlinks=rs=>(rs||[]).map(([k,u,r,s,m])=>
+  `<span class="tm rl"><b>${RKIND[k]||k}</b><a href="${esc(u)}" target="_blank" rel="noopener" title="${esc(s||u)}" onclick="event.stopPropagation()">${esc(r)}<i>↗</i></a>${m?`<small>${esc(facts(m).slice(3))}</small>`:''}</span>`).join('');
 // ---- the reading queue -----------------------------------------------------
 // Forty papers in a list is still forty papers of reading. What a reader needs
 // is to record a DECISION and see what is left. The marks are the reader's own
@@ -4050,10 +4202,39 @@ function renderTable(res,show){
         <span class="cyst" style="color:var(--v${vhue(p.cy)})">${esc(CY[p.cy].v)} ${CY[p.cy].y}</span>
         ${p.o===2?`<span class="badge sp">${esc(CY[p.cy].hw||'Spotlight')}</span>`:''}</td>
       <td>${hl(names(p.p,mname))}</td><td>${hl(names(p.u,mname))}</td>
-      <td>${hl(names(p.k,dname))}</td><td>${hl(names(p.s,tname))}</td></tr>`;}).join('');
+      <td>${dlinks(p.k)}</td><td>${hl(names(p.s,tname))}</td></tr>`;}).join('');
   const cols=`<colgroup>`+[0,1,2,3,4,5].map(n=>`<col class="c${n}">`).join('')+`</colgroup>`;
   return `<div class="tblwrap"><table class="tbl">${cols}<thead>${head}</thead><tbody>${body}</tbody></table></div>`+
     `<div class="tbcov">${show.length} rows · ${cov}</div>`;
+}
+
+// ---- the set's benchmarks --------------------------------------------------
+// One ROW per benchmark the set names in its abstracts (the abstract pass —
+// the only field countable across papers), how many of the set name it, and
+// where it lives when our registry has a checked location. Recurrence within
+// the set orders the rows, as STANDS ON does; nothing here is a merit rank.
+// Every row is a door: the name narrows the set to the papers naming it.
+function renderBench(res){
+  const cnt=new Map(); let named=0;
+  for(const i of res){
+    const ks=[...new Set(P[i].k0)].filter(d=>!DSPH.has(d));
+    if(ks.length)named++;
+    for(const d of ks)cnt.set(d,(cnt.get(d)||0)+1);
+  }
+  const rows=[...cnt.entries()].sort((a,b)=>b[1]-a[1]||(dname(a[0])<dname(b[0])?-1:1)).slice(0,150);
+  if(!rows.length)return `<div class="empty">No paper in this set names a benchmark in its abstract.</div>`;
+  const withWhere=rows.filter(([d])=>BL[d]).length;
+  const body=rows.map(([d,c])=>{
+    const b=BL[d];
+    const where=b?(b[0].toLowerCase()!==dname(d).toLowerCase()?`<em class="cn">${esc(b[0])}</em> `:'')+`<a class="bl" href="${esc(b[1])}" target="_blank" rel="noopener" title="${esc(blTitle(b))}">${esc(b[2]==='hf'?'huggingface.co/datasets/'+b[1].split('/datasets/')[1]:b[2]==='gh'?b[1].replace(/^https?:\/\//,''):b[1].replace(/^https?:\/\/(www\.)?/,''))}<i>↗</i></a>`+
+      (b[3]?`<small>${esc(facts(b[3]).slice(3))}</small>`:''):`<span class="dim">—</span>`;
+    return `<tr><td class="tt"><button data-bd="${d}" title="show the ${c} papers naming it">${esc(abbr(dname(d)))}</button></td>`+
+      `<td class="num">${c}<small>${Math.round(c/res.length*100)}%</small></td><td class="wh">${where}</td></tr>`;
+  }).join('');
+  return `<div class="tblwrap"><table class="tbl bnt"><colgroup><col class="b0"><col class="b1"><col class="b2"></colgroup>`+
+    `<thead><tr><th>benchmark</th><th>papers in this set</th><th>where it lives <em>our mapping</em></th></tr></thead><tbody>${body}</tbody></table></div>`+
+    `<div class="tbcov">${named} of ${res.length} papers name a benchmark in their abstract · ${rows.length} benchmarks${cnt.size>rows.length?' of '+cnt.size:''} · `+
+    `a location for ${withWhere} of them (${RES.nreg||0} in the registry, checked against the Hub and GitHub)</div>`;
 }
 
 // ---- the set as a map ------------------------------------------------------
@@ -4295,7 +4476,7 @@ def main() -> int:
     for r in payload["papers"]:
         spans_by[keys_by_ci[r["cy"]]][str(r["i"])] = [
             r.pop("n"), r.pop("L"), r.pop("K"), r.pop("R"), r.pop("c1"),
-            r.pop("D"), r.pop("cg"), r.pop("cl"), r.pop("cx")]
+            r.pop("D"), r.pop("cg"), r.pop("cl"), r.pop("cx"), r.pop("rs")]
     for k, v in spans_by.items():
         parts[f"spans_{k}.json"] = dump(v)
     parts["search.json"] = dump({"terms": payload.pop("terms"),
