@@ -18,3 +18,9 @@ report_roadmap.md
 
 # API keys for the eval harnesses (scripts/eval) — never committed
 .env
+
+# Internal working notes — not part of the published project.
+todo.md
+
+# Eval transcripts: per-run cost/token data from the harnesses.
+scripts/eval/answers/
