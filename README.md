@@ -19,8 +19,9 @@ NeurIPS 2024/2025, ICLR 2025/2026 — 29,605 papers in one cross-venue index.
 
 ## Install & run
 
-Runs locally and serves on your network: install on one machine, browse from
-any device on the same LAN. Requirements: git and Python 3.10+.
+Runs entirely on your own machine — each reader installs their own copy and
+serves it on loopback, so the corpus, the search engine and the agent all stay
+local. Requirements: git and Python 3.10+.
 
 **Linux / macOS** — one line:
 
@@ -45,12 +46,16 @@ bellwether serve
 (Set `WNAI_BUNDLE=<file-or-url>` before running the installer to fold the
 `fetch-data` step in.)
 
-`bellwether serve` starts everything on one port and prints both addresses:
+`bellwether serve` starts everything on one port and prints its address:
 
 ```
   local:    http://127.0.0.1:8001
-  network:  http://192.168.0.180:8001   <- other devices on this network
 ```
+
+The server binds to loopback only. It is not reachable from other machines,
+by design: a question asked on this page spawns a coding agent signed in on
+*this* machine, so an address anyone on the network could open would be that
+account handed out without a login.
 
 Ctrl+C stops everything. `bellwether status` shows what is running and what data
 exists. The data bundle is produced by `bellwether bundle` on a build machine and

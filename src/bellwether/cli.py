@@ -1,6 +1,6 @@
-"""The launcher: install on Linux/Windows, serve on the local network.
+"""The launcher: install on Linux/Windows, serve on this machine.
 
-    bellwether serve            # search engine + site on one port; prints the LAN URL
+    bellwether serve            # search engine + site on one port, loopback only
     bellwether setup            # fetch the Meilisearch binary, generate keys
     bellwether status           # what is running, what data exists
 
@@ -53,16 +53,6 @@ def _port_open(port: int, host: str = "127.0.0.1") -> bool:
     with socket.socket() as s:
         s.settimeout(0.3)
         return s.connect_ex((host, port)) == 0
-
-
-def _lan_ip() -> str:
-    """The address other devices on the network reach this machine at."""
-    try:
-        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
-            s.connect(("8.8.8.8", 80))   # no packet is sent; picks the route
-            return s.getsockname()[0]
-    except OSError:
-        return "127.0.0.1"
 
 
 def _meili_asset() -> str:
@@ -335,10 +325,8 @@ def cmd_serve(args: argparse.Namespace) -> int:
     import signal
     signal.signal(signal.SIGTERM, lambda *_: sys.exit(0))
 
-    srv = server.make_server(args.host, args.port)
+    srv = server.make_server(port=args.port)
     print(f"\n  local:    http://127.0.0.1:{args.port}")
-    if args.host == "0.0.0.0":
-        print(f"  network:  http://{_lan_ip()}:{args.port}   <- other devices on this network")
     print("\nCtrl+C stops everything")
     try:
         srv.serve_forever()
@@ -364,10 +352,8 @@ def cmd_status(args: argparse.Namespace) -> int:
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(prog="bellwether", description=__doc__.split("\n")[0])
     sub = ap.add_subparsers(dest="cmd", required=True)
-    s = sub.add_parser("serve", help="serve the site + search on the local network")
+    s = sub.add_parser("serve", help="serve the site + search on this machine")
     s.add_argument("--port", type=int, default=8001)
-    s.add_argument("--host", default="0.0.0.0",
-                   help="bind address; 127.0.0.1 disables LAN access")
     s.add_argument("--no-meili", action="store_true",
                    help="do not start the search engine")
     s.set_defaults(fn=cmd_serve)

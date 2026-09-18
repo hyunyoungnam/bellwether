@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "bellwether"
 version = "0.1.0"
-description = "Local-first conference-paper research platform: install, serve on your LAN, connect your coding agent"
+description = "Local-first conference-paper research platform: install, serve locally, connect your coding agent"
 requires-python = ">=3.10"
 # The SERVING layer is stdlib-only by design — it must run on machines that
 # cannot run the build pipeline (Windows, no GPU). Pipeline deps live in .venv.

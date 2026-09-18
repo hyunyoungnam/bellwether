@@ -2,7 +2,7 @@
 
 Existing invocations (`python3 scripts/serve.py`, the tunnel restart line in
 CLAUDE.md) keep working; new installs use `wnai serve`, which also starts
-Meilisearch and prints the LAN address.
+Meilisearch and prints the local address.
 """
 import sys
 from pathlib import Path

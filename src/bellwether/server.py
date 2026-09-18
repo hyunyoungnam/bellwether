@@ -1,11 +1,12 @@
 """One port for the whole product: static files + the search endpoints.
 
-The static site (reports/) and Meilisearch share one port so that a LAN URL —
-or the cloudflared quick tunnel, which forwards exactly one port — is the whole
-address. This proxy serves the files and forwards TWO paths, POST /meili/search
-and POST /meili/similar, to the local Meilisearch with a search-only key
-injected server-side. Nothing else of Meilisearch is exposed: no write
-endpoints, no keys in the client, no other indexes.
+The static site (reports/) and Meilisearch share one port so that one address
+is the whole address — which is also what the cloudflared quick tunnel needs,
+since it forwards exactly one port. This proxy serves the files and forwards
+TWO paths, POST /meili/search and POST /meili/similar, to the local
+Meilisearch with a search-only key injected server-side. Nothing else of
+Meilisearch is exposed: no write endpoints, no keys in the client, no other
+indexes.
 
 Degrades without Meilisearch: if the key file is missing or the engine is down,
 the two POST paths answer 502 and the page falls back to its shipped indexes
@@ -275,7 +276,7 @@ class Handler(SimpleHTTPRequestHandler):
         self.wfile.write(msg)
 
 
-def make_server(host: str = "0.0.0.0", port: int = 8001,
+def make_server(host: str = "127.0.0.1", port: int = 8001,
                 docs: str = DOCS) -> ThreadingHTTPServer:
     return ThreadingHTTPServer((host, port), partial(Handler, directory=docs))
 
