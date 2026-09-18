@@ -40,6 +40,9 @@ BUNDLE_GLOBS = [
     "data/processed/card_terms.json",
     "data/processed/citations.json", "data/processed/neighbors_union.json",
     "data/processed/contacts.json", "data/processed/papers*.jsonl",
+    # without this an install answers "no code" for every paper, which
+    # reads as a fact about the paper rather than a missing file
+    "data/processed/resources.json",
 ]
 
 _IS_WIN = platform.system() == "Windows"
