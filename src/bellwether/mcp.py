@@ -820,6 +820,19 @@ def t_paper_resources(a: dict) -> dict:
     out.update(S.resources_of(gid))
     out["benchmarks"] = S.benchmarks_of(gid)
     out["full_text_on_file"] = ft
+    # An install whose bundle carries no resources.json answers "no links"
+    # for every paper in the corpus. That is a missing file, not a fact
+    # about the paper, and the difference has to reach the caller — or an
+    # answer states "this paper releases no code" 29,605 times over.
+    have = bool(S.resources.get("papers"))
+    out["link_index_loaded"] = have
+    if not have:
+        out["note"] = ("NO LINK INDEX: data/processed/resources.json is not in "
+                       "this install, so code/data/model/page are empty for EVERY "
+                       "paper here and say nothing about this one. Do not report "
+                       "their absence. benchmarks below are unaffected — they come "
+                       "from config/benchmarks.json, which ships with the repo.")
+        return out
     out["note"] = ("code/data/model/page: URLs printed in the paper, each with the "
                    "paper's own sentence as evidence and dated GitHub/Hub facts "
                    f"(stars, downloads) to report, never to rank. Links exist only "
