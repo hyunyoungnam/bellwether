@@ -52,6 +52,7 @@ body{margin:0;background:var(--bg);color:var(--ink);
 .qmsg>div{background:var(--bub);color:var(--bubfg);border-radius:14px 14px 4px 14px;
   padding:9px 15px;max-width:80%;white-space:pre-wrap}
 .amsg{margin:0 0 6px;white-space:pre-wrap}
+.amsg a{color:var(--acc);text-decoration:underline;text-underline-offset:2px}
 .afoot{display:flex;align-items:center;gap:10px;font-size:12.5px;color:var(--mut);margin:8px 0 0}
 .trmark{font-size:11.5px;color:var(--mut);border-left:1px solid var(--ring);padding-left:10px}
 .afoot .cpy{font:inherit;font-size:12.5px;color:var(--mut);background:none;border:0;
@@ -485,6 +486,11 @@ async function toggleCard(btn){
   const g=btn.dataset.pg;
   const open=btn.nextElementSibling;
   if(open&&open.classList.contains('pcard')){ open.remove(); return; }
+  // The card is the paper, not the quote. An answer that cites one paper
+  // twice carries two chips, and opening both used to print the identical
+  // card twice — so opening from another chip MOVES the card there.
+  (btn.closest('.amsg')||document).querySelectorAll(`.pcard[data-pg="${g}"]`)
+    .forEach(c=>c.remove());
   if(!PCACHE[g]){
     try{ PCACHE[g]=await (await fetch('/paper/'+g)).json(); }
     catch(e){ return; }
@@ -494,11 +500,20 @@ async function toggleCard(btn){
   const pass=['L','K','R'].map(k=>d[k]?`<i class="w${k}">${esc(d[k])}</i>`:'').filter(Boolean).join(' ');
   const au=(d.authors||[]).join(', ')+(d.n_authors>3?STR[LANG].etal:'');
   btn.insertAdjacentHTML('afterend',
-    `<div class="pcard"><div class="pt"><a href="/browse#p${g}" target="_blank" rel="noopener">${esc(d.title)}</a></div>
+    `<div class="pcard" data-pg="${g}"><div class="pt"><a href="/browse#p${g}" target="_blank" rel="noopener">${esc(d.title)}</a></div>
      <div class="pv"><b>${esc(d.venue+' '+d.year)}</b>${au?' · '+esc(au):''}</div>
      <div class="pass">${pass}</div></div>`);
 }
-const md=s=>esc(s).replace(/\*\*([^*]+)\*\*/g,'<b>$1</b>');
+// An address the agent names — a benchmark's home, a repo — is there to be
+// followed, not copied out by hand. Linkified AFTER esc(), so the pattern only
+// ever sees inert text, and after the bold pass, so [^\s<] stops at a tag.
+// Trailing punctuation closes the sentence, not the URL.
+const md=s=>esc(s)
+  .replace(/\*\*([^*]+)\*\*/g,'<b>$1</b>')
+  .replace(/https?:\/\/[^\s<]+/g,u=>{
+    const a=u.replace(/[.,;:!?)\]}'"]+$/,'');
+    return `<a href="${a}" target="_blank" rel="noopener noreferrer">${a}</a>`+u.slice(a.length);
+  });
 // ---- the derivation tree: branches = failures the field names, split into
 // namers vs attackers; an unattacked branch IS the gap candidate
 function chipOf(g){
