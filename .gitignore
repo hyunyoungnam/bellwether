@@ -21,6 +21,3 @@ report_roadmap.md
 
 # Internal working notes — not part of the published project.
 todo.md
-
-# Eval transcripts: per-run cost/token data from the harnesses.
-scripts/eval/answers/

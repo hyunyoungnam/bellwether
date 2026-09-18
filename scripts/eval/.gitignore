@@ -1,2 +1,4 @@
-# answers and scores are the evidence behind docs/harness-comparison-*.md — tracked
-answers/*/superseded/
+# scores/ are the evidence behind docs/harness-comparison-*.md, and stay tracked.
+# answers/ (the raw transcripts) are not: they carry per-run cost and token
+# figures. They are reproducible — rerun the harnesses in README.md.
+answers/

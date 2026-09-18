@@ -85,9 +85,10 @@ cd ~/bellwether
 python3 scripts/status.py          # what exists, what's stale, what to run next
 ```
 
-**Running work state lives in `todo.md`, not here** (owner, 2026-09-03): this
-file holds principles, data facts, and traps; in-progress status, pending
-items, and day-to-day updates go to todo.md.
+**Running work state lives outside this file** (owner, 2026-09-03): this file
+holds principles, data facts, and traps. In-progress status, pending items,
+and day-to-day updates belong in a local scratch file — `todo.md` is
+git-ignored and is not part of the repo.
 
 Stdlib-only stages run on system `python3` with `PYTHONPATH=src`. Anything using
 embeddings or a local LLM runs on `.venv/bin/python` (see *Environment*).

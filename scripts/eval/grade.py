@@ -268,6 +268,15 @@ def summarize(system: str, rows: list[dict]) -> dict:
 
 def main() -> int:
     truth = json.load((HERE / "truth.json").open(encoding="utf-8"))
+    # answers/ is not tracked — the transcripts carry per-run cost and token
+    # figures — so a fresh clone has nothing to grade until a runner has
+    # written into it. Say that, rather than dying on iterdir().
+    if not ANSWERS.is_dir():
+        print(f"nothing to grade: {ANSWERS} does not exist yet.\n"
+              f"Run the harnesses first (see README.md).\n"
+              f"The scores/ in this repo are an earlier run's results.",
+              file=sys.stderr)
+        return 1
     systems = sys.argv[1:] or sorted(p.name for p in ANSWERS.iterdir() if p.is_dir())
     S = Store()
     T, V = Titles(S), Verifier(S)
